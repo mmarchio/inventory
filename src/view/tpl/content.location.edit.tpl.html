@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+    <header>
+        {{template "nav" .}}
+    </header>
+    <main>
+        <section class="inventory">
+            <h2>{{.PageTitle}}</h2>
+            <form id="edit_location" method="POST" action="/api/content/location/edit/{{.Location.Attributes.Id}}" data-token="{{.Token}}">
+                <ul>
+                    <li>
+                        <label for="name">Name:</label>
+                        <input type="text" name="name" id="name" value="{{.Location.Attributes.Name}}">
+                    </li>
+                    <li>
+                        <label for="address1">Address 1:</label>
+                        <input type="text" name="address1" id="address1" value="{{.Location.Address.Address1}}">
+                    </li>
+                    <li>
+                        <label for="address2">Address 2:</label>
+                        <input type="text" name="address2" id="address2" value="{{.Location.Address.Address2}}">
+                    </li>
+                    <li>
+                        <label for="city">City:</label>
+                        <input type="text" name="city" id="city" value="{{.Location.Address.City}}">
+                    </li>
+                    <li>
+                        <label for="state">State:</label>
+                        <input type="text" name="state" id="state" value="{{.Location.Address.State}}">
+                    </li>
+                    <li>
+                        <label for="country">Country:</label>
+                        <input type="text" name="country" id="coutry" value="{{.Location.Address.Country}}">
+                    </li>
+                    <li>
+                        <label for="zipcode">Zipcode:</label>
+                        <input type="text" name="zipcode" id="zipcode" value="{{.Location.Address.Zipcode}}">
+                    </li>
+                    <li>
+                        <ul>
+                            <table class="inventory">
+                                <thead>
+                                    <th>Name:</th>
+                                    <th>Edit:</th>
+                                    <th>Delete:</th>
+                                </thead>
+                                <tbody>
+                                    {{range $r := .Location.Rooms}}
+                                    <tr>
+                                        <td><a href="/content/room/view/{{$r.Attributes.Id}}">{{$r.Attributes.Name}}</a></td>
+                                        <td><a href="/content/room/edit/{{$r.Attributes.Id}}">Edit</a></td>
+                                        <td><a href="/content/room/delete/{{$r.Attributes.Id}}">Delete</a></td>
+                                    </tr>
+                                    {{end}}
+                                    <tr>
+                                        <td><button name="new_room" id="new_room">New Room</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </ul>
+                    </li>
+                    <li>
+                        <button id="submit">Submit</button>
+                    </li>
+                </ul>
+            </form>
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>

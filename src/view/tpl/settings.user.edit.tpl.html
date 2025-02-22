@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+    <header>
+        {{template "nav" .}}
+    </header>
+    <main>
+        <section class="inventory">
+            <form ation="" method="" id="edit_user" data-token="{{.Token}}">
+                <h2>{{.PageTitle}}</h2>
+                <ul>
+                    <li>
+                        <label for="roles">Roles:</label>
+                        <select name="roles" id="roles">
+                            <option value="">Select Role</option>
+                            {{range $r := .Roles}}
+                            {{if eq $r.Selected 1}}
+                            <option value="{{$r.Name}}" selected>{{$r.Name}}</option>
+                            {{else}}
+                            <option value="{{$r.Name}}">{{$r.Name}}</option>
+                            {{end}}
+                            {{end}}
+                        </select>
+                    </li>
+                    <li>
+                        <label for="firstname">First Name:</label>
+                        <input type="text" name="firstname" id="firstname" value="{{.Entity.Firstname}}">
+                    </li>
+                    <li>
+                        <label for="middlenames">Middle Names:</label>
+                        {{range $i, $m := .Entity.Middlenames}}
+                        <input type="text" name="middlenames_{{$i}}" id="middlenames_{{$i}}" value="{{$m}}">
+                        {{end}}
+                    </li>
+                    <li>
+                        <label for="lastname">Last Name:</label>
+                        <input type="text" name="lastname" id="lastname" value="{{.Entity.Lastname}}">
+                    </li>
+                    <li>
+                        <label for="maidenname">Maiden Name:</label>
+                        <input type="text" name="maidenname" id="maidenname" value="{{.Entity.Maidenname}}">
+                    </li>
+                    <li>
+                        <label for="nameprefix">Name Prefix:</label>
+                        <input type="text" name="nameprefix" id="nameprefix" value="{{.Entity.Nameprefix}}">
+                    </li>
+                    <li>
+                        <label for="namesuffix">Name Suffix:</label>
+                        <input type="text" name="namesuffix" id="namesuffix" value="{{.Entity.Namesuffix}}">
+                    </li>
+                    <li>
+                        <label for="dob">DOB:</label>
+                        <input type="text" name="dob" id="dob" value="{{.DOB}}">
+                    </li>
+                    <li>
+                        <button name="submit" id="submit">submit</button>
+                    </li>
+                </ul>
+            </form>
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>

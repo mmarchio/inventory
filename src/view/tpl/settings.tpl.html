@@ -1,0 +1,104 @@
+{{ $Token := .Token}}
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+    <header>
+        {{template "nav" .}}
+    </header>
+    <main>
+        <section class="inventory">
+            <h2>Users</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $u := .Users}}
+                    <tr>
+                        <td><a href="/settings/user/{{$u.Attributes.Id}}" data-token="{{$Token}}" data-page="View User" data-title="View User">{{$u.Username}}</a></td>
+                        <td><a href="/settings/user/edit/{{$u.Attributes.Id}}" data-token="{{$Token}}" data-page="Edit User" data-title="Edit User">edit</a></td>
+                        <td><a href="/settings/user/delete/{{$u.Attributes.Id}}" data-token="{{$Token}}" data-page="Delete User" data-title="Delete User">delete</a></td>
+                    </tr>
+                    {{end}}
+                    <tr>
+                        <td><a href="/settings/user/create" data-token="{{$Token}}" data-page="New User" data-title="New User">New</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section class="inventory">
+            <h2>Locations</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><a href="/settings/location/create" data-token="{{$Token}}" data-page="New Location" data-title="New Location">New</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section class="inventory">
+            <h2>Roles</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $r := .Roles}}
+                    <tr>
+                        <td><a href="/settings/role/view/{{$r.Id}}" data-token="{{$Token}}" data-page="View Role" data-title="View Role">{{$r.Name}}</a></td>
+                        <td><a href="/settings/role/edit/{{$r.Id}}" data-token="{{$Token}}" data-page="Edit Role" data-title="Edit Role">edit</a></td>
+                        <td><a href="/settings/role/delete/{{$r.Id}}" data-token="{{$Token}}" data-page="Delete Role" data-title="Delete Role">delete</a></td>
+                    </tr>
+                    {{end}}
+                    <tr>
+                        <td><a href="/settings/role/create" data-token="{{$Token}}" data-page="New Role" data-title="New Role">New</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section class="inventory">
+            <h2>Policies:</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Resource</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $r := .Policies}}
+                    <tr>
+                        <td><a href="/settings/policy/view/{{$r.Id}}" data-token="{{$Token}}" data-page="View Policy" data-title="View Policy">{{$r.Role}}</a></td>
+                        <td><a href="/settings/policy/view/{{$r.Id}}" data-token="{{$Token}}" data-page="View Policy" data-title="View Policy">{{$r.Resource}}</a></td>
+                        <td><a href="/settings/policy/edit/{{$r.Id}}" data-token="{{$Token}}" data-page="Edit Policy" data-title="Edit Policy">edit</a></td>
+                        <td><a href="/settings/policy/delete/{{$r.Id}}" data-token="{{$Token}}" data-page="Delete Policy" data-title="Delete Policy">delete</a></td>
+                    </tr>
+                    {{end}}
+                    <tr>
+                        <td><a href="/settings/policy/create" data-token="{{$Token}}" data-page="New Policy" data-title="New Policy">New</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>

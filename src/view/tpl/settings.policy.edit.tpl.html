@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+    <header>
+        {{template "nav" .}}
+    </header>
+    <main>
+        <section class="inventory">
+            <h2>{{.PageTitle}}</h2>
+            <form id="create_policy" method="POST" action="/api/policy/create" data-token="{{.Token}}">
+                <ul>
+                    <li>
+                        <label for="name">Name:</label>
+                        <input type="text" name="name" id="name" value="{{.Policy.Name}}">
+                    </li>
+                    <li>
+                        <label for="role">Role:</label>
+                        <input type="text" name="role" id="role" value="{{.Policy.Role}}">
+                    </li>
+                    <li>
+                        <label for="resource">Resource:</label>
+                        <input type="text" name="resource" id="resource" value="{{.Policy.Resource}}">
+                    </li>
+                    <li>
+                        <label for="permission">Permission:</label>
+                        <input type="text" name="permission" id="permission" value="{{.Policy.Permission.Name}}">
+                    </li>
+                    <li>
+                        <label for="isContent">Is Content:</label>
+                        <input type="checkbox" name="isContent" id="isContent"{{if eq .Policy.IsContent true}} CHECKED{{end}}>
+                    </li>
+                    <li>
+                        <button id="submit">Submit</button>
+                    </li>
+                </ul>
+            </form>
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>

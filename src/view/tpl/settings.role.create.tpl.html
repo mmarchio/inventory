@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+    <body>
+        <header>
+            {{template "nav" .}}
+        </header>
+        <main>
+            <section class="inventory">
+                <form ation="" method="" id="create_role" data-token="{{.Token}}">
+                    <h2>{{.PageTitle}}</h2>
+                    <ul>
+                        <li>
+                            <label for="name">Name:</label>
+                            <input type="text" name="name" id="name" value="">
+                        </li>
+                        <table class="">
+                            <thead>
+                                <tr>
+                                    <th>User:</th>
+                                    <th>Role:</th>
+                                    <th>Location:</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <ul>
+                                            <li>
+                                                <label for="user_create">Create:</label>
+                                                <input type="checkbox" name="user_create" id="user_create">
+                                            </li>
+                                            <li>
+                                                <label for="user_read">Read:</label>
+                                                <input type="checkbox" name="user_read" id="user_read">
+                                            </li>
+                                            <li>
+                                                <label for="user_update">Update:</label>
+                                                <input type="checkbox" name="user_update" id="user_update">
+                                            </li>
+                                            <li>
+                                                <label for="user_delete">Delete:</label>
+                                                <input type="checkbox" name="user_delete" id="user_delete">
+                                            </li>
+                                            <li>
+                                                <label for="user_access">Access:</label>
+                                                <input type="radio" name="user_access" id="user_access" value="all">
+                                                <input type="radio" name="user_access" id="user_access" value="owned">
+                                                <input type="radio" name="user_access" id="user_access" value="created">
+                                            </li>
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        <ul>
+                                            <li>
+                                                <label for="role_create">Create:</label>
+                                                <input type="checkbox" name="role_create" id="role_create">
+                                            </li>
+                                            <li>
+                                                <label for="role_read">Read:</label>
+                                                <input type="checkbox" name="role_read" id="role_read">
+                                            </li>
+                                            <li>
+                                                <label for="role_update">Update:</label>
+                                                <input type="checkbox" name="role_update" id="role_update">
+                                            </li>
+                                            <li>
+                                                <label for="role_delete">Delete:</label>
+                                                <input type="checkbox" name="role_delete" id="role_delete">
+                                            </li>
+                                            <li>
+                                                <label for="role_all">All:</label>
+                                                <input type="radio" name="role_access" id="role_all" value="all">
+                                                <label for="role_owned">Owned:</label>
+                                                <input type="radio" name="role_access" id="role_owned" value="owned">
+                                                <label for="role_created">Created:</label>
+                                                <input type="radio" name="role_access" id="role_created" value="created">
+                                            </li>
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        <ul>
+                                            <li>
+                                                <label for="location_create">Create:</label>
+                                                <input type="checkbox" name="location_create" id="location_create">
+                                            </li>
+                                            <li>
+                                                <label for="location_read">Read:</label>
+                                                <input type="checkbox" name="location_read" id="location_read">
+                                            </li>
+                                            <li>
+                                                <label for="location_update">Update:</label>
+                                                <input type="checkbox" name="location_update" id="location_update">
+                                            </li>
+                                            <li>
+                                                <label for="location_delete">Delete:</label>
+                                                <input type="checkbox" name="location_delete" id="location_delete">
+                                            </li>
+                                            <li>
+                                                <label for="location_access">Access:</label>
+                                                <input type="radio" name="location_access" id="location_access" value="all">
+                                                <input type="radio" name="location_access" id="location_access" value="owned">
+                                                <input type="radio" name="location_access" id="location_access" value="created">
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </tbody>                            
+                        </table>
+                        <li>
+                            <button name="submit" id="submit">submit</button>
+                        </li>
+                    </ul>
+                </form>
+            </section>
+        </main>
+        {{template "footer" .}}
+    </body>
+</html>

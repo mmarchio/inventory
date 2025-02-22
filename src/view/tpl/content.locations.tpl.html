@@ -1,0 +1,37 @@
+{{ $Token := .Token}}
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+    <header>
+        {{template "nav" .}}
+    </header>
+    <main>
+        <section class="inventory">
+            <h2>Locations</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $l := .Locations}}
+                    <tr>
+                        <td><a href="/content/location/{{$l.Attributes.Id}}" data-token="{{$Token}}" data-page="View Location" data-title="View Location">{{$l.Attributes.Name}}</a></td>
+                        <td><a href="/content/location/edit/{{$l.Attributes.Id}}" data-token="{{$Token}}" data-page="Edit Location" data-title="Edit Location">edit</a></td>
+                        <td><a href="/content/location/delete/{{$l.Attributes.Id}}" data-token="{{$Token}}" data-page="Delete Location" data-title="Delete Location">delete</a></td>
+                    </tr>
+                    {{end}}
+                    <tr>
+                        <td><a href="/content/location/create" data-token="{{$Token}}" data-page="New Location" data-title="New Location">New</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+   </main>
+    {{template "footer" .}}
+</body>
+</html>

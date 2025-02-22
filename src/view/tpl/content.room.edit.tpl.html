@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+    <header>
+        {{template "nav" .}}
+    </header>
+    <main>
+        <section class="inventory">
+            <h2>{{.PageTitle}}</h2>
+            <form id="edit_room" method="POST" action="/api/content/room/edit/{{.Zone.Attributes.Id}}" data-token="{{.Token}}">
+                <ul>
+                    <li>
+                        <label for="name">Name:</label>
+                        <input type="text" name="name" id="name" value="{{.Zone.Attributes.Name}}">
+                    </li>
+                    <li>
+                        <ul>
+                            <table class="inventory">
+                                <thead>
+                                    <th>Name:</th>
+                                    <th>Edit:</th>
+                                    <th>Delete:</th>
+                                </thead>
+                                <tbody>
+                                    {{range $z := .Room.Zones}}
+                                    <tr>
+                                        <td><a href="/content/room/view/{{$z.Attributes.Id}}">{{$z.Attributes.Name}}</a></td>
+                                        <td><a href="/content/room/edit/{{$z.Attributes.Id}}">Edit</a></td>
+                                        <td><a href="/content/room/delete/{{$z.Attributes.Id}}">Delete</a></td>
+                                    </tr>
+                                    {{end}}
+                                    <tr>
+                                        <td><button name="new_zone" id="new_zone">New Zone</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </ul>
+                    </li>
+                    <li>
+                        <button id="submit">Submit</button>
+                    </li>
+                </ul>
+            </form>
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>

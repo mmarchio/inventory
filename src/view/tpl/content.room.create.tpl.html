@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+    <header>
+        {{template "nav" .}}
+    </header>
+    <main>
+        <section class="inventory">
+            <h2>{{.PageTitle}}</h2>
+            <form id="create_room" method="POST" action="/api/content/room/create" data-token="{{.Token}}">
+                <ul>
+                    <li>
+                        <label for="name">Name:</label>
+                        <input type="text" name="name" id="name" value="">
+                    </li>
+                    <li>
+                        <button id="new_zone" name="new_zone">New Zone</button>
+                    </li>
+                    <li>
+                        <button id="submit">Submit</button>
+                    </li>
+                </ul>
+            </form>
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>

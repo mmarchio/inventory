@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+    <header>
+        {{template "nav" .}}
+    </header>
+    <main>
+        <section class="inventory">
+            <h2>{{.PageTitle}}</h2>
+            <form id="edit_zone" method="POST" action="/api/content/zone/edit/{{.Zone.Attributes.Id}}" data-token="{{.Token}}">
+                <ul>
+                    <li>
+                        <label for="name">Name:</label>
+                        <input type="text" name="name" id="name" value="{{.Zone.Attributes.Name}}">
+                    </li>
+                    <li>
+                        <ul>
+                            <table class="inventory">
+                                <thead>
+                                    <th>Name:</th>
+                                    <th>Edit:</th>
+                                    <th>Delete:</th>
+                                </thead>
+                                <tbody>
+                                    {{range $c := .Zone.Containers}}
+                                    <tr>
+                                        <td><a href="/content/room/view/{{$c.Attributes.Id}}">{{$c.Attributes.Name}}</a></td>
+                                        <td><a href="/content/room/edit/{{$c.Attributes.Id}}">Edit</a></td>
+                                        <td><a href="/content/room/delete/{{$c.Attributes.Id}}">Delete</a></td>
+                                    </tr>
+                                    {{end}}
+                                    <tr>
+                                        <td><button name="new_container" id="new_container">New Container</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </ul>
+                    </li>
+                    <li>
+                        <button id="submit">Submit</button>
+                    </li>
+                </ul>
+            </form>
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>

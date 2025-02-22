@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+    <header>
+        {{template "nav" .}}
+    </header>
+    <main>
+        <section class="inventory">
+            <h2>Inventory List</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Quantity</th>
+                        <th>Location</th>
+                        <th>Room</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Paper Towels</td>
+                        <td>50</td>
+                        <td>Home</td>
+                        <td>Laundry Room</td>
+                        <td>High</td>
+                    </tr>
+                    <tr>
+                        <td>Dog Food</td>
+                        <td>50</td>
+                        <td>Home</td>
+                        <td>Living Room</td>
+                        <td>High</td>
+                    </tr>
+                    <tr>
+                        <td>Ground Beef</td>
+                        <td>50</td>
+                        <td>Home</td>
+                        <td>Garage</td>
+                        <td>Low</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section class="inventory">
+            <h2>Events</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Location</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+            </table>
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>
