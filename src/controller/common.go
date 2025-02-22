@@ -244,3 +244,14 @@ func UpdateResources(resources acl.Resources) error {
 	}
 	return nil
 }
+
+func GetContentIdFromUrl(c echo.Context) (string, error) {
+	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+	r := regexp.MustCompile(pattern)
+	url := c.Request().RequestURI
+	segments := strings.Split(url, "/")
+	if r.Match([]byte(segments[len(segments)-1])) {
+		return segments[len(segments)-1], nil
+	}
+	return "", fmt.Errorf("content id not found in url")
+}

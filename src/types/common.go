@@ -55,7 +55,7 @@ func GetContent(id string) (*map[string]interface{}, error) {
 		logger.Printf(err.Error())
 		return nil, err
 	}
-	msi := make(map[string]interface{})
+	msi := make([]map[string]interface{}, 0)
 	if !JSONValidate([]byte(responseString), msi) {
 		err := fmt.Errorf("redis response does not contain valid json\n\n %s", responseString)
 		logger.Printf(err.Error())
@@ -66,7 +66,17 @@ func GetContent(id string) (*map[string]interface{}, error) {
 		logger.Printf(err.Error())
 		return nil, err
 	}
-	return &msi, nil
+	for _, m := range msi {
+		cid, err := GetMSIAttribute("id", m)
+		if err != nil {
+			logger.Printf(err.Error())
+			return nil, err
+		}
+		if id == cid {
+			return &m, nil
+		}
+	}
+	return nil, fmt.Errorf("content not found")
 }
 
 func GetMSIAttribute(name string, msi map[string]interface{}) (string, error) {

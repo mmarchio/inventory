@@ -280,7 +280,7 @@ func (cl ContentController) Get() echo.HandlerFunc {
 	}
 }
 
-func (c ContentController) GetLocationCreate() echo.HandlerFunc {
+func (cl ContentController) GetLocationCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -292,11 +292,11 @@ func (c ContentController) GetLocationCreate() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			data["User"] = user
 		}
@@ -304,7 +304,7 @@ func (c ContentController) GetLocationCreate() echo.HandlerFunc {
 	}
 }
 
-func (c ContentController) GetLocationEdit() echo.HandlerFunc {
+func (cl ContentController) GetLocationEdit() echo.HandlerFunc {
 	return func (c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -316,15 +316,61 @@ func (c ContentController) GetLocationEdit() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			data["User"] = user
+			redis, err := db.NewRedisClient()
+			if err != nil {
+				data["error"] = err.Error()
+				cl.Logger.Printf("%#v\n", data)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+
+			}
+			redisResponseString, err := redis.ReadJSONDocument("content", ".")
+			if err != nil {
+				data["error"] = err.Error()
+				cl.Logger.Printf("%#v\n", data)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			contentId, err := GetContentIdFromUrl(c)
+			if err != nil {
+				data["error"] = err.Error()
+				cl.Logger.Printf("%#v\n", data)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+
+			msiPtr, err := types.GetContent(contentId)
+			if err != nil {
+				if err != nil {
+					data["error"] = err.Error()
+					cl.Logger.Printf("%#v\n", data)
+					return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+				}
+			}
+			if redisResponseString != nil {
+				responseString := *redisResponseString
+				if len(responseString) > 0 && responseString[0] != '[' {
+					responseString = fmt.Sprintf("[%s]", responseString)
+				}
+				if types.JSONValidate([]byte(responseString), &types.Locations{}) {
+					locations := types.Locations{}
+					err = json.Unmarshal([]byte(responseString), &locations)
+					if err != nil {
+						data["error"] = err.Error()
+						cl.Logger.Printf("%#v\n", data)
+						return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+					}
+					data["Locations"] = locations
+				}
+			}
+			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
+			return c.Render(http.StatusOK, "content.room.edit.tpl.html", data)
 		}
-		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
+		return c.Render(http.StatusOK, "content.room.edit.tpl.html", data)
 	}
 }
 
@@ -431,7 +477,7 @@ func (c ContentController) PostApiLocationEdit() echo.HandlerFunc {
 }
 
 func (c ContentController) GetRoomCreate() echo.HandlerFunc {
-	return func (c echo.Context) error {
+	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
 			data["error"] = err.Error()
@@ -442,20 +488,19 @@ func (c ContentController) GetRoomCreate() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			data["User"] = user
 		}
-		data["PageTitle"] = "Inventory Management"
-		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
+		return c.Render(http.StatusOK, "content.room.create.tpl.html", data)
 	}
 }
 
-func (c ContentController) GetRoomEdit() echo.HandlerFunc {
+func (cl ContentController) GetRoomEdit() echo.HandlerFunc {
 	return func (c echo.Context) error {
 		data, err := authenticateToken(c) 
 		if err != nil {
@@ -467,13 +512,44 @@ func (c ContentController) GetRoomEdit() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			data["User"] = user
+			redis, err := db.NewRedisClient()
+			if err != nil {
+				data["error"] = err.Error()
+				cl.Logger.Printf("%#v\n", data)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+
+			}
+			redisResponseString, err := redis.ReadJSONDocument("content", ".")
+			if err != nil {
+				data["error"] = err.Error()
+				cl.Logger.Printf("%#v\n", data)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			if redisResponseString != nil {
+				responseString := *redisResponseString
+				if len(responseString) > 0 && responseString[0] != '[' {
+					responseString = fmt.Sprintf("[%s]", responseString)
+				}
+				if types.JSONValidate([]byte(responseString), &types.Locations{}) {
+					locations := types.Locations{}
+					err = json.Unmarshal([]byte(responseString), &locations)
+					if err != nil {
+						data["error"] = err.Error()
+						cl.Logger.Printf("%#v\n", data)
+						return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+					}
+					data["Locations"] = locations
+				}
+			}
+			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
+			return c.Render(http.StatusOK, "content.locations.tpl.html", data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
