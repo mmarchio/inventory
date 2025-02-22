@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"inventory/src/acl"
+	"inventory/src/errors"
 	"log"
 	"net/http"
 
@@ -19,6 +20,7 @@ func (c DashboardController) Get() echo.HandlerFunc {
 		data, err := authenticateToken(c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
+				errors.Err(err)
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			fmt.Printf("\nauthenticateToken err: %s\n", err.Error())
@@ -27,11 +29,13 @@ func (c DashboardController) Get() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				errors.Err(err)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				errors.Err(err)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			c.Set("user", user.Id)
 			data["Authenticated"] = true
@@ -58,21 +62,25 @@ func (c DashboardController) RegisterResources(e *echo.Echo) error {
 	})
 	adminRolePtr, err := acl.GetRole("admin")
 	if err != nil {
+		errors.Err(err)
 		return err
 	}
 	if adminRolePtr != nil {
 		adminRole := *adminRolePtr
 		err = UpdateRole(adminRole.Id, resources)
 		if err != nil {
+			errors.Err(err)
 			return err
 		}
 	}
 	err = UpdateResources(resources)
 	if err != nil {
+		errors.Err(err)
 		return err
 	}
 	err = UpdatePolicy("admin", resources)
 	if err != nil {
+		errors.Err(err)
 		return err
 	}
 	return nil
