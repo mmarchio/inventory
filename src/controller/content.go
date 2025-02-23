@@ -32,9 +32,6 @@ func (c ContentController) RegisterResources(e *echo.Echo) error {
 	view.GET("/location/create", c.GetLocationCreate())
 	view.GET("/location/edit/:id", c.GetLocationEdit())
 	view.GET("/location/delete/:id", c.GetLocationDelete())
-	view.GET("/room/create", c.GetRoomCreate())
-	view.GET("/room/edit/:id", c.GetRoomEdit())
-	view.GET("/room/delete/:id", c.GetRoomDelete())
 	view.GET("/zone/create", c.GetZoneCreate())
 	view.GET("/zone/edit/:id", c.GetZoneEdit())
 	view.GET("/zone/delete/:id", c.GetZoneDelete())
@@ -47,8 +44,6 @@ func (c ContentController) RegisterResources(e *echo.Echo) error {
 
 	api.POST("/location/create", c.PostApiLocationCreate())
 	api.POST("/location/edit/:id", c.PostApiLocationEdit())
-	api.POST("/room/create", c.PostApiRoomCreate())
-	api.POST("/room/edit/:id", c.PostApiRoomEdit())
 	api.POST("/zone/create", c.PostApiZoneCreate())
 	api.POST("/zone/edit/:id", c.PostApiZoneEdit())
 	api.POST("/container/create", c.PostApiContainerCreate())
@@ -73,21 +68,6 @@ func (c ContentController) RegisterResources(e *echo.Echo) error {
 	res = acl.Resource{
 		Id: uuid.NewString(),
 		URL: "/content/location/delete",
-	}
-	resources = append(resources, res)
-	res = acl.Resource{
-		Id: uuid.NewString(),
-		URL: "/content/room/create",
-	}
-	resources = append(resources, res)
-	res = acl.Resource{
-		Id: uuid.NewString(),
-		URL: "/content/room/edit",
-	}
-	resources = append(resources, res)
-	res = acl.Resource{
-		Id: uuid.NewString(),
-		URL: "/content/room/delete",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
@@ -143,16 +123,6 @@ func (c ContentController) RegisterResources(e *echo.Echo) error {
 	res = acl.Resource{
 		Id: uuid.NewString(),
 		URL: "/content/api/location/edit",
-	}
-	resources = append(resources, res)
-	res = acl.Resource{
-		Id: uuid.NewString(),
-		URL: "/content/api/room/create",
-	}
-	resources = append(resources, res)
-	res = acl.Resource{
-		Id: uuid.NewString(),
-		URL: "/content/api/room/edit",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
@@ -444,170 +414,6 @@ func (c ContentController) PostApiLocationCreate() echo.HandlerFunc {
 }
 
 func (c ContentController) PostApiLocationEdit() echo.HandlerFunc {
-	return func (c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			errors.Err(err)
-			data["error"] = err.Error()
-			return c.JSON(http.StatusInternalServerError, data)
-		}
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				errors.Err(err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				errors.Err(err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			data["User"] = user
-		}
-		return c.JSON(http.StatusOK, data)
-	}
-}
-
-func (c ContentController) GetRoomCreate() echo.HandlerFunc {
-	return func(c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			errors.Err(err)
-			data["error"] = err.Error()
-			data["PageTitle"] = "Inventory Management"
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		data["PageTitle"] = "Inventory Management"
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
-			}
-			data["User"] = user
-		}
-		return c.Render(http.StatusOK, "content.room.create.tpl.html", data)
-	}
-}
-
-func (cl ContentController) GetRoomEdit() echo.HandlerFunc {
-	return func (c echo.Context) error {
-		data, err := authenticateToken(c) 
-		if err != nil {
-			errors.Err(err)
-			data["error"] = err.Error()
-			data["PageTitle"] = "Inventory Management"
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		data["PageTitle"] = "Inventory Management"
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
-			}
-			data["User"] = user
-			redis, err := db.NewRedisClient()
-			if err != nil {
-				errors.Err(err)
-				data["error"] = err.Error()
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-
-			}
-			redisResponseString, err := redis.ReadJSONDocument("content", ".")
-			if err != nil {
-				errors.Err(err)
-				data["error"] = err.Error()
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-			}
-			if redisResponseString != nil {
-				responseString := *redisResponseString
-				if len(responseString) > 0 && responseString[0] != '[' {
-					responseString = fmt.Sprintf("[%s]", responseString)
-				}
-				if types.JSONValidate([]byte(responseString), &types.Locations{}) {
-					locations := types.Locations{}
-					err = json.Unmarshal([]byte(responseString), &locations)
-					if err != nil {
-						errors.Err(err)
-						data["error"] = err.Error()
-						return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-					}
-					data["Locations"] = locations
-				}
-			}
-			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
-			return c.Render(http.StatusOK, "content.locations.tpl.html", data)
-		}
-		data["PageTitle"] = "Inventory Management"
-		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
-	}
-}
-
-func (c ContentController) GetRoomDelete() echo.HandlerFunc {
-	return func (c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			errors.Err(err)
-			data["error"] = err.Error()
-			data["PageTitle"] = "Inventory Management"
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		data["PageTitle"] = "Inventory Management"
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
-		}
-		data["PageTitle"] = "Inventory Management"
-		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
-	}
-}
-
-func (c ContentController) PostApiRoomCreate() echo.HandlerFunc {
-	return func (c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			errors.Err(err)
-			data["error"] = err.Error()
-			return c.JSON(http.StatusInternalServerError, data)
-		}
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				errors.Err(err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				errors.Err(err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			data["User"] = user
-		}
-		return c.JSON(http.StatusOK, data)
-	}
-}
-
-func (c ContentController) PostApiRoomEdit() echo.HandlerFunc {
 	return func (c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
