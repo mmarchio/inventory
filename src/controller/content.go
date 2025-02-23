@@ -27,34 +27,14 @@ type ContentController struct {
 
 func (c ContentController) RegisterResources(e *echo.Echo) error {
 	view := e.Group("/content")
-	api := e.Group("/api/content")
 	view.GET("/locations", c.Get())
-	view.GET("/container/create", c.GetContainerCreate())
-	view.GET("/container/edit/:id", c.GetContainerEdit())
-	view.GET("/container/delete/:id", c.GetContainerDelete())
 	view.GET("/item/create", c.GetItemCreate())
 	view.GET("/item/edit/:id", c.GetItemEdit())
 	view.GET("/item/delete/:id", c.GetItemDelete())
 
-	api.POST("/container/create", c.PostApiContainerCreate())
-	api.POST("/container/edit/:id", c.PostApiContainerEdit())
 
 	resources := acl.Resources{}
 	res := acl.Resource{}
-	res = acl.Resource{
-		Id: uuid.NewString(),
-		URL: "/content/container/create",
-	}
-	resources = append(resources, res)
-	res = acl.Resource{
-		Id: uuid.NewString(),
-		URL: "/content/container/edit",
-	}
-	resources = append(resources, res)
-	res = acl.Resource{
-		Id: uuid.NewString(),
-		URL: "/content/container/delete",
-	}
 	resources = append(resources, res)
 	res = acl.Resource{
 		Id: uuid.NewString(),
@@ -69,16 +49,6 @@ func (c ContentController) RegisterResources(e *echo.Echo) error {
 	res = acl.Resource{
 		Id: uuid.NewString(),
 		URL: "/content/item/delete",
-	}
-	resources = append(resources, res)
-	res = acl.Resource{
-		Id: uuid.NewString(),
-		URL: "/content/api/container/create",
-	}
-	resources = append(resources, res)
-	res = acl.Resource{
-		Id: uuid.NewString(),
-		URL: "/content/api/container/edit",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
@@ -187,140 +157,6 @@ func (cl ContentController) Get() echo.HandlerFunc {
 		errors.Err(err)
 		data["error"] = err.Error()
 		return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-	}
-}
-
-func (c ContentController) GetContainerCreate() echo.HandlerFunc {
-	return func (c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			errors.Err(err)
-			data["error"] = err.Error()
-			data["PageTitle"] = "Inventory Management"
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		data["PageTitle"] = "Inventory Management"
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
-		}
-		data["PageTitle"] = "Inventory Management"
-		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
-	}
-}
-
-func (c ContentController) GetContainerEdit() echo.HandlerFunc {
-	return func (c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			errors.Err(err)
-			data["error"] = err.Error()
-			data["PageTitle"] = "Inventory Management"
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		data["PageTitle"] = "Inventory Management"
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
-		}
-		data["PageTitle"] = "Inventory Management"
-		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
-	}
-}
-
-func (c ContentController) GetContainerDelete() echo.HandlerFunc {
-	return func (c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			errors.Err(err)
-			data["error"] = err.Error()
-			data["PageTitle"] = "Inventory Management"
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		data["PageTitle"] = "Inventory Management"
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				errors.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
-		}
-		data["PageTitle"] = "Inventory Management"
-		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
-	}
-}
-
-func (c ContentController) PostApiContainerCreate() echo.HandlerFunc {
-	return func (c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			errors.Err(err)
-			data["error"] = err.Error()
-			return c.JSON(http.StatusInternalServerError, data)
-		}
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				errors.Err(err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				errors.Err(err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			data["User"] = user
-		}
-		return c.JSON(http.StatusOK, data)
-	}
-}
-
-func (c ContentController) PostApiContainerEdit() echo.HandlerFunc {
-	return func (c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			errors.Err(err)
-			data["error"] = err.Error()
-			return c.JSON(http.StatusInternalServerError, data)
-		}
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				errors.Err(err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				errors.Err(err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			data["User"] = user
-		}
-		return c.JSON(http.StatusOK, data)
 	}
 }
 
