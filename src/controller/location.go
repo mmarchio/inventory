@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"inventory/src/acl"
+	"inventory/src/db"
 	"inventory/src/errors"
 	"inventory/src/types"
 	"net/http"
@@ -12,6 +14,81 @@ import (
 )
 
 type LocationController struct{}
+
+func (cl LocationController) Get() echo.HandlerFunc {
+	return func (c echo.Context) error {
+		data, err := authenticateToken(c)
+		if err != nil {
+			data["PageTitle"] = "Inventory Management"
+			if err.Error() == "bearer not found" {
+				errors.Err(err)
+				return c.Render(http.StatusOK, "index.tpl.html", data)
+			}
+			fmt.Printf("\nauthenticateToken err: %s\n", err.Error())
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+		}
+		data["PageTitle"] = "Inventory Management"
+		if token, ok := data["Token"].(string); ok {
+			claims, err := decodeJWT(token, []byte("secret"))
+			if err != nil {
+				data["error"] = err.Error()
+				errors.Err(err)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			userPtr, err := getUser(claims)
+			if err != nil {
+				data["error"] = err.Error()
+				errors.Err(err)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			if userPtr == nil {
+				data["error"] = fmt.Sprintf("user is nil")
+				errors.Err(err)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			user := *userPtr
+			c.Set("user", user.Id)
+			data["Authenticated"] = true
+			data["Token"] = token
+			data["User"] = user
+			redis, err := db.NewRedisClient()
+			if err != nil {
+				data["error"] = err.Error()
+				errors.Err(err)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+
+			}
+			redisResponseString, err := redis.ReadJSONDocument("content", ".")
+			if err != nil {
+				data["error"] = err.Error()
+				errors.Err(err)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			if redisResponseString != nil {
+				responseString := *redisResponseString
+				if len(responseString) > 0 && responseString[0] != '[' {
+					responseString = fmt.Sprintf("[%s]", responseString)
+				}
+				if types.JSONValidate([]byte(responseString), &types.Locations{}) {
+					locations := types.Locations{}
+					err = json.Unmarshal([]byte(responseString), &locations)
+					if err != nil {
+						data["error"] = err.Error()
+						errors.Err(err)
+						return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+					}
+					data["Locations"] = locations
+				}
+			}
+			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
+			return c.Render(http.StatusOK, "content.locations.tpl.html", data)
+		}
+		err = fmt.Errorf("invalid token")
+		errors.Err(err)
+		data["error"] = err.Error()
+		return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+	}
+}
 
 func (cl LocationController) GetLocationCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -201,6 +278,8 @@ func (c LocationController) RegisterResources(e *echo.Echo) error {
 	view := e.Group("/content/location")
 	api := e.Group("/api/content/location")
 
+	e.GET("/content/locations", c.Get())
+	
 	view.GET("/location/create", c.GetLocationCreate())
 	view.GET("/location/edit/:id", c.GetLocationEdit())
 	view.GET("/location/delete/:id", c.GetLocationDelete())
