@@ -205,6 +205,7 @@ func (c RoomController) RegisterResources(e *echo.Echo) error {
 		Id: uuid.NewString(),
 		URL: "/content/room/delete",
 	}
+	resources = append(resources, res)
 	res = acl.Resource{
 		Id: uuid.NewString(),
 		URL: "/content/api/room/create",

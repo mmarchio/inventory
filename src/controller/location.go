@@ -42,7 +42,7 @@ func (cl LocationController) Get() echo.HandlerFunc {
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
 			if userPtr == nil {
-				data["error"] = fmt.Sprintf("user is nil")
+				data["error"] = "user is nil"
 				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
@@ -148,11 +148,9 @@ func (cl LocationController) GetEdit() echo.HandlerFunc {
 
 			msiPtr, err := types.GetContent(contentId)
 			if err != nil {
-				if err != nil {
-					data["error"] = err.Error()
-					errors.Err(err)
-					return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-				}
+				data["error"] = err.Error()
+				errors.Err(err)
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
 			if msiPtr != nil {
 				err = fmt.Errorf("content pointer is nil")
@@ -216,6 +214,7 @@ func (cl LocationController) PostApiCreate() echo.HandlerFunc {
 				return c.JSON(http.StatusInternalServerError, data)
 			}
 			if userPtr == nil {
+				err = fmt.Errorf("user pointer is nil")
 				data["error"] = err.Error()
 				errors.Err(err)
 				return c.JSON(http.StatusBadRequest, data)
@@ -229,6 +228,7 @@ func (cl LocationController) PostApiCreate() echo.HandlerFunc {
 				return c.JSON(http.StatusInternalServerError, data)
 			}
 			if bodyPtr == nil {
+				err = fmt.Errorf("body pointer is nil")
 				data["error"] = err.Error()
 				errors.Err(err)
 				return c.JSON(http.StatusBadRequest, data)
@@ -243,6 +243,7 @@ func (cl LocationController) PostApiCreate() echo.HandlerFunc {
 			}
 			return c.JSON(http.StatusCreated, r)
 		}
+		err = fmt.Errorf("invalid token")
 		data["error"] = err.Error()
 		errors.Err(err)
 		return c.JSON(http.StatusBadRequest, data)
