@@ -3,6 +3,7 @@ package login
 import (
 	"encoding/json"
 	"fmt"
+	"inventory/src/errors"
 	"net/http"
 	"os"
 	"time"
@@ -70,9 +71,11 @@ func Login(username, userValue, dbValue string) (*http.Cookie, error) {
     }
     auth := VerifyPassword(userValue, dbValue)
     if !auth {
-        return nil, fmt.Errorf("password does not match %s:%s", userValue, dbValue)
+        err := fmt.Errorf("password does not match %s:%s", userValue, dbValue)
+        errors.Err(err)
+        return nil, err
     }
-    expirationTime := time.Now().Add(15 * time.Minute)
+    expirationTime := time.Now().Add(2 * time.Hour)
     claims := &Claims{
         Username: creds.Username,
         StandardClaims: jwt.StandardClaims{
@@ -81,14 +84,16 @@ func Login(username, userValue, dbValue string) (*http.Cookie, error) {
     }
 
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    tokenString, err := token.SignedString(jwtKey)
+    tokenString, err := token.SignedString([]byte("secret"))
     if err != nil {
+        errors.Err(err)
         return nil, err
     }
 
     test, err := decodeJWT(tokenString, []byte("secret"))
     if err != nil {
-        fmt.Sprintf("test decode err: %s\n", err.Error())
+        errors.Err(err)
+        return nil, err
     }
     msi := make(map[string]interface{})
     b, err := json.Marshal(test)
@@ -97,6 +102,7 @@ func Login(username, userValue, dbValue string) (*http.Cookie, error) {
     }
     err = json.Unmarshal(b, &msi)
     if err != nil {
+        errors.Err(err)
         return nil, err
     }
 
