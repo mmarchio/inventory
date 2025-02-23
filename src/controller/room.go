@@ -15,7 +15,7 @@ import (
 
 type RoomController struct {}
 
-func (c RoomController) GetRoomCreate() echo.HandlerFunc {
+func (c RoomController) GetCreate() echo.HandlerFunc {
 	
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
@@ -43,7 +43,7 @@ func (c RoomController) GetRoomCreate() echo.HandlerFunc {
 	}
 }
 
-func (cl RoomController) GetRoomEdit() echo.HandlerFunc {
+func (cl RoomController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -102,7 +102,7 @@ func (cl RoomController) GetRoomEdit() echo.HandlerFunc {
 	}
 }
 
-func (c RoomController) GetRoomDelete() echo.HandlerFunc {
+func (c RoomController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -130,7 +130,7 @@ func (c RoomController) GetRoomDelete() echo.HandlerFunc {
 	}
 }
 
-func (c RoomController) PostApiRoomCreate() echo.HandlerFunc {
+func (c RoomController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -155,7 +155,7 @@ func (c RoomController) PostApiRoomCreate() echo.HandlerFunc {
 	}
 }
 
-func (c RoomController) PostApiRoomEdit() echo.HandlerFunc {
+func (c RoomController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -184,11 +184,11 @@ func (c RoomController) RegisterResources(e *echo.Echo) error {
 	view := e.Group("/content/room")
 	api := e.Group("/api/content/room")
 
-	view.GET("/create", c.GetRoomCreate())
-	view.GET("/edit/:id", c.GetRoomEdit())
-	view.GET("/delete/:id", c.GetRoomDelete())
-	api.POST("/create", c.PostApiRoomCreate())
-	api.POST("/edit/:id", c.PostApiRoomEdit())
+	view.GET("/create", c.GetCreate())
+	view.GET("/edit/:id", c.GetEdit())
+	view.GET("/delete/:id", c.GetDelete())
+	api.POST("/create", c.PostApiCreate())
+	api.POST("/edit/:id", c.PostApiEdit())
 
 	resources := acl.Resources{}
 	res := acl.Resource{
