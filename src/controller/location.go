@@ -90,7 +90,7 @@ func (cl LocationController) Get() echo.HandlerFunc {
 	}
 }
 
-func (cl LocationController) GetLocationCreate() echo.HandlerFunc {
+func (cl LocationController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -117,7 +117,7 @@ func (cl LocationController) GetLocationCreate() echo.HandlerFunc {
 	}
 }
 
-func (cl LocationController) GetLocationEdit() echo.HandlerFunc {
+func (cl LocationController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -167,7 +167,7 @@ func (cl LocationController) GetLocationEdit() echo.HandlerFunc {
 	}
 }
 
-func (cl LocationController) GetLocationDelete() echo.HandlerFunc {
+func (cl LocationController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -194,7 +194,7 @@ func (cl LocationController) GetLocationDelete() echo.HandlerFunc {
 	}
 }
 
-func (cl LocationController) PostApiLocationCreate() echo.HandlerFunc {
+func (cl LocationController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -249,7 +249,7 @@ func (cl LocationController) PostApiLocationCreate() echo.HandlerFunc {
 	}
 }
 
-func (cl LocationController) PostApiLocationEdit() echo.HandlerFunc {
+func (cl LocationController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -280,12 +280,12 @@ func (c LocationController) RegisterResources(e *echo.Echo) error {
 
 	e.GET("/content/locations", c.Get())
 	
-	view.GET("/create", c.GetLocationCreate())
-	view.GET("/edit/:id", c.GetLocationEdit())
-	view.GET("/delete/:id", c.GetLocationDelete())
+	view.GET("/create", c.GetCreate())
+	view.GET("/edit/:id", c.GetEdit())
+	view.GET("/delete/:id", c.GetDelete())
 
-	api.POST("/create", c.PostApiLocationCreate())
-	api.POST("/edit/:id", c.PostApiLocationEdit())
+	api.POST("/create", c.PostApiCreate())
+	api.POST("/edit/:id", c.PostApiEdit())
 
 	resources := acl.Resources{}
 
