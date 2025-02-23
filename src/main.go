@@ -137,10 +137,32 @@ func main() {
 			panic(err)
 		}
 
-		contentController := controller.ContentController{
-			Logger: logger,
+		locationController := controller.LocationController{}
+		err = locationController.RegisterResources(e)
+		if err != nil {
+			panic(err)
 		}
-		err = contentController.RegisterResources(e)
+
+		roomController := controller.RoomController{}
+		err = roomController.RegisterResources(e)
+		if err != nil {
+			panic(err)
+		}
+
+		zoneController := controller.ZoneController{}
+		err = zoneController.RegisterResources(e)
+		if err != nil {
+			panic(err)
+		}
+
+		containerController := controller.ContainerController{}
+		err = containerController.RegisterResources(e)
+		if err != nil {
+			panic(err)
+		}
+
+		itemController := controller.ItemController{}
+		err = itemController.RegisterResources(e)
 		if err != nil {
 			panic(err)
 		}
