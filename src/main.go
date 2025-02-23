@@ -14,6 +14,7 @@ import (
 	"inventory/src/acl"
 	"inventory/src/controller"
 	"inventory/src/db"
+	"inventory/src/errors"
 	system_init "inventory/src/init"
 	"inventory/src/login"
 	"inventory/src/types"
@@ -179,11 +180,13 @@ func APILoginHandler(c echo.Context) error {
 	msg := make(map[string]interface{})
 	redis, err := db.NewRedisClient()
 	if err != nil {
+		errors.Err(err)
 		msg["error"] = fmt.Sprintf("redis: %s", err.Error())
 		return c.JSON(http.StatusInternalServerError, msg)
 	}
 	requestBody, err := getRequestData(c) 
 	if err != nil {
+		errors.Err(err)
 		msg["error"] = fmt.Sprintf("json: %s", err.Error())
 	}
 	if requestBody == nil {
@@ -200,6 +203,7 @@ func APILoginHandler(c echo.Context) error {
 	}
 	res, err := redis.ReadJSONDocument("auth", ".")
 	if err != nil {
+		errors.Err(err)
 		msg["error"] = fmt.Sprintf("redis: %s", err.Error())
 		return c.JSON(http.StatusInternalServerError, msg)
 	}
@@ -213,6 +217,7 @@ func APILoginHandler(c echo.Context) error {
 	users := types.Users{}
 	err = json.Unmarshal([]byte(jsonRes), &users)
 	if err != nil {
+		errors.Err(err)
 		msg["error"] = fmt.Sprintf("json: %s", err.Error())
 		msg["input"] = jsonRes
 		return c.JSON(http.StatusInternalServerError, msg)
@@ -222,6 +227,7 @@ func APILoginHandler(c echo.Context) error {
 		if u.Username == creds.Username {
 			auth, err := login.Login(u.Username, creds.Password, u.Password)
 			if err != nil {
+				errors.Err(err)
 				msg["error"] = fmt.Sprintf("auth: %s", err.Error())
 				return c.JSON(http.StatusInternalServerError, msg)
 			}
