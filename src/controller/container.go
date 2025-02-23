@@ -11,7 +11,7 @@ import (
 
 type ContainerController struct{}
 
-func (c ContainerController) GetContainerCreate() echo.HandlerFunc {
+func (c ContainerController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -39,7 +39,7 @@ func (c ContainerController) GetContainerCreate() echo.HandlerFunc {
 	}
 }
 
-func (c ContainerController) GetContainerEdit() echo.HandlerFunc {
+func (c ContainerController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -67,7 +67,7 @@ func (c ContainerController) GetContainerEdit() echo.HandlerFunc {
 	}
 }
 
-func (c ContainerController) GetContainerDelete() echo.HandlerFunc {
+func (c ContainerController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -95,7 +95,7 @@ func (c ContainerController) GetContainerDelete() echo.HandlerFunc {
 	}
 }
 
-func (c ContainerController) PostApiContainerCreate() echo.HandlerFunc {
+func (c ContainerController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -120,7 +120,7 @@ func (c ContainerController) PostApiContainerCreate() echo.HandlerFunc {
 	}
 }
 
-func (c ContainerController) PostApiContainerEdit() echo.HandlerFunc {
+func (c ContainerController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -148,11 +148,11 @@ func (c ContainerController) PostApiContainerEdit() echo.HandlerFunc {
 func (c ContainerController) RegisterResources(e *echo.Echo) error {
 	view := e.Group("/content/container")
 	api := e.Group("/api/content/container")
-	view.GET("/create", c.GetContainerCreate())
-	view.GET("/edit/:id", c.GetContainerEdit())
-	view.GET("/delete/:id", c.GetContainerDelete())
-	api.POST("/create", c.PostApiContainerCreate())
-	api.POST("/edit/:id", c.PostApiContainerEdit())
+	view.GET("/create", c.GetCreate())
+	view.GET("/edit/:id", c.GetEdit())
+	view.GET("/delete/:id", c.GetDelete())
+	api.POST("/create", c.PostApiCreate())
+	api.POST("/edit/:id", c.PostApiEdit())
 
 	resources := acl.Resources{}
 	res := acl.Resource{
