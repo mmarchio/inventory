@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"inventory/src/db"
+	"inventory/src/errors"
 	"inventory/src/types"
 	"os"
 	"regexp"
@@ -28,56 +29,52 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 			return nil
 		}
 		token, err := GetBearerToken(c)
-		if err != nil {
-			logger.Printf(err.Error())
-			return err			
+		if errors.Err(err) != nil {
+			return err
 		}
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
 			err := fmt.Errorf("secret not found")
-			fmt.Println(err)
-			return err
+			return errors.Err(err)
 		}
 		// if authorization[len(authorization)-2:len(authorization)-1] != "==" {
 		// 	authorization = fmt.Sprintf("%s==", authorization)
 		// }
 
 		claims, err := decodeJWT(token, []byte("secret"))
-		if err != nil {
-			fmt.Println(err)
+		if errors.Err(err) != nil {
 			return err
 		}
 		user, err := getUser(claims)
-		if err != nil {
-			fmt.Println(err)
+		if errors.Err(err) != nil {
 			return err
 		}
 		if user != nil {
 			us := *user
 			policyPtr, err := getResourcePolicy(us, c.Request().URL.Path)
-			if err != nil {
-				fmt.Println("path: %s\nerror: %s\n", err.Error())
+			if errors.Err(err) != nil {
 				return err
 			}
 			if policyPtr == nil {
-				return fmt.Errorf("policy is nil")
+				err = fmt.Errorf("policy is nil")
+				return errors.Err(err)
 			}
 			policy := *policyPtr
 			if policy.IsContent {
 				auth, err := PermissionsHandler(c, policy)
-				if err != nil {
+				if errors.Err(err) != nil {
 					return err
 				}
 				if auth {
 					return nil
 				} else {
-					return fmt.Errorf("access forbidden")
+					err = fmt.Errorf("access forbidden")
+					return errors.Err(err)
 				}
 			}
 			return nil
 		}
-		fmt.Println(err)
-		return err
+		return errors.Err(err)
 	}
 }
 
@@ -85,28 +82,29 @@ func decodeJWT(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Verify the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			err2 := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, errors.Err(err2)
 		}
 		return secretKey, nil
 	})
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return claims, nil
 	}
-    
-	return nil, fmt.Errorf("invalid token")
+	err = fmt.Errorf("invalid token")
+	return nil, errors.Err(err)
 }
 
 func getUser(claims jwt.MapClaims) (*types.User, error) {
 	redis, err := db.NewRedisClient()
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	redisResponseString, err := redis.ReadJSONDocument("user", ".")
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	if redisResponseString != nil {
@@ -116,12 +114,12 @@ func getUser(claims jwt.MapClaims) (*types.User, error) {
 		}
 		var users types.Users
 		err = json.Unmarshal([]byte(responseString), &users)
-		if err != nil {
+		if errors.Err(err) != nil {
 			return nil, err
 		}
 		for _, u := range users {
 			b, err := json.Marshal(claims)
-			if err != nil {
+			if errors.Err(err) != nil {
 				return nil, err
 			}
 			msi := make(map[string]interface{})
@@ -133,17 +131,18 @@ func getUser(claims jwt.MapClaims) (*types.User, error) {
 			}
 		}
 	}
-	return nil, fmt.Errorf("bad redis response")
+	err = fmt.Errorf("bad redis response")
+	return nil, errors.Err(err)
 }
 
 func getResourcePolicy(u types.User, resource string) (*Policy, error) {
 	redis, err := db.NewRedisClient()
 	if err != nil {
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	redisResponseString, err := redis.ReadJSONDocument("policy", ".")
 	if err != nil {
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	if redisResponseString != nil {
 		responseString := *redisResponseString
@@ -155,7 +154,7 @@ func getResourcePolicy(u types.User, resource string) (*Policy, error) {
 		policies := Policies{}
 		err = json.Unmarshal([]byte(responseString),&policies)
 		if err != nil {
-			return nil, err
+			return nil, errors.Err(err)
 		}
 		for _, p := range policies {
 			resource = pathToResource(resource)
@@ -164,7 +163,7 @@ func getResourcePolicy(u types.User, resource string) (*Policy, error) {
 			}
 		}
 	}
-	return nil, fmt.Errorf("", resource)
+	return nil, errors.Err(fmt.Errorf("%s", resource))
 }
 
 func skipper(c echo.Context) bool {
@@ -180,23 +179,23 @@ func GetUsableClaims(c echo.Context) (*map[string]interface{}, error) {
 	token, err := GetBearerToken(c)
 	if err != nil {
 		logger.Printf(err.Error())
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	jwt, err := decodeJWT(token, []byte("secret"))
 	if err != nil {
 		logger.Printf(err.Error())
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	msi := make(map[string]interface{})
 	b, err := json.Marshal(jwt)
 	if err != nil {
 		logger.Printf(err.Error())
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	err = json.Unmarshal(b, &msi)
 	if err != nil {
 		logger.Printf(err.Error())
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	return &msi, nil
 }
@@ -216,12 +215,12 @@ func PermissionsHandler(c echo.Context, p Policy) (bool, error) {
 	userPtr, err := GetUserFromContext(c)
 	if err != nil {
 		logger.Printf(err.Error())
-		return false, err
+		return false, errors.Err(err)
 	}
 	if userPtr == nil {
 		err := fmt.Errorf("user is nil")
 		logger.Printf(err.Error())
-		return false, err
+		return false, errors.Err(err)
 	}
 	user := *userPtr
 	segments := strings.Split(c.Request().RequestURI, "/")
@@ -229,12 +228,12 @@ func PermissionsHandler(c echo.Context, p Policy) (bool, error) {
 	contentPtr, err := types.GetContent(contentId)
 	if err != nil {
 		logger.Printf(err.Error())
-		return false, err
+		return false, errors.Err(err)
 	}
 	if contentPtr == nil {
 		err := fmt.Errorf("content pointer is nil")
 		logger.Printf(err.Error())
-		return false, err
+		return false, errors.Err(err)
 	}
 	content := *contentPtr
 	if user.HasRole(p.Role) {
@@ -263,5 +262,5 @@ func PermissionsHandler(c echo.Context, p Policy) (bool, error) {
 			return false, nil
 		}
 	}
-	return false, fmt.Errorf("unknown path")
+	return false, errors.Err(fmt.Errorf("unknown path"))
 }

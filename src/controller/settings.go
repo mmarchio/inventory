@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"inventory/src/acl"
 	"inventory/src/db"
+	"inventory/src/errors"
 	"inventory/src/login"
 	"inventory/src/types"
 	"log"
@@ -26,6 +27,7 @@ func (c SettingsController) Get() echo.HandlerFunc {
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
 			if err.Error() == "bearer not found" {
+				errors.Err(err)
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
@@ -34,6 +36,7 @@ func (c SettingsController) Get() echo.HandlerFunc {
 
 		usersPtr, err := types.GetUsers()
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
@@ -44,6 +47,7 @@ func (c SettingsController) Get() echo.HandlerFunc {
 		rolesPtr, err := acl.GetRoles()
 		if err != nil {
 			if err.Error() != "roles not found" {
+				errors.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
@@ -55,6 +59,7 @@ func (c SettingsController) Get() echo.HandlerFunc {
 		policiesPtr, err := acl.GetPolicies()
 		if err != nil {
 			if err.Error() != "policies not found" {
+				errors.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
@@ -66,10 +71,12 @@ func (c SettingsController) Get() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -85,6 +92,7 @@ func (c SettingsController) GetUserCreate() echo.HandlerFunc {
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
 			if err.Error() == "bearer not found" {
+				errors.Err(err)
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
@@ -94,10 +102,12 @@ func (c SettingsController) GetUserCreate() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -112,6 +122,7 @@ func (c SettingsController) GetUserEdit() echo.HandlerFunc {
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
 			if err.Error() == "bearer not found" {
+				errors.Err(err)
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
@@ -120,6 +131,7 @@ func (c SettingsController) GetUserEdit() echo.HandlerFunc {
 
 		userPtr, err := types.GetUser(c.Param("id"))
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
@@ -137,6 +149,7 @@ func (c SettingsController) GetUserEdit() echo.HandlerFunc {
 		}
 		rolesPtr, err := acl.GetRoles()
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
@@ -161,10 +174,12 @@ func (c SettingsController) GetUserEdit() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -179,6 +194,7 @@ func (c SettingsController) GetUserDelete() echo.HandlerFunc {
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
 			if err.Error() == "bearer not found" {
+				errors.Err(err)
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
@@ -186,11 +202,13 @@ func (c SettingsController) GetUserDelete() echo.HandlerFunc {
 		data["PageTitle"] = "Inventory Management"
 		redis, err := db.NewRedisClient()
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		redisResponseString, err := redis.ReadJSONDocument("user", ".")
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
@@ -202,6 +220,7 @@ func (c SettingsController) GetUserDelete() echo.HandlerFunc {
 			entities := types.Users{}
 			err = json.Unmarshal([]byte(responseString), &entities)
 			if err != nil {
+				errors.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.DefaultMaxHeaderBytes, ERRORTPL, data)
 			}
@@ -213,6 +232,7 @@ func (c SettingsController) GetUserDelete() echo.HandlerFunc {
 			}
 			err = redis.UpdateJSONDocument(newEntities, "user", ".")
 			if err != nil {
+				errors.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
@@ -221,10 +241,12 @@ func (c SettingsController) GetUserDelete() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -236,155 +258,13 @@ func (c SettingsController) GetUserDelete() echo.HandlerFunc {
 	}
 }
 
-func (c SettingsController) GetLocationCreate() echo.HandlerFunc {
-	return func(c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			data["PageTitle"] = "Inventory Management"
-			if err.Error() == "bearer not found" {
-				return c.Render(http.StatusOK, "index.tpl.html", data)
-			}
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		data["PageTitle"] = "Inventory Management"
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
-		}
-		data["PageTitle"] = "Inventory Management"
-		return c.Render(http.StatusOK, "settings.location.create.tpl.html", data)
-	}
-}
-
-func (c SettingsController) GetLocationEdit() echo.HandlerFunc {
-	return func(c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			data["PageTitle"] = "Inventory Management"
-			if err.Error() == "bearer not found" {
-				return c.Render(http.StatusOK, "index.tpl.html", data)
-			}
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		data["PageTitle"] = "Inventory Management"
-		redis, err := db.NewRedisClient()
-		if err != nil {
-			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		redisResponseString, err := redis.ReadJSONDocument("location", ".")
-		if err != nil {
-			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		if redisResponseString != nil {
-			responseString := *redisResponseString
-			if responseString[0] != '[' {
-				responseString = fmt.Sprint("[%s]", responseString)
-			} 
-			entities := types.Locations{}
-			err = json.Unmarshal([]byte(responseString), &entities)
-			if err != nil {
-				data["error"] = err.Error()
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-			}
-			for _, entity := range entities {
-				if entity.Attributes.Id == c.Param("id") {
-					data["entity"] = entity
-					break
-				}
-			}
-		}
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
-		}
-		data["PageTitle"] = "Inventory Management"
-		return c.Render(http.StatusOK, "settings.location.edit.tpl.html", data)
-	}
-}
-
-func (c SettingsController) GetLocationDelete() echo.HandlerFunc {
-	return func(c echo.Context) error {
-		data, err := authenticateToken(c)
-		if err != nil {
-			data["PageTitle"] = "Inventory Management"
-			if err.Error() == "bearer not found" {
-				return c.Render(http.StatusOK, "index.tpl.html", data)
-			}
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		data["PageTitle"] = "Inventory Management"
-		redis, err := db.NewRedisClient()
-		if err != nil {
-			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		redisResponseString, err := redis.ReadJSONDocument("user", ".")
-		if err != nil {
-			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		if redisResponseString != nil {
-			responseString := *redisResponseString
-			if responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			entities := types.Locations{}
-			err = json.Unmarshal([]byte(responseString), &entities)
-			if err != nil {
-				data["error"] = err.Error()
-				return c.Render(http.DefaultMaxHeaderBytes, ERRORTPL, data)
-			}
-			newEntities := types.Locations{}
-			for _, entity := range entities {
-				if entity.Attributes.Id != c.Param("id") {
-					newEntities = append(newEntities, entity)
-				}
-			}
-			err = redis.UpdateJSONDocument(newEntities, "location", ".")
-			if err != nil {
-				data["error"] = err.Error()
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-			}
-		}
-		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
-			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
-		}
-		data["msg"] = "location deleted"
-		data["PageTitle"] = "Inventory Management"
-		return c.Render(http.StatusOK, "dashboard.tpl.html", data)
-	}
-}
-
 func (c SettingsController) GetRoleCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
 			if err.Error() == "bearer not found" {
+				errors.Err(err)
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
@@ -393,10 +273,12 @@ func (c SettingsController) GetRoleCreate() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -420,6 +302,7 @@ func (c SettingsController) GetRoleEdit() echo.HandlerFunc {
 
 		rolePtr, err := acl.GetRole(c.Param("id"))
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
@@ -428,6 +311,7 @@ func (c SettingsController) GetRoleEdit() echo.HandlerFunc {
 			role := *rolePtr
 			policiesPtr, err := acl.GetPolicyByRole(role.Name)
 			if err != nil {
+				errors.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
@@ -451,11 +335,13 @@ func (c SettingsController) GetRoleEdit() echo.HandlerFunc {
 
 		redis, err := db.NewRedisClient()
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		redisResponseString, err := redis.ReadJSONDocument("role", ".")
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
@@ -467,6 +353,7 @@ func (c SettingsController) GetRoleEdit() echo.HandlerFunc {
 			entities := acl.Roles{}
 			err = json.Unmarshal([]byte(responseString), &entities)
 			if err != nil {
+				errors.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
@@ -480,10 +367,12 @@ func (c SettingsController) GetRoleEdit() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -501,16 +390,19 @@ func (c SettingsController) GetRoleDelete() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
+			errors.Err(err)
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		redis, err := db.NewRedisClient()
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		redisResponseString, err := redis.ReadJSONDocument("role", ".")
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
@@ -522,6 +414,7 @@ func (c SettingsController) GetRoleDelete() echo.HandlerFunc {
 			entities := acl.Roles{}
 			err = json.Unmarshal([]byte(responseString), &entities)
 			if err != nil {
+				errors.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.DefaultMaxHeaderBytes, ERRORTPL, data)
 			}
@@ -533,6 +426,7 @@ func (c SettingsController) GetRoleDelete() echo.HandlerFunc {
 			}
 			err = redis.UpdateJSONDocument(newEntities, "role", ".")
 			if err != nil {
+				errors.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
@@ -540,10 +434,12 @@ func (c SettingsController) GetRoleDelete() echo.HandlerFunc {
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -562,16 +458,19 @@ func (c SettingsController) GetPolicyCreate() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
+			errors.Err(err)
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -589,16 +488,19 @@ func (c SettingsController) GetPolicyEdit() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
+			errors.Err(err)
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -616,16 +518,19 @@ func (c SettingsController) GetPolicyDelete() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
+			errors.Err(err)
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
 			claims, err := decodeJWT(token, []byte("secret"))
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
+				errors.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -642,15 +547,18 @@ func (c SettingsController) PostApiUserCreate() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		redis, err := db.NewRedisClient()
 		if err != nil {
+			errors.Err(err)
 			data["error"] = fmt.Sprintf("db init: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		requestBody, err := GetRequestData(c)
 		if err != nil {
+			errors.Err(err)
 			data["error"] = fmt.Sprintf("json: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, data)
 		}
@@ -658,7 +566,9 @@ func (c SettingsController) PostApiUserCreate() echo.HandlerFunc {
 		if requestBody != nil {
 			body = *requestBody
 		} else {
-			data["error"] = fmt.Sprintf("empty post body")
+			err = fmt.Errorf("empty post body")
+			errors.Err(err)
+			data["error"] = err.Error()
 			return c.JSON(http.StatusBadRequest, data)
 		}
 	
@@ -673,12 +583,14 @@ func (c SettingsController) PostApiUserCreate() echo.HandlerFunc {
 		user := &types.User{}
 		user, err = user.Hydrate(body)
 		if err != nil {
+			errors.Err(err)
 			data["error"] = fmt.Sprintf("user hydrate: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, err)
 		}
 
 		hash, err := login.HashPassword(user.Password)
 		if err != nil {
+			errors.Err(err)
 			data["error"] = fmt.Sprintf("login: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, data)
 		}
@@ -693,12 +605,14 @@ func (c SettingsController) PostApiUserCreate() echo.HandlerFunc {
 	
 		err = redis.CreateJSONDocument(user, "user", ".", false)
 		if err != nil {
+			errors.Err(err)
 			data["error"] = fmt.Sprintf("db write: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 	
 		err = redis.CreateJSONDocument(creds, "auth", ".", false)
 		if err != nil {
+			errors.Err(err)
 			data["error"] = fmt.Sprintf("redis: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, data)
 		}
@@ -713,15 +627,18 @@ func (c SettingsController) PostApiLocationCreate() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		redis, err := db.NewRedisClient()
 		if err != nil {
+			errors.Err(err)
 			data["error"] = fmt.Sprintf("db init: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		requestBody, err := GetRequestData(c)
 		if err != nil {
+			errors.Err(err)
 			data["error"] = fmt.Sprintf("json: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, data)
 		}
@@ -729,7 +646,9 @@ func (c SettingsController) PostApiLocationCreate() echo.HandlerFunc {
 		if requestBody != nil {
 			body = *requestBody
 		} else {
-			data["error"] = fmt.Sprintf("empty post body")
+			err = fmt.Errorf("empty post body")
+			errors.Err(err)
+			data["error"] = err.Error()
 			return c.JSON(http.StatusBadRequest, data)
 		}
 		
@@ -737,6 +656,7 @@ func (c SettingsController) PostApiLocationCreate() echo.HandlerFunc {
 		if user, ok := data["User"].(types.User); ok {
 			entity, err = entity.Hydrate(body, user)
 			if err != nil {
+				errors.Err(err)
 				data["error"] = fmt.Sprintf("user hydrate: %s", err.Error())
 				return c.JSON(http.StatusInternalServerError, err)
 			}
@@ -746,6 +666,7 @@ func (c SettingsController) PostApiLocationCreate() echo.HandlerFunc {
 		
 			err = redis.CreateJSONDocument(entity, "user", ".", false)
 			if err != nil {
+				errors.Err(err)
 				data["error"] = fmt.Sprintf("db write: %s", err.Error())
 				return c.JSON(http.StatusInternalServerError, data)
 			}
@@ -762,6 +683,7 @@ func (c SettingsController) PostApiLocationEdit() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		return nil
@@ -775,6 +697,7 @@ func (c SettingsController) PostApiLocationDelete() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		return nil
@@ -788,6 +711,7 @@ func (c SettingsController) PostApiRoleCreate() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		return nil
@@ -801,6 +725,7 @@ func (c SettingsController) PostApiRoleEdit() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		return nil
@@ -814,6 +739,7 @@ func (c SettingsController) PostApiRoleDelete() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		return nil
@@ -827,17 +753,20 @@ func (c SettingsController) PostApiUserEdit() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 
 		redis, err := db.NewRedisClient()
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 
 		redisRepsonseString, err := redis.ReadJSONDocument("user", ".")
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.JSON(http.StatusInternalServerError, data)
 		}
@@ -849,6 +778,7 @@ func (c SettingsController) PostApiUserEdit() echo.HandlerFunc {
 			entities := types.Users{}
 			err = json.Unmarshal([]byte(responseString), &entities)
 			if err != nil {
+				errors.Err(err)
 				data["error"] = err.Error()
 				return c.JSON(http.StatusInternalServerError, data)
 			}
@@ -856,6 +786,7 @@ func (c SettingsController) PostApiUserEdit() echo.HandlerFunc {
 				if u.Attributes.Id == c.Param("id") {
 					body, err := GetRequestData(c)
 					if err != nil {
+						errors.Err(err)
 						data["error"] = err.Error()
 						return c.JSON(http.StatusInternalServerError, data)
 					}
@@ -863,6 +794,7 @@ func (c SettingsController) PostApiUserEdit() echo.HandlerFunc {
 						msi := *body
 						newEntity, err := u.Hydrate(msi)
 						if err != nil {
+							errors.Err(err)
 							data["error"] = err.Error()
 							return c.JSON(http.StatusInternalServerError, data)
 						}
@@ -870,6 +802,7 @@ func (c SettingsController) PostApiUserEdit() echo.HandlerFunc {
 							newEntity.Attributes.UpdatedAt = time.Now()
 							err = redis.UpdateJSONDocument(*newEntity, "user", ".")
 							if err != nil {
+								errors.Err(err)
 								data["error"] = err.Error()
 								return c.JSON(http.StatusInternalServerError, data)
 							}
@@ -892,6 +825,7 @@ func (c SettingsController) PostApiUserDelete() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		return nil
@@ -905,6 +839,7 @@ func (c SettingsController) PostApiPolicyCreate() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		body, err := GetRequestData(c)
@@ -936,10 +871,12 @@ func (c SettingsController) PostApiPolicyCreate() echo.HandlerFunc {
 		policyPtr := acl.NewPolicy(values["name"], values["role"], values["resource"], values["permission"])
 		redis, err := db.NewRedisClient()
 		if err != nil {
+			errors.Err(err)
 			return err
 		}
 		policiesPtr, err := acl.GetPolicies()
 		if err != nil {
+			errors.Err(err)
 			return err
 		}
 		if policiesPtr != nil {
@@ -949,6 +886,7 @@ func (c SettingsController) PostApiPolicyCreate() echo.HandlerFunc {
 			}
 			err = redis.CreateJSONDocument(policies, "policy", ".", true)
 			if err != nil {
+				errors.Err(err)
 				return err
 			}
 		}
@@ -964,6 +902,7 @@ func (c SettingsController) PostApiPolicyEdit() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		return nil
@@ -977,6 +916,7 @@ func (c SettingsController) PostApiPolicyDelete() echo.HandlerFunc {
 			if err.Error() == "bearer not found" {
 				return c.JSON(http.StatusOK, data)
 			}
+			errors.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		return nil
@@ -991,9 +931,6 @@ func (c SettingsController) RegisterResources(e *echo.Echo) error {
 	view.GET("/user/create", c.GetUserCreate())
 	view.GET("/user/edit/:id", c.GetUserEdit())
 	view.GET("/user/delete/:id", c.GetUserDelete())
-	view.GET("/location/create", c.GetLocationCreate())
-	view.GET("/location/edit/:id", c.GetLocationEdit())
-	view.GET("/location/delete/:id", c.GetLocationDelete())
 	view.GET("/role/create", c.GetRoleCreate())
 	view.GET("/role/edit/:id", c.GetRoleEdit())
 	view.GET("/role/edit/:id", c.GetRoleDelete())

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"inventory/src/acl"
 	"inventory/src/db"
+	"inventory/src/errors"
 	"inventory/src/login"
 	"inventory/src/types"
 	"regexp"
@@ -26,29 +27,29 @@ func decodeJWT(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Verify the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, errors.Err(fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
 		}
 		return secretKey, nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Err(err)
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return claims, nil
 	}
     
-	return nil, fmt.Errorf("invalid token")
+	return nil, errors.Err(fmt.Errorf("invalid token"))
 }
 
 func getUser(claims jwt.MapClaims) (*types.User, error) {
 	redis, err := db.NewRedisClient()
 	if err != nil {
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	redisResponseString, err := redis.ReadJSONDocument("user", ".")
 	if err != nil {
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	if redisResponseString != nil {
 		responseString := *redisResponseString
@@ -59,17 +60,17 @@ func getUser(claims jwt.MapClaims) (*types.User, error) {
 		if redisResponseString != nil {
 			err = json.Unmarshal([]byte(responseString), &users)
 			if err != nil {
-				return nil, err
+				return nil, errors.Err(err)
 			}
 			for _, u := range users {
 				b, err := json.Marshal(claims)
 				if err != nil {
-					return nil, err
+					return nil, errors.Err(err)
 				}
 				msi := make(map[string]interface{})
 				err = json.Unmarshal(b, &msi)
 				if err != nil {
-					return nil, err
+					return nil, errors.Err(err)
 				}
 				if v, ok := msi["username"].(string); ok {
 					if u.Username == v {
@@ -79,14 +80,14 @@ func getUser(claims jwt.MapClaims) (*types.User, error) {
 			}
 		}
 	}
-	return nil, fmt.Errorf("bad redis response")
+	return nil, errors.Err(fmt.Errorf("bad redis response"))
 }
 
 func GetRequestData(c echo.Context) (*map[string]interface{}, error) {
 	body := make(map[string]interface{})
 	err := json.NewDecoder(c.Request().Body).Decode(&body)
 	if err != nil {
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	return &body, nil
 }
@@ -108,11 +109,11 @@ func authenticateToken(c echo.Context) (map[string]interface{}, error){
 	if err != nil {
 		fmt.Printf("test err: %s\n", err.Error())
 		data["error"] = err.Error()
-		return data, err
+		return data, errors.Err(err)
 	}
 	tokenPtr, err := login.ExtendToken(token, []byte("secret"))
 	if err != nil {
-		return data, err
+		return data, errors.Err(err)
 	}
 	if tokenPtr != nil {
 		data["Token"] = token
@@ -137,13 +138,13 @@ func CreatePolicy(resource, role, permission string) (*acl.Policy, error) {
 	if polPtr != nil {
 		return polPtr, nil
 	}
-	return nil, fmt.Errorf("unable to create policy")
+	return nil, errors.Err(fmt.Errorf("unable to create policy"))
 }
 
 func UpdateRole(id string, resources acl.Resources) error {
 	rolePtr, err := acl.GetRole(id)
 	if err != nil {
-		return err
+		return errors.Err(err)
 	}
 	var role acl.Role
 	if rolePtr != nil {
@@ -152,22 +153,25 @@ func UpdateRole(id string, resources acl.Resources) error {
 	for _, resource := range resources {
 		polPtr, err := CreatePolicy(resource.URL, role.Name, role.DefaultPermisison)
 		if err != nil || polPtr == nil {
-			return err
+			return errors.Err(err)
 		}
 		role.Policies = append(role.Policies, *polPtr)
 	}
 	redis, err := db.NewRedisClient()
 	if err != nil {
-		return err
+		return errors.Err(err)
 	}
-
-	return redis.CreateJSONDocument(role, "role", ".", true)
+	err = redis.CreateJSONDocument(role, "role", ".", true) 
+	if err != nil {
+		return errors.Err(err)
+	}
+	return nil
 }
 
 func UpdatePolicy(role string, resources acl.Resources) error {
 	dbPoliciesPtr, err := acl.GetPolicyByRole(role)
 	if err != nil {
-		return err
+		return errors.Err(err)
 	}
 	if dbPoliciesPtr != nil {
 		dbPolicies := *dbPoliciesPtr
@@ -182,7 +186,7 @@ func UpdatePolicy(role string, resources acl.Resources) error {
 			segments = append([]string{role}, segments...)
 			rolePtr, err := acl.GetRole(role)
 			if err != nil {
-				return err
+				return errors.Err(err)
 			}
 			if rolePtr != nil {
 				polPtr := acl.NewPolicy(strings.Join(segments, "-"), role, outer.URL, rolePtr.DefaultPermisison)
@@ -194,11 +198,11 @@ func UpdatePolicy(role string, resources acl.Resources) error {
 		}
 		redis, err := db.NewRedisClient()
 		if err != nil {
-			return err
+			return errors.Err(err)
 		}
 		err = redis.CreateJSONDocument(dbPolicies, "policy", ".", true)
 		if err != nil {
-			return err
+			return errors.Err(err)
 		}
 	}
 	return nil	
@@ -207,11 +211,11 @@ func UpdatePolicy(role string, resources acl.Resources) error {
 func UpdateResources(resources acl.Resources) error {
 	redis, err := db.NewRedisClient()
 	if err != nil {
-		return err
+		return errors.Err(err)
 	}
 	redisResponseString, err := redis.ReadJSONDocument("resource", ".")
 	if err != nil {
-		return err
+		return errors.Err(err)
 	}
 	if redisResponseString != nil {
 		responseString := *redisResponseString
@@ -222,7 +226,7 @@ func UpdateResources(resources acl.Resources) error {
 			dbResources := acl.Resources{}
 			err = json.Unmarshal([]byte(responseString), &dbResources)
 			if err != nil {
-				return err
+				return errors.Err(err)
 			}
 			oldLen := len(dbResources)
 			for _, outer := range resources {
@@ -237,10 +241,21 @@ func UpdateResources(resources acl.Resources) error {
 			if oldLen != newLen {
 				err = redis.CreateJSONDocument(dbResources, "resource", ".", true)
 				if err != nil {
-					return err
+					return errors.Err(err)
 				}
 			}
 		}
 	}
 	return nil
+}
+
+func GetContentIdFromUrl(c echo.Context) (string, error) {
+	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+	r := regexp.MustCompile(pattern)
+	url := c.Request().RequestURI
+	segments := strings.Split(url, "/")
+	if r.Match([]byte(segments[len(segments)-1])) {
+		return segments[len(segments)-1], nil
+	}
+	return "", errors.Err(fmt.Errorf("content id not found in url"))
 }

@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"fmt"
 	"inventory/src/acl"
+	"inventory/src/errors"
 	"log"
 	"net/http"
 	"strings"
@@ -19,7 +19,6 @@ func (c IndexController) Get() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data := make(map[string]interface{})
 		data["PageTitle"] = "Inventory Management"
-		fmt.Println(c.Get("user"))
 		bearer := c.Request().Header.Get("AUTHORIZATION")
 		if bearer == "" {
 			data["Authenticated"] = false
@@ -28,11 +27,13 @@ func (c IndexController) Get() echo.HandlerFunc {
 		token := strings.Split(bearer, " ")[1]
 		claims, err := decodeJWT(token, []byte("secret"))
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, "error.tpl.html", data)
 		}
 		user, err := getUser(claims)
 		if err != nil {
+			errors.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, "error.tpl.html", data)
 		}
@@ -55,6 +56,7 @@ func (c IndexController) RegisterResources(e *echo.Echo) error {
 	})
 	adminRolePtr, err := acl.GetRole("admin")
 	if err != nil {
+		errors.Err(err)
 		return err
 	}
 	var adminRole acl.Role
@@ -63,16 +65,19 @@ func (c IndexController) RegisterResources(e *echo.Echo) error {
 		err = UpdateRole(adminRole.Id, resources)
 		if err != nil {
 			if err.Error() != "roles not found" {
+				errors.Err(err)
 				return err
 			}
 		}
 	}
 	err = UpdateResources(resources)
 	if err != nil {
+		errors.Err(err)
 		return err
 	}
 	err = UpdatePolicy("admin", resources)
 	if err != nil {
+		errors.Err(err)
 		return err
 	}
 	return nil

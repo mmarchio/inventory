@@ -3,10 +3,11 @@ package acl
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"inventory/src/db"
+	"inventory/src/errors"
 	"inventory/src/login"
 	"inventory/src/types"
+	"log"
 	"os"
 	"strings"
 
@@ -31,11 +32,11 @@ func (c Policy) IsDocument() bool {
 func (c Policy) ToMSI() (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	err = json.Unmarshal(m, &r)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	return r, nil
@@ -50,11 +51,11 @@ func (c Policies) IsDocument() bool {
 func (c Policies) ToMSI() (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	err = json.Unmarshal(m, &r)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	return r, nil
@@ -62,7 +63,7 @@ func (c Policies) ToMSI() (map[string]interface{}, error) {
 
 func CreatePolicy(name, role, resource string) error {
 	rolePtr, err := GetRole(role)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return err
 	}
 	if rolePtr != nil {
@@ -70,11 +71,11 @@ func CreatePolicy(name, role, resource string) error {
 		if pol != nil {
 			p := *pol
 			redis, err := db.NewRedisClient()
-			if err != nil {
+			if errors.Err(err) != nil {
 				return err
 			}
 			err = redis.CreateJSONDocument(p, "policy", ".", false)
-			if err != nil {
+			if errors.Err(err) != nil {
 				return err
 			}
 			return nil
@@ -103,11 +104,11 @@ func NewPolicy(name, role, resource, permission string) *Policy {
 
 func GetPolicies() (*Policies, error) {
 	redis, err := db.NewRedisClient()
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	redisResponseString, err := redis.ReadJSONDocument("policy", ".")
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	if redisResponseString != nil {
@@ -118,7 +119,7 @@ func GetPolicies() (*Policies, error) {
 			}
 			policies := Policies{}
 			err := json.Unmarshal([]byte(responseString), &policies)
-			if err != nil {
+			if errors.Err(err) != nil {
 				return nil, err
 			}
 			return &policies, nil
@@ -129,7 +130,7 @@ func GetPolicies() (*Policies, error) {
 
 func GetPolicyByRole(role string) (*Policies, error) {
 	dbPoliciesPtr, err := GetPolicies()
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	if dbPoliciesPtr != nil {
@@ -147,7 +148,7 @@ func GetPolicyByRole(role string) (*Policies, error) {
 
 func GetPolicyById(id string) (*Policy, error) {
 	dbPoliciesPtr, err := GetPolicies()
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	if dbPoliciesPtr != nil {
@@ -208,15 +209,15 @@ func CreateSystemPolicies() error {
 		policies = append(policies, *pol)
 	}
 	redis, err := db.NewRedisClient()
-	if err != nil {
+	if errors.Err(err) != nil {
 		return err
 	}
 	for _, p := range policies {
 		err = redis.CreateJSONDocument(p, "policy", ".", false)
-		if err != nil {
+		if errors.Err(err) != nil {
 			return err
 		}
-	}
+		}
 	return nil
 }
 
@@ -234,11 +235,11 @@ func (c Role) IsDocument() bool {
 func (c Role) ToMSI() (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	b, err := json.Marshal(c)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	err = json.Unmarshal(b, &r)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	return r, nil
@@ -246,7 +247,7 @@ func (c Role) ToMSI() (map[string]interface{}, error) {
 
 func GetRole(id string) (*Role, error) {
 	rolesPtr, err := GetRoles()
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	if rolesPtr != nil {
@@ -265,11 +266,11 @@ type Roles []Role
 func GetRoles() (*Roles, error) {
 	roles := Roles{}
 	redis, err := db.NewRedisClient()
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	redisRepsonseString, err := redis.ReadJSONDocument("role", ".")
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	if redisRepsonseString != nil {
@@ -279,10 +280,10 @@ func GetRoles() (*Roles, error) {
 				responseString = fmt.Sprintf("[%s]", responseString)
 			}
 			err = json.Unmarshal([]byte(responseString), &roles)
-			if err != nil {
-				return nil, err
-			}
-			return &roles, nil
+		if errors.Err(err) != nil {
+			return nil, err
+		}
+		return &roles, nil
 		}
 	}
 	return nil, fmt.Errorf("roles not found")
@@ -295,11 +296,11 @@ func (c Roles) IsDocument() bool {
 func (c Roles) ToMSI() (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	err = json.Unmarshal(m, &r)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	return r, nil
@@ -317,11 +318,11 @@ func (c Resource) IsDocument() bool {
 func (c Resource) ToMSI() (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	b, err := json.Marshal(c)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	err = json.Unmarshal(b, &r)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	return r, nil
@@ -336,11 +337,11 @@ func (c Resources) IsDocument() bool {
 func (c Resources) ToMSI() (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	b, err := json.Marshal(c)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	err = json.Unmarshal(b, &r)
-	if err != nil {
+	if errors.Err(err) != nil {
 		return r, err
 	}
 	return r, nil
@@ -348,11 +349,11 @@ func (c Resources) ToMSI() (map[string]interface{}, error) {
 
 func GetResource(url string) (*Resource, error) {
 	redis, err := db.NewRedisClient()
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	redisResponseString, err := redis.ReadJSONDocument("resource", ".")
-	if err != nil {
+	if errors.Err(err) != nil {
 		return nil, err
 	}
 	if redisResponseString != nil {
@@ -365,16 +366,18 @@ func GetResource(url string) (*Resource, error) {
 		}
 		resources := Resources{}
 		err = json.Unmarshal([]byte(responseString), &resources)
-		if err != nil {
+		if errors.Err(err) != nil {
 			return nil, err
 		}
 		for _, r := range resources {
-			if r.URL == url {
-				return &r, nil
-			}
+		if r.URL == url {
+			return &r, nil
+		}
 		}
 	}
-	return nil, fmt.Errorf("not found")
+	err = fmt.Errorf("not found")
+
+	return nil, errors.Err(err)
 }
 
 func authenticateToken(c echo.Context) (map[string]interface{}, error){
@@ -410,14 +413,12 @@ func GetBearerToken(c echo.Context) (string, error) {
 	bearer := c.Request().Header.Get("AUTHORIZATION")
 	if bearer == "" {
 		err := fmt.Errorf("authorization header not found")
-		logger.Printf(err.Error())
-		return "", err
+		return "", errors.Err(err)
 	}
 	parts := strings.Split(bearer, " ")
 	if len(parts) != 2 {
 		err := fmt.Errorf("unexpected authorization header segments")
-		logger.Printf(err.Error())
-		return "", err
+		return "", errors.Err(err)
 	}
 	return parts[1], nil
 }
@@ -425,18 +426,15 @@ func GetBearerToken(c echo.Context) (string, error) {
 func GetUserFromContext(c echo.Context) (*types.User, error) {
 	token, err := GetBearerToken(c)
 	if err != nil {
-		logger.Printf(err.Error())
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	jwt, err := decodeJWT(token, []byte("secret"))
 	if err != nil {
-		logger.Printf(err.Error())
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	userPtr, err := getUser(jwt)
 	if err != nil {
-		logger.Printf(err.Error())
-		return nil, err
+		return nil, errors.Err(err)
 	}
 	return userPtr, nil
 }
