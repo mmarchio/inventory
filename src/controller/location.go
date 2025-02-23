@@ -280,12 +280,12 @@ func (c LocationController) RegisterResources(e *echo.Echo) error {
 
 	e.GET("/content/locations", c.Get())
 	
-	view.GET("/location/create", c.GetLocationCreate())
-	view.GET("/location/edit/:id", c.GetLocationEdit())
-	view.GET("/location/delete/:id", c.GetLocationDelete())
+	view.GET("/create", c.GetLocationCreate())
+	view.GET("/edit/:id", c.GetLocationEdit())
+	view.GET("/delete/:id", c.GetLocationDelete())
 
-	api.POST("/location/create", c.PostApiLocationCreate())
-	api.POST("/location/edit/:id", c.PostApiLocationEdit())
+	api.POST("/create", c.PostApiLocationCreate())
+	api.POST("/edit/:id", c.PostApiLocationEdit())
 
 	resources := acl.Resources{}
 
