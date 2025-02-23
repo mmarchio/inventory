@@ -11,7 +11,7 @@ import (
 
 type ItemController struct{}
 
-func (cl ItemController) GetItemCreate() echo.HandlerFunc {
+func (cl ItemController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -38,7 +38,7 @@ func (cl ItemController) GetItemCreate() echo.HandlerFunc {
 	}
 }
 
-func (c ItemController) GetItemEdit() echo.HandlerFunc {
+func (c ItemController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -65,7 +65,7 @@ func (c ItemController) GetItemEdit() echo.HandlerFunc {
 	}
 }
 
-func (c ItemController) GetItemDelete() echo.HandlerFunc {
+func (c ItemController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -92,7 +92,7 @@ func (c ItemController) GetItemDelete() echo.HandlerFunc {
 	}
 }
 
-func (c ItemController) PostApiItemCreate() echo.HandlerFunc {
+func (c ItemController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -117,7 +117,7 @@ func (c ItemController) PostApiItemCreate() echo.HandlerFunc {
 	}
 }
 
-func (c ItemController) PostApiItemEdit() echo.HandlerFunc {
+func (c ItemController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data, err := authenticateToken(c)
 		if err != nil {
@@ -146,11 +146,11 @@ func (c ItemController) RegisterResources(e *echo.Echo) error {
 	view := e.Group("/content/item")
 	api := e.Group("/api/content/item")
 
-	view.GET("/item/create", c.GetItemCreate())
-	view.GET("/item/edit/:id", c.GetItemEdit())
-	view.GET("/item/delete/:id", c.GetItemDelete())
-	api.POST("/create", c.PostApiItemCreate())
-	api.POST("/edit/:id", c.PostApiItemEdit())
+	view.GET("/item/create", c.GetCreate())
+	view.GET("/item/edit/:id", c.GetEdit())
+	view.GET("/item/delete/:id", c.GetDelete())
+	api.POST("/create", c.PostApiCreate())
+	api.POST("/edit/:id", c.PostApiEdit())
 
 	resources := acl.Resources{}
 	res := acl.Resource{}
