@@ -169,6 +169,7 @@ func (c ContainerController) RegisterResources(e *echo.Echo) error {
 		Id: uuid.NewString(),
 		URL: "/content/container/delete",
 	}
+	resources = append(resources, res)
 	res = acl.Resource{
 		Id: uuid.NewString(),
 		URL: "/content/api/container/create",

@@ -57,25 +57,23 @@ func getUser(claims jwt.MapClaims) (*types.User, error) {
 			responseString = fmt.Sprintf("[%s]", responseString)
 		}
 		var users types.Users
-		if redisResponseString != nil {
-			err = json.Unmarshal([]byte(responseString), &users)
+		err = json.Unmarshal([]byte(responseString), &users)
+		if err != nil {
+			return nil, errors.Err(err)
+		}
+		for _, u := range users {
+			b, err := json.Marshal(claims)
 			if err != nil {
 				return nil, errors.Err(err)
 			}
-			for _, u := range users {
-				b, err := json.Marshal(claims)
-				if err != nil {
-					return nil, errors.Err(err)
-				}
-				msi := make(map[string]interface{})
-				err = json.Unmarshal(b, &msi)
-				if err != nil {
-					return nil, errors.Err(err)
-				}
-				if v, ok := msi["username"].(string); ok {
-					if u.Username == v {
-						return &u, nil
-					}
+			msi := make(map[string]interface{})
+			err = json.Unmarshal(b, &msi)
+			if err != nil {
+				return nil, errors.Err(err)
+			}
+			if v, ok := msi["username"].(string); ok {
+				if u.Username == v {
+					return &u, nil
 				}
 			}
 		}
