@@ -10,12 +10,14 @@ if (document.getElementById("login_submit") != null) {
 }
 
 function registerFormSubmit(id) {
+    console.log("registerFormSubmit ID: "+id)
     if (document.getElementById(id) != null) {
         document.getElementById(id).addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            form = gebt("form");
-            submitForm(form[0].id, form[0].dataset.token)
+            form = gebt("form")[0];
+            console.log(form)
+            submitForm(form.id, form.dataset.token, form.action)
         });
     }
 }

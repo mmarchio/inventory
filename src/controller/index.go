@@ -13,10 +13,14 @@ import (
 
 type IndexController struct {
 	Logger *log.Logger
+	Error errors.Error
 }
 
-func (c IndexController) Get() echo.HandlerFunc {
+func (s IndexController) Get() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "Get"
+		s.Error.RequestUri = c.Request().RequestURI
+
 		data := make(map[string]interface{})
 		data["PageTitle"] = "Inventory Management"
 		bearer := c.Request().Header.Get("AUTHORIZATION")
@@ -25,17 +29,17 @@ func (c IndexController) Get() echo.HandlerFunc {
 			return c.Render(http.StatusOK, "index.tpl.html", data)
 		}
 		token := strings.Split(bearer, " ")[1]
-		claims, err := decodeJWT(token, []byte("secret"))
+		claims, err := acl.DecodeJWT(token, []byte("secret"))
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, "error.tpl.html", data)
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		user, err := getUser(claims)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, "error.tpl.html", data)
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		c.Set("user", user.Id)
 		c.Response().Header().Set("AUTHORIZATION", bearer)
@@ -46,6 +50,7 @@ func (c IndexController) Get() echo.HandlerFunc {
 }
 
 func (c IndexController) RegisterResources(e *echo.Echo) error {
+	c.Error.Function = "GetCreate"
 	g := e.Group("")
 	g.GET("/", c.Get())
 
@@ -56,7 +61,7 @@ func (c IndexController) RegisterResources(e *echo.Echo) error {
 	})
 	adminRolePtr, err := acl.GetRole("admin")
 	if err != nil {
-		errors.Err(err)
+		c.Error.Err(err)
 		return err
 	}
 	var adminRole acl.Role
@@ -65,19 +70,19 @@ func (c IndexController) RegisterResources(e *echo.Echo) error {
 		err = UpdateRole(adminRole.Id, resources)
 		if err != nil {
 			if err.Error() != "roles not found" {
-				errors.Err(err)
+				c.Error.Err(err)
 				return err
 			}
 		}
 	}
 	err = UpdateResources(resources)
 	if err != nil {
-		errors.Err(err)
+		c.Error.Err(err)
 		return err
 	}
 	err = UpdatePolicy("admin", resources)
 	if err != nil {
-		errors.Err(err)
+		c.Error.Err(err)
 		return err
 	}
 	return nil

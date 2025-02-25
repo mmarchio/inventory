@@ -4,10 +4,10 @@ type Address struct {
 	Attributes
 	Address1 string `json:"address1"`
 	Address2 string `json:"address2"`
-	City string `json:"city"`
-	State string `json:"state"`
-	Zipcode string `json:"zipcode"`
-	Country string `json:"country"`
+	City     string `json:"city"`
+	State    string `json:"state"`
+	Zipcode  string `json:"zipcode"`
+	Country  string `json:"country"`
 }
 
 func NewAddress(createdBy *User) (*Address, error) {
@@ -61,6 +61,31 @@ func (c Address) Hydrate(msi map[string]interface{}) (*Address, error) {
 			return nil, err
 		}
 	}
+	if a, ok := msi["address"].(map[string]interface{}); ok {
+		if v, ok := a["address1"].(string); ok {
+			address.Address1 = v
+		}
+	
+		if v, ok := a["address2"].(string); ok {
+			address.Address2 = v
+		}
+	
+		if v, ok := a["city"].(string); ok {
+			address.City = v
+		}
+	
+		if v, ok := a["state"].(string); ok {
+			address.State = v
+		}
+	
+		if v, ok := a["zipcode"].(string); ok {
+			address.Zipcode = v
+		}
+	
+		if v, ok := a["country"].(string); ok {
+			address.Country = v
+		}
+	}
 	if v, ok := msi["address1"].(string); ok {
 		address.Address1 = v
 	}
@@ -84,6 +109,5 @@ func (c Address) Hydrate(msi map[string]interface{}) (*Address, error) {
 	if v, ok := msi["country"].(string); ok {
 		address.Country = v
 	}
-
 	return &address, nil
 }

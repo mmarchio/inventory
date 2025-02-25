@@ -1,4 +1,4 @@
-async function submitForm(id, token) {
+async function submitForm(id, token, action) {
     data = {};
     inputs = document.getElementsByTagName("input");
     for (let i =0; i<inputs.length; i++) {
@@ -10,13 +10,16 @@ async function submitForm(id, token) {
     }
     switch (id) {
         case "create_user":
-          sendForm("/api/user/create", data, token);
+          sendForm(action, data, token);
         break;
         case "create_location":
-          sendForm("/api/content/location/create", data, token);
+          sendForm(action, data, token);
         break;
         case "create_policy":
-          sendForm("/api/policy/create", data, token);
+          sendForm(action, data, token);
+        break;
+        case "edit_location":
+          sendForm(action, data, token)
         break;
         case "login":
           const resp = await sendForm("/api/login", data);
@@ -33,6 +36,7 @@ async function submitForm(id, token) {
 }
 
 async function sendForm(uri, data, token) {
+  console.log("url: "+uri, "token: "+token);
     const rawResponse = await fetch(uri, {
       method: 'POST',
       headers: {

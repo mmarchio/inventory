@@ -21,14 +21,14 @@ func (c *Attributes) MSIHydrate(msi map[string]interface{}) error {
 		c.Id = v
 	}
 	if v, ok := msi["createdAt"].(string); ok {
-		t, err := time.Parse("", v)
+		t, err := time.Parse("2006-01-02T15:04:05.000000000Z", v)
 		if err != nil {
 			return err
 		}
 		c.CreatedAt = t
 	}
 	if v, ok := msi["updatedAt"].(string); ok {
-		t, err := time.Parse("", v)
+		t, err := time.Parse("2006-01-02T15:04:05.000000000Z", v)
 		if err != nil {
 			return err
 		}

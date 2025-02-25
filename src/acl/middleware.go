@@ -22,6 +22,11 @@ type IDocument interface{
 
 func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		e := errors.Error{
+			RequestUri: c.Request().RequestURI,
+			Package: "acl",
+			Function: "ACL",
+		}
 		if err := next(c); err != nil {
 			c.Error(err)
 		}
@@ -29,82 +34,84 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 			return nil
 		}
 		token, err := GetBearerToken(c)
-		if errors.Err(err) != nil {
+		if e.Err(err) != nil {
 			return err
 		}
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
 			err := fmt.Errorf("secret not found")
-			return errors.Err(err)
+			return e.Err(err)
 		}
 		// if authorization[len(authorization)-2:len(authorization)-1] != "==" {
 		// 	authorization = fmt.Sprintf("%s==", authorization)
 		// }
 
-		claims, err := decodeJWT(token, []byte("secret"))
-		if errors.Err(err) != nil {
+		claims, err := DecodeJWT(token, []byte("secret"))
+		if e.Err(err) != nil {
 			return err
 		}
-		user, err := getUser(claims)
-		if errors.Err(err) != nil {
+		user, err := GetUser(claims)
+		if e.Err(err) != nil {
 			return err
 		}
 		if user != nil {
 			us := *user
 			policyPtr, err := getResourcePolicy(us, c.Request().URL.Path)
-			if errors.Err(err) != nil {
+			if e.Err(err) != nil {
 				return err
 			}
 			if policyPtr == nil {
 				err = fmt.Errorf("policy is nil")
-				return errors.Err(err)
+				return e.Err(err)
 			}
 			policy := *policyPtr
 			if policy.IsContent {
 				auth, err := PermissionsHandler(c, policy)
-				if errors.Err(err) != nil {
+				if e.Err(err) != nil {
 					return err
 				}
 				if auth {
 					return nil
 				} else {
 					err = fmt.Errorf("access forbidden")
-					return errors.Err(err)
+					return e.Err(err)
 				}
 			}
 			return nil
 		}
-		return errors.Err(err)
+		return e.Err(err)
 	}
 }
 
-func decodeJWT(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
+func DecodeJWT(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Verify the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			err2 := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			return nil, errors.Err(err2)
+		return nil, err2
 		}
 		return secretKey, nil
 	})
-	if errors.Err(err) != nil {
+
+	if err != nil {
 		return nil, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return claims, nil
 	}
+
 	err = fmt.Errorf("invalid token")
-	return nil, errors.Err(err)
+	return nil, err
 }
 
-func getUser(claims jwt.MapClaims) (*types.User, error) {
+func GetUser(claims jwt.MapClaims) (*types.User, error) {
 	redis, err := db.NewRedisClient()
-	if errors.Err(err) != nil {
+	if err != nil {
 		return nil, err
 	}
 	redisResponseString, err := redis.ReadJSONDocument("user", ".")
-	if errors.Err(err) != nil {
+	if err != nil {
 		return nil, err
 	}
 	if redisResponseString != nil {
@@ -114,12 +121,12 @@ func getUser(claims jwt.MapClaims) (*types.User, error) {
 		}
 		var users types.Users
 		err = json.Unmarshal([]byte(responseString), &users)
-		if errors.Err(err) != nil {
+		if err != nil {
 			return nil, err
 		}
 		for _, u := range users {
 			b, err := json.Marshal(claims)
-			if errors.Err(err) != nil {
+			if err != nil {
 				return nil, err
 			}
 			msi := make(map[string]interface{})
@@ -132,17 +139,17 @@ func getUser(claims jwt.MapClaims) (*types.User, error) {
 		}
 	}
 	err = fmt.Errorf("bad redis response")
-	return nil, errors.Err(err)
+	return nil, err
 }
 
 func getResourcePolicy(u types.User, resource string) (*Policy, error) {
 	redis, err := db.NewRedisClient()
 	if err != nil {
-		return nil, errors.Err(err)
+		return nil, err
 	}
 	redisResponseString, err := redis.ReadJSONDocument("policy", ".")
 	if err != nil {
-		return nil, errors.Err(err)
+		return nil, err
 	}
 	if redisResponseString != nil {
 		responseString := *redisResponseString
@@ -154,7 +161,7 @@ func getResourcePolicy(u types.User, resource string) (*Policy, error) {
 		policies := Policies{}
 		err = json.Unmarshal([]byte(responseString),&policies)
 		if err != nil {
-			return nil, errors.Err(err)
+			return nil, err
 		}
 		for _, p := range policies {
 			resource = pathToResource(resource)
@@ -163,7 +170,8 @@ func getResourcePolicy(u types.User, resource string) (*Policy, error) {
 			}
 		}
 	}
-	return nil, errors.Err(fmt.Errorf("%s", resource))
+	err = fmt.Errorf("%s", resource)
+	return nil, err
 }
 
 func skipper(c echo.Context) bool {
@@ -178,24 +186,20 @@ func skipper(c echo.Context) bool {
 func GetUsableClaims(c echo.Context) (*map[string]interface{}, error) {
 	token, err := GetBearerToken(c)
 	if err != nil {
-		logger.Printf(err.Error())
-		return nil, errors.Err(err)
+		return nil, err
 	}
-	jwt, err := decodeJWT(token, []byte("secret"))
+	jwt, err := DecodeJWT(token, []byte("secret"))
 	if err != nil {
-		logger.Printf(err.Error())
-		return nil, errors.Err(err)
+		return nil, err
 	}
 	msi := make(map[string]interface{})
 	b, err := json.Marshal(jwt)
 	if err != nil {
-		logger.Printf(err.Error())
-		return nil, errors.Err(err)
+		return nil, err
 	}
 	err = json.Unmarshal(b, &msi)
 	if err != nil {
-		logger.Printf(err.Error())
-		return nil, errors.Err(err)
+		return nil, err
 	}
 	return &msi, nil
 }
@@ -206,7 +210,7 @@ func pathToResource(url string) string {
 	segments := strings.Split(url, "/")
 	s := url
 	if r.Match([]byte(segments[len(segments)-1])) {
-		s = strings.Join(segments[0:len(segments)-2], "/")
+		s = strings.Join(segments[0:len(segments)-1], "/")
 	}
 	return s
 }
@@ -214,26 +218,22 @@ func pathToResource(url string) string {
 func PermissionsHandler(c echo.Context, p Policy) (bool, error) {
 	userPtr, err := GetUserFromContext(c)
 	if err != nil {
-		logger.Printf(err.Error())
-		return false, errors.Err(err)
+		return false, err
 	}
 	if userPtr == nil {
 		err := fmt.Errorf("user is nil")
-		logger.Printf(err.Error())
-		return false, errors.Err(err)
+		return false, err
 	}
 	user := *userPtr
 	segments := strings.Split(c.Request().RequestURI, "/")
 	contentId := segments[len(segments)-1]
 	contentPtr, err := types.GetContent(contentId)
 	if err != nil {
-		logger.Printf(err.Error())
-		return false, errors.Err(err)
+		return false, err
 	}
 	if contentPtr == nil {
 		err := fmt.Errorf("content pointer is nil")
-		logger.Printf(err.Error())
-		return false, errors.Err(err)
+		return false, err
 	}
 	content := *contentPtr
 	if user.HasRole(p.Role) {
@@ -252,8 +252,7 @@ func PermissionsHandler(c echo.Context, p Policy) (bool, error) {
 		case "owned":
 			ownedBy, err := types.GetMSIAttribute("owner", content)
 			if err != nil {
-				logger.Printf(err.Error())
-				return false, nil
+				return false, err
 			}
 			if user.Attributes.Id == ownedBy {
 				return true, nil
@@ -262,5 +261,5 @@ func PermissionsHandler(c echo.Context, p Policy) (bool, error) {
 			return false, nil
 		}
 	}
-	return false, errors.Err(fmt.Errorf("unknown path"))
+	return false, err
 }

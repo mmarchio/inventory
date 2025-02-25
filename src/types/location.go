@@ -67,6 +67,7 @@ func (c Location) Hydrate(msi map[string]interface{}, user User) (*Location, err
 	if v, ok := msi["name"].(string); ok {
 		r.Attributes.Name = v
 	}
+
 	return &r, nil
 }
 
@@ -100,15 +101,12 @@ func (c Locations) MergeLocations(msi map[string]interface{}, user User) (string
 	l := Location{}
 	h, err := l.Hydrate(msi, user)
 	if err != nil {
-		logger.Printf("%#v", err)
 		return "", err
 	}
 	if h == nil {
-		logger.Printf("%#v", fmt.Errorf("hydrated location is nil"))
 		return "", fmt.Errorf("hydrated location is nil")
 	}
 	loc := *h
-	fmt.Printf("\n\nhydrated location: %#v\n\n", loc)
 	redis, err := db.NewRedisClient()
 	if err != nil {
 		logger.Printf("%#v", err)

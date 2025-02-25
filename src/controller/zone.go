@@ -9,27 +9,31 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type ZoneController struct{}
+type ZoneController struct{
+	Error errors.Error
+}
 
-func (c ZoneController) GetZoneCreate() echo.HandlerFunc {
+func (s ZoneController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "GetCreate"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			data["User"] = user
@@ -39,25 +43,27 @@ func (c ZoneController) GetZoneCreate() echo.HandlerFunc {
 	}
 }
 
-func (c ZoneController) GetZoneEdit() echo.HandlerFunc {
+func (s ZoneController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "GetEdit"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			data["User"] = user
@@ -67,25 +73,27 @@ func (c ZoneController) GetZoneEdit() echo.HandlerFunc {
 	}
 }
 
-func (c ZoneController) GetZoneDelete() echo.HandlerFunc {
+func (s ZoneController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "GetDelete"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			data["User"] = user
@@ -95,23 +103,25 @@ func (c ZoneController) GetZoneDelete() echo.HandlerFunc {
 	}
 }
 
-func (c ZoneController) PostApiZoneCreate() echo.HandlerFunc {
+func (s ZoneController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "PostApiCreate"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["PageTitle"] = "Inventory Management"
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			data["User"] = user
@@ -120,23 +130,25 @@ func (c ZoneController) PostApiZoneCreate() echo.HandlerFunc {
 	}
 }
 
-func (c ZoneController) PostApiZoneEdit() echo.HandlerFunc {
+func (s ZoneController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "PostApiEdit"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			data["User"] = user
@@ -146,13 +158,15 @@ func (c ZoneController) PostApiZoneEdit() echo.HandlerFunc {
 }
 
 func (c ZoneController) RegisterResources(e *echo.Echo) error {
+	c.Error.Function = "RegisterResources"
+
 	view := e.Group("/content/zone")
 	api := e.Group("/api/content/zone")
-	view.GET("/create", c.GetZoneCreate())
-	view.GET("/edit/:id", c.GetZoneEdit())
-	view.GET("/delete/:id", c.GetZoneDelete())
-	api.POST("/create", c.PostApiZoneCreate())
-	api.POST("/edit/:id", c.PostApiZoneEdit())
+	view.GET("/create", c.GetCreate())
+	view.GET("/edit/:id", c.GetEdit())
+	view.GET("/delete/:id", c.GetDelete())
+	api.POST("/create", c.PostApiCreate())
+	api.POST("/edit/:id", c.PostApiEdit())
 	resources := acl.Resources{}
 	res := acl.Resource{
 		Id: uuid.NewString(),
@@ -181,23 +195,23 @@ func (c ZoneController) RegisterResources(e *echo.Echo) error {
 	resources = append(resources, res)
 	adminRolePtr, err := acl.GetRole("admin")
 	if err != nil {
-		return errors.Err(err)
+		return c.Error.Err(err)
 	}
 	var adminRole acl.Role
 	if adminRolePtr != nil {
 		adminRole = *adminRolePtr
 		err = UpdateRole(adminRole.Id, resources)
 		if err != nil {
-			return errors.Err(err)
+			return c.Error.Err(err)
 		}
 	}
 	err = UpdateResources(resources)
 	if err != nil {
-		return errors.Err(err)
+		return c.Error.Err(err)
 	}
 	err = UpdatePolicy("admin", resources)
 	if err != nil {
-		return errors.Err(err)
+		return c.Error.Err(err)
 	}
 	return nil
 }

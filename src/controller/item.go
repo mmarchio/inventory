@@ -9,27 +9,31 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type ItemController struct{}
+type ItemController struct{
+	Error errors.Error
+}
 
-func (cl ItemController) GetCreate() echo.HandlerFunc {
+func (s ItemController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "GetCreate"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -38,25 +42,27 @@ func (cl ItemController) GetCreate() echo.HandlerFunc {
 	}
 }
 
-func (c ItemController) GetEdit() echo.HandlerFunc {
+func (s ItemController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "GetEdit"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -65,25 +71,28 @@ func (c ItemController) GetEdit() echo.HandlerFunc {
 	}
 }
 
-func (c ItemController) GetDelete() echo.HandlerFunc {
+func (s ItemController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "GetDelete"
+		s.Error.RequestUri = c.Request().RequestURI
+
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -92,23 +101,25 @@ func (c ItemController) GetDelete() echo.HandlerFunc {
 	}
 }
 
-func (c ItemController) PostApiCreate() echo.HandlerFunc {
+func (s ItemController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "PostApiCreate"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			data["User"] = user
@@ -117,23 +128,25 @@ func (c ItemController) PostApiCreate() echo.HandlerFunc {
 	}
 }
 
-func (c ItemController) PostApiEdit() echo.HandlerFunc {
+func (s ItemController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "PostApiEdit"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			data["User"] = user
@@ -143,6 +156,8 @@ func (c ItemController) PostApiEdit() echo.HandlerFunc {
 }
 
 func (c ItemController) RegisterResources(e *echo.Echo) error {
+	c.Error.Function = "GetCreate"
+
 	view := e.Group("/content/item")
 	api := e.Group("/api/content/item")
 
@@ -183,24 +198,23 @@ func (c ItemController) RegisterResources(e *echo.Echo) error {
 	
 	adminRolePtr, err := acl.GetRole("admin")
 	if err != nil {
-		return errors.Err(err)
+		return c.Error.Err(err)
 	}
 	var adminRole acl.Role
 	if adminRolePtr != nil {
 		adminRole = *adminRolePtr
 		err = UpdateRole(adminRole.Id, resources)
 		if err != nil {
-			return errors.Err(err)
+			return c.Error.Err(err)
 		}
 	}
 	err = UpdateResources(resources)
 	if err != nil {
-		return errors.Err(err)
+		return c.Error.Err(err)
 	}
 	err = UpdatePolicy("admin", resources)
 	if err != nil {
-		return errors.Err(err)
+		return c.Error.Err(err)
 	}
 	return nil
-
 }

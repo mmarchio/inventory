@@ -13,28 +13,31 @@ import (
 
 type DashboardController struct {
 	Logger *log.Logger
+	Error errors.Error
 }
 
-func (c DashboardController) Get() echo.HandlerFunc {
+func (s DashboardController) Get() echo.HandlerFunc {
 	return func (c echo.Context) error {
+		s.Error.Function = "Get"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			fmt.Printf("\nauthenticateToken err: %s\n", err.Error())
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			c.Set("user", user.Id)
@@ -45,13 +48,17 @@ func (c DashboardController) Get() echo.HandlerFunc {
 			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
 			return c.Render(http.StatusOK, "dashboard.tpl.html", data)
 		}
-		fmt.Printf("\ndata: %#v\n", data)
-		data["error"] = "invalid token"
+		err = fmt.Errorf("invalid token")
+		s.Error.Err(err)
+		data["error"] = err.Error()
+
 		return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 	}
 }
 
 func (c DashboardController) RegisterResources(e *echo.Echo) error {
+	c.Error.Function = "GetCreate"
+	
 	g := e.Group("")
 	g.GET("/dashboard", c.Get())
 
@@ -62,25 +69,25 @@ func (c DashboardController) RegisterResources(e *echo.Echo) error {
 	})
 	adminRolePtr, err := acl.GetRole("admin")
 	if err != nil {
-		errors.Err(err)
+		c.Error.Err(err)
 		return err
 	}
 	if adminRolePtr != nil {
 		adminRole := *adminRolePtr
 		err = UpdateRole(adminRole.Id, resources)
 		if err != nil {
-			errors.Err(err)
+			c.Error.Err(err)
 			return err
 		}
 	}
 	err = UpdateResources(resources)
 	if err != nil {
-		errors.Err(err)
+		c.Error.Err(err)
 		return err
 	}
 	err = UpdatePolicy("admin", resources)
 	if err != nil {
-		errors.Err(err)
+		c.Error.Err(err)
 		return err
 	}
 	return nil

@@ -13,37 +13,40 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type LocationController struct{}
+type LocationController struct{
+	Error errors.Error
+}
 
-func (cl LocationController) Get() echo.HandlerFunc {
+func (s LocationController) Get() echo.HandlerFunc {
 	return func (c echo.Context) error {
+		s.Error.Function = "Get"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
 			if err.Error() == "bearer not found" {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
-			fmt.Printf("\nauthenticateToken err: %s\n", err.Error())
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
 			userPtr, err := getUser(claims)
 			if err != nil {
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
 			if userPtr == nil {
 				data["error"] = "user is nil"
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
 			user := *userPtr
@@ -54,14 +57,14 @@ func (cl LocationController) Get() echo.HandlerFunc {
 			redis, err := db.NewRedisClient()
 			if err != nil {
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 
 			}
 			redisResponseString, err := redis.ReadJSONDocument("content", ".")
 			if err != nil {
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
 			if redisResponseString != nil {
@@ -74,7 +77,7 @@ func (cl LocationController) Get() echo.HandlerFunc {
 					err = json.Unmarshal([]byte(responseString), &locations)
 					if err != nil {
 						data["error"] = err.Error()
-						errors.Err(err)
+						s.Error.Err(err)
 						return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 					}
 					data["Locations"] = locations
@@ -84,31 +87,33 @@ func (cl LocationController) Get() echo.HandlerFunc {
 			return c.Render(http.StatusOK, "content.locations.tpl.html", data)
 		}
 		err = fmt.Errorf("invalid token")
-		errors.Err(err)
+		s.Error.Err(err)
 		data["error"] = err.Error()
 		return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 	}
 }
 
-func (cl LocationController) GetCreate() echo.HandlerFunc {
+func (s LocationController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "GetCreate"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			data["User"] = user
@@ -117,56 +122,79 @@ func (cl LocationController) GetCreate() echo.HandlerFunc {
 	}
 }
 
-func (cl LocationController) GetEdit() echo.HandlerFunc {
+func (s LocationController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "GetEdit"
+		s.Error.RequestUri = c.Request().RequestURI
+	
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
-			user, err := getUser(claims)
+			userPtr, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
+			if userPtr == nil {
+				err = fmt.Errorf("user pointer is nil")
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			user := *userPtr
 			data["User"] = user
 			contentId, err := GetContentIdFromUrl(c)
 			if err != nil {
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
 
 			msiPtr, err := types.GetContent(contentId)
 			if err != nil {
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
-			if msiPtr != nil {
+			if msiPtr == nil {
 				err = fmt.Errorf("content pointer is nil")
-				errors.Err(err)
+				s.Error.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
+			msi := *msiPtr
+			l := types.Location{}
+			
+			location, err := l.Hydrate(msi, user)
+			if err != nil {
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			data["Location"] = location
 			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
-			return c.Render(http.StatusOK, "content.room.edit.tpl.html", data)
+			return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
 		}
-		return c.Render(http.StatusOK, "content.room.edit.tpl.html", data)
+		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
 	}
 }
 
-func (cl LocationController) GetDelete() echo.HandlerFunc {
+func (s LocationController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "GetDelete"
+		s.Error.RequestUri = c.Request().RequestURI
+
 		data, err := authenticateToken(c)
 		if err != nil {
 			data["error"] = err.Error()
@@ -175,14 +203,14 @@ func (cl LocationController) GetDelete() echo.HandlerFunc {
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
 			data["User"] = user
@@ -192,31 +220,33 @@ func (cl LocationController) GetDelete() echo.HandlerFunc {
 	}
 }
 
-func (cl LocationController) PostApiCreate() echo.HandlerFunc {
+func (s LocationController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "PostApiCreate"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
 			data["error"] = err.Error()
-			errors.Err(err)
+			s.Error.Err(err)
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, data)
 			}
 			userPtr, err := getUser(claims)
 			if err != nil {
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, data)
 			}
 			if userPtr == nil {
 				err = fmt.Errorf("user pointer is nil")
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusBadRequest, data)
 			}
 			user := *userPtr
@@ -224,58 +254,118 @@ func (cl LocationController) PostApiCreate() echo.HandlerFunc {
 			bodyPtr, err := GetRequestData(c)
 			if err != nil {
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, data)
 			}
 			if bodyPtr == nil {
 				err = fmt.Errorf("body pointer is nil")
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusBadRequest, data)
 			}
 			body := *bodyPtr
 			locations := types.Locations{}
+			fmt.Printf("body: %#v", body)
 			r, err := locations.MergeLocations(body, user)
 			if err != nil {
 				data["error"] = err.Error()
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, data)
 			}
 			return c.JSON(http.StatusCreated, r)
 		}
 		err = fmt.Errorf("invalid token")
 		data["error"] = err.Error()
-		errors.Err(err)
+		s.Error.Err(err)
 		return c.JSON(http.StatusBadRequest, data)
 	}
 }
 
-func (cl LocationController) PostApiEdit() echo.HandlerFunc {
+func (s LocationController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "PostApiEdit"
+		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(c)
 		if err != nil {
-			errors.Err(err)
+			s.Error.Err(err)
 			data["error"] = err.Error()
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		if token, ok := data["Token"].(string); ok {
-			claims, err := decodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
-			user, err := getUser(claims)
+			userPtr, err := getUser(claims)
 			if err != nil {
-				errors.Err(err)
+				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
+			if userPtr == nil {
+				err = fmt.Errorf("user is nil")
+				s.Error.Err(err)
+				return c.JSON(http.StatusInternalServerError, err.Error())
+			}
+			user := *userPtr
 			data["User"] = user
+			bodyPtr, err := GetRequestData(c)
+			if err != nil {
+				s.Error.Err(err)
+				return c.JSON(http.StatusInternalServerError, err.Error())
+			}
+			if bodyPtr == nil {
+				err = fmt.Errorf("request body nil")
+				s.Error.Err(err)
+				return c.JSON(http.StatusInternalServerError, err.Error())
+			}
+			l := types.Location{}
+			locationPtr, err := l.Hydrate(*bodyPtr, user)
+			if err != nil {
+				s.Error.Err(err)
+				return c.JSON(http.StatusInternalServerError, err.Error())
+			}
+			if locationPtr == nil {
+				err = fmt.Errorf("location is nil")
+				s.Error.Err(err)
+				return c.JSON(http.StatusInternalServerError, err.Error())
+			}
+
+			contentId, err := GetContentIdFromUrl(c)
+			if err != nil {
+				s.Error.Err(err)
+				return c.JSON(http.StatusInternalServerError, err.Error())
+			}
+			contentPtr, err := types.GetContent(contentId)
+			if err != nil {
+				s.Error.Err(err)
+				return c.JSON(http.StatusInternalServerError, err.Error())
+			}
+			if contentPtr == nil {
+				err = fmt.Errorf("content is nil")
+				s.Error.Err(err)
+				return c.JSON(http.StatusInternalServerError, err.Error())
+			}
+			content := *contentPtr
+			ls := types.Locations{}
+			id, err := ls.MergeLocations(content, user)
+			if err != nil {
+				s.Error.Err(err)
+				return c.JSON(http.StatusInternalServerError, err.Error())
+			}
+			data["id"] = id
+			return c.JSON(http.StatusInternalServerError, data)
 		}
-		return c.JSON(http.StatusOK, data)
+		err = fmt.Errorf("invalid token")
+		s.Error.Err(err)
+		data["error"] = err.Error()
+		return c.JSON(http.StatusInternalServerError, data)
 	}
 }
 
 func (c LocationController) RegisterResources(e *echo.Echo) error {
+	c.Error.Function = "GetCreate"
+
 	view := e.Group("/content/location")
 	api := e.Group("/api/content/location")
 
@@ -322,23 +412,23 @@ func (c LocationController) RegisterResources(e *echo.Echo) error {
 	resources = append(resources, res)
 	adminRolePtr, err := acl.GetRole("admin")
 	if err != nil {
-		return errors.Err(err)
+		return c.Error.Err(err)
 	}
 	var adminRole acl.Role
 	if adminRolePtr != nil {
 		adminRole = *adminRolePtr
 		err = UpdateRole(adminRole.Id, resources)
 		if err != nil {
-			return errors.Err(err)
+			return c.Error.Err(err)
 		}
 	}
 	err = UpdateResources(resources)
 	if err != nil {
-		return errors.Err(err)
+		return c.Error.Err(err)
 	}
 	err = UpdatePolicy("admin", resources)
 	if err != nil {
-		return errors.Err(err)
+		return c.Error.Err(err)
 	}
 	return nil
 }

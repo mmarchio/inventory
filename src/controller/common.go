@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"inventory/src/acl"
 	"inventory/src/db"
-	"inventory/src/errors"
 	"inventory/src/login"
 	"inventory/src/types"
 	"regexp"
@@ -23,33 +22,14 @@ type IDocument interface {
 	Hydrate(map[string]interface{}) error
 }
 
-func decodeJWT(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Verify the signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.Err(fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
-		}
-		return secretKey, nil
-	})
-	if err != nil {
-		return nil, errors.Err(err)
-	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return claims, nil
-	}
-    
-	return nil, errors.Err(fmt.Errorf("invalid token"))
-}
-
 func getUser(claims jwt.MapClaims) (*types.User, error) {
 	redis, err := db.NewRedisClient()
 	if err != nil {
-		return nil, errors.Err(err)
+		return nil, err
 	}
 	redisResponseString, err := redis.ReadJSONDocument("user", ".")
 	if err != nil {
-		return nil, errors.Err(err)
+		return nil, err
 	}
 	if redisResponseString != nil {
 		responseString := *redisResponseString
@@ -59,17 +39,17 @@ func getUser(claims jwt.MapClaims) (*types.User, error) {
 		var users types.Users
 		err = json.Unmarshal([]byte(responseString), &users)
 		if err != nil {
-			return nil, errors.Err(err)
+			return nil, err
 		}
 		for _, u := range users {
 			b, err := json.Marshal(claims)
 			if err != nil {
-				return nil, errors.Err(err)
+				return nil, err
 			}
 			msi := make(map[string]interface{})
 			err = json.Unmarshal(b, &msi)
 			if err != nil {
-				return nil, errors.Err(err)
+				return nil, err
 			}
 			if v, ok := msi["username"].(string); ok {
 				if u.Username == v {
@@ -78,14 +58,14 @@ func getUser(claims jwt.MapClaims) (*types.User, error) {
 			}
 		}
 	}
-	return nil, errors.Err(fmt.Errorf("bad redis response"))
+	return nil, fmt.Errorf("bad redis response")
 }
 
 func GetRequestData(c echo.Context) (*map[string]interface{}, error) {
 	body := make(map[string]interface{})
 	err := json.NewDecoder(c.Request().Body).Decode(&body)
 	if err != nil {
-		return nil, errors.Err(err)
+		return nil, err
 	}
 	return &body, nil
 }
@@ -103,15 +83,15 @@ func authenticateToken(c echo.Context) (map[string]interface{}, error){
 		token = bearerParts[1]
 	}
 	data["Token"] = token
-	_, err := decodeJWT(token, []byte("secret"))
+	_, err := acl.DecodeJWT(token, []byte("secret"))
 	if err != nil {
 		fmt.Printf("test err: %s\n", err.Error())
 		data["error"] = err.Error()
-		return data, errors.Err(err)
+		return data, err
 	}
 	tokenPtr, err := login.ExtendToken(token, []byte("secret"))
 	if err != nil {
-		return data, errors.Err(err)
+		return data, err
 	}
 	if tokenPtr != nil {
 		data["Token"] = token
@@ -136,13 +116,13 @@ func CreatePolicy(resource, role, permission string) (*acl.Policy, error) {
 	if polPtr != nil {
 		return polPtr, nil
 	}
-	return nil, errors.Err(fmt.Errorf("unable to create policy"))
+	return nil, fmt.Errorf("unable to create policy")
 }
 
 func UpdateRole(id string, resources acl.Resources) error {
 	rolePtr, err := acl.GetRole(id)
 	if err != nil {
-		return errors.Err(err)
+		return err
 	}
 	var role acl.Role
 	if rolePtr != nil {
@@ -151,17 +131,17 @@ func UpdateRole(id string, resources acl.Resources) error {
 	for _, resource := range resources {
 		polPtr, err := CreatePolicy(resource.URL, role.Name, role.DefaultPermisison)
 		if err != nil || polPtr == nil {
-			return errors.Err(err)
+			return err
 		}
 		role.Policies = append(role.Policies, *polPtr)
 	}
 	redis, err := db.NewRedisClient()
 	if err != nil {
-		return errors.Err(err)
+		return err
 	}
 	err = redis.CreateJSONDocument(role, "role", ".", true) 
 	if err != nil {
-		return errors.Err(err)
+		return err
 	}
 	return nil
 }
@@ -169,7 +149,7 @@ func UpdateRole(id string, resources acl.Resources) error {
 func UpdatePolicy(role string, resources acl.Resources) error {
 	dbPoliciesPtr, err := acl.GetPolicyByRole(role)
 	if err != nil {
-		return errors.Err(err)
+		return err
 	}
 	if dbPoliciesPtr != nil {
 		dbPolicies := *dbPoliciesPtr
@@ -184,7 +164,7 @@ func UpdatePolicy(role string, resources acl.Resources) error {
 			segments = append([]string{role}, segments...)
 			rolePtr, err := acl.GetRole(role)
 			if err != nil {
-				return errors.Err(err)
+				return err
 			}
 			if rolePtr != nil {
 				polPtr := acl.NewPolicy(strings.Join(segments, "-"), role, outer.URL, rolePtr.DefaultPermisison)
@@ -196,11 +176,11 @@ func UpdatePolicy(role string, resources acl.Resources) error {
 		}
 		redis, err := db.NewRedisClient()
 		if err != nil {
-			return errors.Err(err)
+			return err
 		}
 		err = redis.CreateJSONDocument(dbPolicies, "policy", ".", true)
 		if err != nil {
-			return errors.Err(err)
+			return err
 		}
 	}
 	return nil	
@@ -209,11 +189,11 @@ func UpdatePolicy(role string, resources acl.Resources) error {
 func UpdateResources(resources acl.Resources) error {
 	redis, err := db.NewRedisClient()
 	if err != nil {
-		return errors.Err(err)
+		return err
 	}
 	redisResponseString, err := redis.ReadJSONDocument("resource", ".")
 	if err != nil {
-		return errors.Err(err)
+		return err
 	}
 	if redisResponseString != nil {
 		responseString := *redisResponseString
@@ -224,7 +204,7 @@ func UpdateResources(resources acl.Resources) error {
 			dbResources := acl.Resources{}
 			err = json.Unmarshal([]byte(responseString), &dbResources)
 			if err != nil {
-				return errors.Err(err)
+				return err
 			}
 			oldLen := len(dbResources)
 			for _, outer := range resources {
@@ -239,7 +219,7 @@ func UpdateResources(resources acl.Resources) error {
 			if oldLen != newLen {
 				err = redis.CreateJSONDocument(dbResources, "resource", ".", true)
 				if err != nil {
-					return errors.Err(err)
+					return err
 				}
 			}
 		}
@@ -255,5 +235,5 @@ func GetContentIdFromUrl(c echo.Context) (string, error) {
 	if r.Match([]byte(segments[len(segments)-1])) {
 		return segments[len(segments)-1], nil
 	}
-	return "", errors.Err(fmt.Errorf("content id not found in url"))
+	return "", fmt.Errorf("content id not found in url")
 }
