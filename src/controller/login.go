@@ -9,7 +9,8 @@ import (
 	"inventory/src/login"
 	"inventory/src/types"
 	"net/http"
-	"strings"
+	"os"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -22,8 +23,8 @@ type LoginController struct{
 func (c LoginController) RegisterResources(e *echo.Echo) error {
 	c.Error.Function = "RegisterResources"
 
-	e.GET("", c.LogoutHandler())
-	e.POST("", c.ApiLoginHandler())
+	e.GET("/logout", c.LogoutHandler())
+	e.POST("/api/login", c.ApiLoginHandler())
 
 	resources := acl.Resources{}
 	res := acl.Resource{
@@ -57,23 +58,36 @@ func (c LoginController) RegisterResources(e *echo.Echo) error {
 
 func (s LoginController) LogoutHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		s.Error.Function = "LogoutHandler"
+
 		data := make(map[string]interface{})
 		bearer := c.Request().Header.Get("AUTHORIZATION")
 		if bearer == "" {
 			data["Authenticated"] = false
 			return c.Render(http.StatusOK, "index.tpl.html", data)
 		}
-		token := strings.Split(bearer, " ")[1]
-		_, err := acl.DecodeJWT(token, []byte("secret"))
-		if err != nil {
-			return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+		domain := os.Getenv("APP_DOMAIN")
+		if domain == "" {
+			err := fmt.Errorf("app domain not found")
+			s.Error.Error = err
+			s.Error.Err(err)
+			data["error"] = err.Error()
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
+
+		cookie := &http.Cookie{
+			Domain: domain,
+			Expires: time.Now(),
+		}
+		c.SetCookie(cookie)
+		data["Authenticated"] = false
 		return c.Render(http.StatusOK, "index.tpl.html", nil)
 	}
 }
 
 func (s LoginController) ApiLoginHandler() echo.HandlerFunc{
 	return func(c echo.Context) error {
+		fmt.Println("loginController:ApiLoginHandler")
 		s.Error.Function = "ApiLoginHandler"
 		s.Error.RequestUri = c.Request().RequestURI
 		msg := make(map[string]interface{})

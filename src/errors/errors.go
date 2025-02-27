@@ -1,9 +1,6 @@
 package errors
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
 	"log"
 	"os"
 	"runtime/debug"
@@ -26,41 +23,10 @@ func (c Error) Err(e error) error {
 	if e != nil {
 		c.Error = e
 		c.Message = e.Error()
-
-		r, w, _ := os.Pipe()
-		os.Stderr = w
-		debug.PrintStack()
-		w.Close()
-
-		var stderr bytes.Buffer
-		io.Copy(&stderr, r)
-		out, outerr := json.Marshal(e)
-		if outerr != nil {
-			logger.Printf(outerr.Error())
-			return outerr
-		}
-		logger.Printf(string(out))
-		return c.Error
+		c.Trace = string(debug.Stack())
+	
+		logger.Printf("\n%#v\n", c)
+		return e
 	}
 	return e
-}
-
-func Err(e Error) error {
-	if e.Error != nil {
-		r, w, _ := os.Pipe()
-		os.Stderr = w
-		debug.PrintStack()
-		w.Close()
-
-		var stderr bytes.Buffer
-		io.Copy(&stderr, r)
-		out, outerr := json.Marshal(e)
-		if outerr != nil {
-			logger.Printf(outerr.Error())
-			return outerr
-		}
-		logger.Printf(string(out))
-		return e.Error
-	}
-	return nil
 }

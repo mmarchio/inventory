@@ -37,15 +37,16 @@ if (document.getElementsByTagName("a").length > 0) {
                 page: elems[i].dataset.page
             };
             let newTitle = elems[i].dataset.title;
+            segments = url.split("/")
+            if (segments[segments.length - 1] == "logout") {
+                url = segments[0]+"//"+segments[2]
+            }
             window.history.pushState(newState, newTitle, url);
         })
     }
 }
 
 async function getPage(url, headers) {
-    if (url === "/logout") {
-        url = "/"
-    }
     try {
         const response = await fetch(url, {
           method: 'GET',

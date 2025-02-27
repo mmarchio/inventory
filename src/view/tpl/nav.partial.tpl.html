@@ -2,12 +2,15 @@
 <h1><a href="/">{{.PageTitle}}</a></h1>
 <nav>
     <ul>
+        {{if eq .Authenticated true}}
         <li><a href="/dashboard" data-token="{{.Token}}" data-page="dashboard" data-title="dashboard">Dashboard</a></li>
         <li><a href="/content/locations" data-token="{{.Token}}" data-page="locations" data-title="locations">Locations</a></li>
         <li><a href="#" data-token="{{.Token}}">Lists</a></li>
         <li><a href="#" data-token="{{.Token}}">Reports</a></li>
         <li><a href="/settings" data-token="{{.Token}}" data-page="settings" data-title="settings">Settings</a></li>
-        {{if eq .Authenticated false}}
+        <li><a href="/logout" data-token="{{.Token}}">Logout</a></li>
+        <li>Hello {{ .User.Username }}</li>
+        {{else}}
         <form action="" method="" id="login">
             <ul>
                 <li>
@@ -23,9 +26,6 @@
                 </li>
             </ul>
         </form>
-        {{else}}
-        <li><a href="/logout" data-token="{{.Token}}">Logout</a></li>
-        <li>Hello {{ .User.Username }}</li>
         {{end}}
     </ul>
 </nav>

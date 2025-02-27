@@ -34,12 +34,14 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 			return nil
 		}
 		token, err := GetBearerToken(c)
-		if e.Err(err) != nil {
-			return err
+		if err != nil {
+			e.Error = err
+			return e.Err(err)
 		}
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
 			err := fmt.Errorf("secret not found")
+			e.Error = err
 			return e.Err(err)
 		}
 		// if authorization[len(authorization)-2:len(authorization)-1] != "==" {
@@ -47,12 +49,14 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 		// }
 
 		claims, err := DecodeJWT(token, []byte("secret"))
-		if e.Err(err) != nil {
-			return err
+		if err != nil {
+			e.Error = err
+			return e.Err(err)
 		}
 		user, err := GetUser(claims)
-		if e.Err(err) != nil {
-			return err
+		if err != nil {
+			e.Error = err
+			return e.Err(err)
 		}
 		if user != nil {
 			us := *user
@@ -62,18 +66,21 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 			if policyPtr == nil {
 				err = fmt.Errorf("policy is nil")
+				e.Error = err
 				return e.Err(err)
 			}
 			policy := *policyPtr
 			if policy.IsContent {
 				auth, err := PermissionsHandler(c, policy)
-				if e.Err(err) != nil {
-					return err
+				if err != nil {
+					e.Error = err
+					return e.Err(err)
 				}
 				if auth {
 					return nil
 				} else {
 					err = fmt.Errorf("access forbidden")
+					e.Error = err
 					return e.Err(err)
 				}
 			}
@@ -175,7 +182,7 @@ func getResourcePolicy(u types.User, resource string) (*Policy, error) {
 }
 
 func skipper(c echo.Context) bool {
-	pattern := regexp.QuoteMeta(".js")+"|"+regexp.QuoteMeta(".css")
+	pattern := regexp.QuoteMeta(".js")+"|"+regexp.QuoteMeta(".css")+"|"+regexp.QuoteMeta("logout")
 	r := regexp.MustCompile(pattern)
 	if c.Request().URL.Path == "" || c.Request().URL.Path == "/" || r.Match([]byte(c.Request().URL.Path)) {
 		return true
