@@ -206,14 +206,58 @@ func (s LocationController) GetDelete() echo.HandlerFunc {
 			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
 				s.Error.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			user, err := getUser(claims)
 			if err != nil {
 				s.Error.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			data["User"] = user
+			locations := types.Locations{}
+			redis, err := db.NewRedisClient()
+			if err != nil {
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			redisResponseString, err := redis.ReadJSONDocument("content", ".")
+			if err != nil {
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			if redisResponseString == nil {
+				err = fmt.Errorf("redis response is nil")
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+			}
+			responseString := *redisResponseString
+			if len(responseString) > 0 && responseString != "" && responseString != " " {
+				if responseString[0] != '[' {
+					responseString = fmt.Sprintf("[%s]", responseString)
+				}
+				err = json.Unmarshal([]byte(responseString), &locations)
+				if err != nil {
+					s.Error.Err(err)
+					data["error"] = err.Error()
+					return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+				}
+				newLocations := types.Locations{}
+				for _, l := range locations {
+					if l.Attributes.Id == c.Param("id") {
+						continue
+					} 
+					newLocations = append(newLocations, l)
+				}
+				err = redis.CreateJSONDocument(newLocations, "content", ".", true)
+				if err != nil {
+					s.Error.Err(err)
+					data["error"] = err.Error()
+					return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+				}
+			}
 		}
 		data["PageTitle"] = "Inventory Management"
 		return c.Render(http.StatusOK, "content.locations.tpl.html", data)
@@ -265,14 +309,58 @@ func (s LocationController) PostApiCreate() echo.HandlerFunc {
 			}
 			body := *bodyPtr
 			locations := types.Locations{}
-			fmt.Printf("body: %#v", body)
-			r, err := locations.MergeLocations(body, user)
+			l := types.Location{}
+			locationPtr, err := l.Hydrate(body, user)
 			if err != nil {
-				data["error"] = err.Error()
 				s.Error.Err(err)
+				data["error"] = err.Error()
 				return c.JSON(http.StatusInternalServerError, data)
 			}
-			return c.JSON(http.StatusCreated, r)
+			if locationPtr == nil {
+				err = fmt.Errorf("location is nil")
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				return c.JSON(http.StatusInternalServerError, data)
+			}
+			location := *locationPtr
+
+			redis, err := db.NewRedisClient()
+			if err != nil {
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				c.JSON(http.StatusInternalServerError, data)
+			}
+			redisResponseString, err := redis.ReadJSONDocument("content", ".")
+			if err != nil {
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				c.JSON(http.StatusInternalServerError, data)
+			}
+			if redisResponseString == nil {
+				err = fmt.Errorf("redis response is nil")
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				c.JSON(http.StatusInternalServerError, data)
+			}
+			responseString := *redisResponseString
+			if len(responseString) > 0 && responseString[0] != '[' {
+				responseString = fmt.Sprintf("[%s]", responseString)
+			}
+			err = json.Unmarshal([]byte(responseString), &locations)
+			if err != nil {
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				c.JSON(http.StatusInternalServerError, data)
+			}
+			locations = append(locations, location)
+			err = redis.CreateJSONDocument(locations, "content", ".", true)
+			if err != nil {
+				s.Error.Err(err)
+				data["error"] = err.Error()
+				c.JSON(http.StatusInternalServerError, data)
+			}
+
+			return c.JSON(http.StatusCreated, location.Attributes.Id)
 		}
 		err = fmt.Errorf("invalid token")
 		data["error"] = err.Error()
@@ -354,7 +442,7 @@ func (s LocationController) PostApiEdit() echo.HandlerFunc {
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			data["id"] = id
-			return c.JSON(http.StatusInternalServerError, data)
+			return c.JSON(http.StatusOK, data)
 		}
 		err = fmt.Errorf("invalid token")
 		s.Error.Err(err)
@@ -402,12 +490,12 @@ func (c LocationController) RegisterResources(e *echo.Echo) error {
 	resources = append(resources, res)
 	res = acl.Resource{
 		Id: uuid.NewString(),
-		URL: "/content/api/location/create",
+		URL: "/api/content/location/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
 		Id: uuid.NewString(),
-		URL: "/content/api/location/edit",
+		URL: "/api/content/location/edit",
 	}
 	resources = append(resources, res)
 	adminRolePtr, err := acl.GetRole("admin")

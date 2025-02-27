@@ -117,22 +117,31 @@ func (c Locations) MergeLocations(msi map[string]interface{}, user User) (string
 		logger.Printf("%#v", err)
 		return "", err
 	}
+	locations := Locations{}
 	if redisResponseString != nil {
 		responseString := *redisResponseString
 		if JSONValidate([]byte(responseString), c) {
 			if responseString[0] != '[' {
 				responseString = fmt.Sprintf("[%s]", responseString)
-			}			
+			}
 			err := json.Unmarshal([]byte(responseString), &c)
 			if err != nil {
 				logger.Printf("%#v", err)
 				return "", err
 			}
-			c = append(c, loc)
+
+			for _, l := range c {
+				if l.Attributes.Id != loc.Attributes.Id {
+					locations = append(locations, l)
+				} else {
+					locations = append(locations, loc)
+				}
+			}
 		} else {
-			c = append(c, loc)
+			locations = c
+			locations = append(locations, loc)
 		}
-		err = redis.CreateJSONDocument(c, "content", ".", true)
+		err = redis.CreateJSONDocument(locations, "content", ".", true)
 		if err != nil {
 			logger.Printf("%#v", err)
 			return "", err

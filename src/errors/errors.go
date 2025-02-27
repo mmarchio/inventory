@@ -20,13 +20,13 @@ type Error struct {
 }
 
 func (c Error) Err(e error) error {
-	if e != nil {
+	if c.Error != nil {
 		c.Error = e
-		c.Message = e.Error()
+		c.Message = c.Error.Error()
 		c.Trace = string(debug.Stack())
 	
 		logger.Printf("\n%#v\n", c)
-		return e
+		return c.Error
 	}
-	return e
+	return nil
 }

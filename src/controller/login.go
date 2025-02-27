@@ -69,7 +69,6 @@ func (s LoginController) LogoutHandler() echo.HandlerFunc {
 		domain := os.Getenv("APP_DOMAIN")
 		if domain == "" {
 			err := fmt.Errorf("app domain not found")
-			s.Error.Error = err
 			s.Error.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)

@@ -35,13 +35,11 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		token, err := GetBearerToken(c)
 		if err != nil {
-			e.Error = err
 			return e.Err(err)
 		}
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
 			err := fmt.Errorf("secret not found")
-			e.Error = err
 			return e.Err(err)
 		}
 		// if authorization[len(authorization)-2:len(authorization)-1] != "==" {
@@ -50,12 +48,10 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 
 		claims, err := DecodeJWT(token, []byte("secret"))
 		if err != nil {
-			e.Error = err
 			return e.Err(err)
 		}
 		user, err := GetUser(claims)
 		if err != nil {
-			e.Error = err
 			return e.Err(err)
 		}
 		if user != nil {
@@ -66,21 +62,18 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 			if policyPtr == nil {
 				err = fmt.Errorf("policy is nil")
-				e.Error = err
 				return e.Err(err)
 			}
 			policy := *policyPtr
 			if policy.IsContent {
 				auth, err := PermissionsHandler(c, policy)
 				if err != nil {
-					e.Error = err
 					return e.Err(err)
 				}
 				if auth {
 					return nil
 				} else {
 					err = fmt.Errorf("access forbidden")
-					e.Error = err
 					return e.Err(err)
 				}
 			}
@@ -94,6 +87,7 @@ func DecodeJWT(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Verify the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+
 			err2 := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		return nil, err2
 		}
@@ -150,6 +144,7 @@ func GetUser(claims jwt.MapClaims) (*types.User, error) {
 }
 
 func getResourcePolicy(u types.User, resource string) (*Policy, error) {
+	
 	redis, err := db.NewRedisClient()
 	if err != nil {
 		return nil, err
@@ -182,7 +177,7 @@ func getResourcePolicy(u types.User, resource string) (*Policy, error) {
 }
 
 func skipper(c echo.Context) bool {
-	pattern := regexp.QuoteMeta(".js")+"|"+regexp.QuoteMeta(".css")+"|"+regexp.QuoteMeta("logout")
+	pattern := regexp.QuoteMeta(".js")+"|"+regexp.QuoteMeta(".css")+"|"+regexp.QuoteMeta("logout")+"|"+regexp.QuoteMeta("login")
 	r := regexp.MustCompile(pattern)
 	if c.Request().URL.Path == "" || c.Request().URL.Path == "/" || r.Match([]byte(c.Request().URL.Path)) {
 		return true
