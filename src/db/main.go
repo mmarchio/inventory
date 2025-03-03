@@ -4,9 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"inventory/src/errors"
 	"os"
 	"strconv"
 
+	"github.com/jackc/pgx/v5"
+    _ "github.com/jackc/pgx/v5/stdlib"
+    _ "github.com/lib/pq"
+    "database/sql"
+    _ "database/sql/driver"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -62,35 +68,34 @@ func (i Document) MarshalBinary() ([]byte, error) {
 //CreateJSONDocument saves a new JSON Document in redis
 func (r *RedisClient) CreateJSONDocument(doc IDocument, key, path string, overwrite bool) error {
     ctx := context.Background()
-    redisResponseString, err := r.ReadJSONDocument(key, path)
-    if err != nil {
-        return err
-    }
     smsi := make([]map[string]interface{}, 0)
     if !overwrite {
-        if redisResponseString != nil {
-            responseString := *redisResponseString
-            if responseString != "" && responseString != "{}" {
-                if responseString[0] == '{' {
-                    responseString = fmt.Sprintf("[%s]", responseString)
-                }
-                err = json.Unmarshal([]byte(responseString), &smsi)
-                if err != nil {
-                    return err
-                }
+        redisResponseString, err := r.ReadJSONDocument(key, path)
+        if errors.ErrOrNil(redisResponseString, err) != nil {
+            return err
+        }
+        responseString := *redisResponseString
+        if responseString != "" && responseString != "{}" {
+            if responseString[0] == '{' {
+                responseString = fmt.Sprintf("[%s]", responseString)
             }
-            msi, err := doc.ToMSI()
+            err = json.Unmarshal([]byte(responseString), &smsi)
             if err != nil {
                 return err
             }
-            smsi = append(smsi, msi)
         }
+        msi, err := doc.ToMSI()
+        if err != nil {
+            return err
+        }
+        smsi = append(smsi, msi)
+    
         _, err = r.client.JSONSet(ctx, key, path, smsi).Result()
         if err != nil {
             return err
         }
     } else {
-        _, err = r.client.JSONSet(ctx, key, path, doc).Result()
+        _, err := r.client.JSONSet(ctx, key, path, doc).Result()
         if err != nil {
             return err
         }
@@ -163,6 +168,73 @@ func (r *RedisClient) DeleteDocument(id string) error {
     if err != nil {
         return err
     }
+    return nil
+}
+
+type PostgresClient struct {
+    Pgx *pgx.Conn
+    Sqlx *sql.DB
+    Ctx context.Context
+    Tx pgx.Tx
+}
+
+func (c *PostgresClient) Open() error {
+	conn, err := pgx.Connect(c.Ctx, os.Getenv("POSTGRES_URL"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+    c.Pgx = conn
+    // host := "localhost"
+    // port := 5432
+    // user := "pguser"
+    // password := "pguser"
+    // dbname := "inventory_v2"
+    // psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+    // "password=%s dbname=%s sslmode=disable",
+    // host, port, user, password, dbname)
+
+    // conn, err := sql.Open("postgres", psqlInfo)
+    // if err != nil {
+    //     fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+    //     os.Exit(1)
+    // }
+    // c.Sqlx = conn
+    return err
+}
+
+func (c PostgresClient) Close() error {
+    return c.Pgx.Close(c.Ctx)
+}
+
+func (c PostgresClient) Commit(tx pgx.Tx) error {
+    return tx.Conn().Close(c.Ctx)
+}
+
+func (c PostgresClient) Query(q string, rs pgx.RowScanner) error {
+    err := c.Open()
+    if err != nil {
+        return err
+    }
+    // txo := pgx.TxOptions{}
+    // tx, err := c.Sqlx.BeginTx(c.Ctx, txo)
+    // if err != nil {
+    //     return err
+    // }
+    // defer c.Commit(tx)
+
+    // defer func() {
+    //     if err != nil {
+    //         tx.Rollback(context.TODO())
+    //     } else {
+    //         tx.Commit(context.TODO())
+    //     }
+    // }()
+    // row, err := tx.Query(context.TODO(), q)
+    // if err != nil {
+    //     return err
+    // }
+    // return rs.ScanRow(row) 
     return nil
 }
 

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"time"
-
+    "inventory/src/types"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
@@ -27,8 +27,79 @@ var oauth2Config = &oauth2.Config{
 }
 
 type Credentials struct {
+    types.Attributes
     Username string `json:"username"`
     Password string `json:"password"`
+}
+
+func (c Credentials) New() (*Credentials, error) {
+    credentials := c
+    attributesPtr, err := c.Attributes.New()
+    if err != nil {
+        return nil, err
+    }
+    if attributesPtr == nil {
+        return nil, fmt.Errorf("attributes is nil")
+    }
+
+    credentials.Attributes = *attributesPtr
+    return &credentials, nil
+}
+
+func (c Credentials) ToContent() (*types.Content, error) {
+    content := types.Content{}
+    content.Id = c.Id
+    jbytes, err := json.Marshal(c)
+    if err != nil {
+        return nil, err
+    }
+    content.Content = jbytes
+    return &content, nil
+}
+
+func (c Credentials) PGRead() (*Credentials, error) {
+    contentPtr, err := types.Content{}.Read(c.Id)
+    if err != nil {
+        return nil, err
+    }
+    if contentPtr == nil {
+        return nil, fmt.Errorf("content is nil")
+    }
+    content := *contentPtr
+    credentials := c
+    err = json.Unmarshal(content.Content, &credentials)
+    if err != nil {
+        return nil, err
+    }
+    return &credentials, nil
+}
+
+func (c Credentials) PGCreate() error {
+    contentPtr, err := c.ToContent()
+    if err != nil {
+        return err
+    }
+    if contentPtr == nil {
+        return fmt.Errorf("content is nil")
+    }
+    content := *contentPtr
+    return content.Create(c)
+}
+
+func (c Credentials) PGUpdate() error {
+    contentPtr, err := c.ToContent()
+    if err != nil {
+        return err
+    }
+    if contentPtr == nil {
+        return fmt.Errorf("content is nil")
+    }
+    content := *contentPtr
+    return content.Update()
+}
+
+func (c Credentials) PGDelete() error {
+    return types.Content{}.Delete(c.Id)
 }
 
 func (c Credentials) MSIHydrate(msi map[string]interface{}) (Credentials, error) {

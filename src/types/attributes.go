@@ -5,15 +5,66 @@ import (
 
 	"github.com/google/uuid"
 )
+const FORMAT = "2006-01-02T15:04:05.000000000Z"
 
 type Attributes struct {
-	Id        string    `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	CreatedBy string    `json:"createdBy"`
-	Owner     string    `json:"owner"`
-	Name      string    `json:"name"`
-	ContentType string `json:"contentType"`
+	Id        string    `json:"id" db:"id"`
+	ParentId  string `json:"parentId" db:"parent_id"`
+	RootId string `json:"rootId" db:"root_id"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
+	CreatedBy string    `json:"createdBy" db:"created_by"`
+	Owner     string    `json:"owner" db:"owner"`
+	Name      string    `json:"name" db:"name"`
+	ContentType string `json:"contentType" db:"content_type"`
+}
+
+func (c Attributes) New() (*Attributes, error) {
+	a := c
+	a.Id = uuid.NewString()
+	a.CreatedAt = time.Now()
+	a.UpdatedAt = time.Now()
+	return &a, nil
+}
+
+func (c Attributes) Columns() []string {
+	cols := []string{
+		"id",
+		"parent_id",
+		"root_id",
+		"created_at",
+		"updated_at",
+		"created_by",
+		"owner",
+		"name",
+		"content_type",
+	}
+	return cols
+}
+
+func (c Attributes) Values() []interface{} {
+	cols := make([]interface{}, 0)
+	cols = append(cols, c.Id)
+	cols = append(cols, c.ParentId)
+	cols = append(cols, c.RootId)
+	cols = append(cols, c.CreatedAt.Format(FORMAT))
+	cols = append(cols, c.UpdatedAt.Format(FORMAT))
+	cols = append(cols, c.Owner)
+	cols = append(cols, c.Name)
+	cols = append(cols, c.ContentType)
+	return cols
+}
+
+func (c Attributes) PGHydrate(content Content) *Attributes {
+	c.Id = content.Id
+	c.ParentId = content.ParentId
+	c.RootId = content.RootId
+	c.CreatedAt = content.CreatedAt
+	c.UpdatedAt = content.UpdatedAt
+	c.Owner = content.Owner
+	c.Name = content.Name
+	c.ContentType = content.ContentType
+	return &c
 }
 
 func (c *Attributes) MSIHydrate(msi map[string]interface{}) error {
@@ -49,7 +100,28 @@ func (c *Attributes) MSIHydrate(msi map[string]interface{}) error {
 	return nil
 }
 
-func (c Attributes) Merge(old, new Attributes) (*Attributes, error) {
+func (c Attributes) Merge(oldInput, newInput interface{}) (*Attributes, error) {
+	var old, new Attributes
+	if o, ok := oldInput.(map[string]interface{}); ok {
+		err := c.MSIHydrate(o)
+		if err != nil {
+			return nil, err
+		}
+		old = c
+	}
+	if o, ok := newInput.(map[string]interface{}); ok {
+		err := c.MSIHydrate(o)
+		if err != nil {
+			return nil, err
+		}
+		new = c
+	}
+	if o, ok := oldInput.(Attributes); ok {
+		old = o
+	}
+	if o, ok := newInput.(Attributes); ok {
+		new = o
+	}
 	new.Id = old.Id
 	new.CreatedAt = old.CreatedAt
 	new.CreatedBy = old.CreatedBy
@@ -81,3 +153,5 @@ func NewAttributes(createdBy *User) *Attributes {
 	}
 	return &r
 }
+
+

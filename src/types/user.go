@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"inventory/src/db"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type User struct {
@@ -20,6 +22,31 @@ type User struct {
 	Username    string     `json:"username"`
 	Password    string     `json:"password"`
 	Token       string
+}
+
+func (c User) New() (*User, error) {
+	user := c
+	attributesPtr, err := c.Attributes.New()
+	if err != nil {
+		return nil, err
+	}
+	if attributesPtr == nil {
+		return nil, fmt.Errorf("attributes is nil")
+	}
+	user.Attributes = *attributesPtr
+	user.Attributes.ContentType = "user"
+	return &user, nil
+}
+
+func (c User) ToContent() (*Content, error) {
+	content := Content{}
+	content.Attributes = c.Attributes
+	jbytes, err := json.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+	content.Content = jbytes
+	return &content, nil
 }
 
 func (c User) Merge(old, new User) (*User, error) {
@@ -241,4 +268,110 @@ func (c User) HasRole(role string) bool {
 		}
 	}
 	return false
+}
+
+func (c User) PGHydrate(content Content) (*User, error) {
+	user := c
+	attributesPtr := c.Attributes.PGHydrate(content)
+	if attributesPtr == nil {
+		return nil, fmt.Errorf("attributes are nil")
+	}
+	user.Attributes = *attributesPtr
+	err := json.Unmarshal(content.Content, &user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (c User) PGRead(id string) (*User, error) {
+	contentPtr, err := Content{}.Read(id)
+	if err != nil {
+		return nil, err
+	}
+	if contentPtr == nil {
+		return nil, fmt.Errorf("content is nil")
+	}
+	content := *contentPtr
+	return c.PGHydrate(content)
+}
+
+func (c User) PGCreate() error {
+	err := Content{}.Create(c)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c User) PGUpdate() error {
+	columns := c.Columns()
+	values := c.Values()
+	sets := []string{}
+	if len(columns) == len(values) {
+		for i := range columns {
+			sets = append(sets, fmt.Sprintf("%s = ?", columns[i]))
+		}
+	}
+	content, err := c.ToContent()
+	if err != nil {
+		return err
+	}
+	return content.Update()
+}
+
+func (c User) PGDelete() error {
+	return Content{}.Delete(c.Attributes.Id)
+}
+
+func (c User) ScanRow(rows pgx.Rows) error {
+	defer rows.Close()
+	content := Content{}
+	err := rows.Scan(&content)
+	if err != nil {
+		return err
+	}
+
+	if content.ContentType == "user" {
+		attributesPtr := c.Attributes.PGHydrate(content)
+		if attributesPtr == nil {
+			return fmt.Errorf("attributes is nil")
+		}
+
+		msi := make(map[string]interface{})
+		err = json.Unmarshal(content.Content, &msi)
+		if err != nil {
+			return err
+		}
+		userPtr, err := c.Hydrate(msi)
+		if err != nil {
+			return err
+		}
+		if userPtr == nil {
+			return fmt.Errorf("content body (user) is nil")
+		}
+		c = *userPtr
+		c.Attributes = *attributesPtr
+	}
+
+	return nil
+}
+
+func (c User) Columns() []string {
+	columns := c.Attributes.Columns()
+	return columns
+}
+
+func (c User) Values() []interface{} {
+	values := c.Attributes.Values()
+	return values
+}
+
+func UserPGRead(id string) (*User, error) {
+	u := &User{}
+	u, err := u.PGRead(id)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
 }

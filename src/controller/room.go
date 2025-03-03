@@ -78,26 +78,22 @@ func (s RoomController) GetEdit() echo.HandlerFunc {
 
 			}
 			redisResponseString, err := redis.ReadJSONDocument("content", ".")
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
+			if s.Error.ErrOrNil(redisResponseString, err) != nil {
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
-			if redisResponseString != nil {
-				responseString := *redisResponseString
-				if len(responseString) > 0 && responseString[0] != '[' {
-					responseString = fmt.Sprintf("[%s]", responseString)
+			responseString := *redisResponseString
+			if len(responseString) > 0 && responseString[0] != '[' {
+				responseString = fmt.Sprintf("[%s]", responseString)
+			}
+			if types.JSONValidate([]byte(responseString), &types.Locations{}) {
+				locations := types.Locations{}
+				err = json.Unmarshal([]byte(responseString), &locations)
+				if err != nil {
+					s.Error.Err(err)
+					data["error"] = err.Error()
+					return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 				}
-				if types.JSONValidate([]byte(responseString), &types.Locations{}) {
-					locations := types.Locations{}
-					err = json.Unmarshal([]byte(responseString), &locations)
-					if err != nil {
-						s.Error.Err(err)
-						data["error"] = err.Error()
-						return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-					}
-					data["Locations"] = locations
-				}
+				data["Locations"] = locations
 			}
 			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
 			return c.Render(http.StatusOK, "content.locations.tpl.html", data)

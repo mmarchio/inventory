@@ -237,3 +237,27 @@ func GetContentIdFromUrl(c echo.Context) (string, error) {
 	}
 	return "", fmt.Errorf("content id not found in url")
 }
+
+func AuthenticateToken(c echo.Context) (map[string]interface{}, error) {
+	data, err := authenticateToken(c)
+	if err != nil {
+		return nil, err
+	}
+	if token, ok := data["Token"].(string); ok {
+		claims, err := acl.DecodeJWT(token, []byte("secret"))
+		if err != nil {
+			return nil, err
+		}
+		userPtr, err := getUser(claims)
+		if err != nil {
+			return nil, err
+		}
+		if userPtr == nil {
+			err = fmt.Errorf("user is nil")
+			return nil, err
+		}
+		user := *userPtr
+		data["User"] = user
+	}
+	return data, nil
+}

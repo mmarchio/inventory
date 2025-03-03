@@ -218,35 +218,32 @@ func (s SettingsController) GetUserDelete() echo.HandlerFunc {
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		redisResponseString, err := redis.ReadJSONDocument("user", ".")
+		responseString := *redisResponseString
+
+		if s.Error.ErrOrNil(redisResponseString, err) != nil {
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+		}
+		if responseString[0] != '[' {
+			responseString = fmt.Sprintf("[%s]", responseString)
+		}
+		entities := types.Users{}
+		err = json.Unmarshal([]byte(responseString), &entities)
+		if err != nil {
+			s.Error.Err(err)
+			data["error"] = err.Error()
+			return c.Render(http.DefaultMaxHeaderBytes, ERRORTPL, data)
+		}
+		newEntities := types.Users{}
+		for _, entity := range entities {
+			if entity.Attributes.Id != c.Param("id") {
+				newEntities = append(newEntities, entity)
+			}
+		}
+		err = redis.UpdateJSONDocument(newEntities, "user", ".")
 		if err != nil {
 			s.Error.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		if redisResponseString != nil {
-			responseString := *redisResponseString
-			if responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			entities := types.Users{}
-			err = json.Unmarshal([]byte(responseString), &entities)
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
-				return c.Render(http.DefaultMaxHeaderBytes, ERRORTPL, data)
-			}
-			newEntities := types.Users{}
-			for _, entity := range entities {
-				if entity.Attributes.Id != c.Param("id") {
-					newEntities = append(newEntities, entity)
-				}
-			}
-			err = redis.UpdateJSONDocument(newEntities, "user", ".")
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-			}
 		}
 
 		if token, ok := data["Token"].(string); ok {
@@ -355,28 +352,24 @@ func (s SettingsController) GetRoleEdit() echo.HandlerFunc {
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		redisResponseString, err := redis.ReadJSONDocument("role", ".")
+		if s.Error.ErrOrNil(redisResponseString, err) != nil {
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+		}
+		responseString := *redisResponseString
+		if responseString[0] != '[' {
+			responseString = fmt.Sprintf("[%s]", responseString)
+		}
+		entities := acl.Roles{}
+		err = json.Unmarshal([]byte(responseString), &entities)
 		if err != nil {
 			s.Error.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
-		if redisResponseString != nil {
-			responseString := *redisResponseString
-			if responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			entities := acl.Roles{}
-			err = json.Unmarshal([]byte(responseString), &entities)
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-			}
-			for _, entity := range entities {
-				if entity.Id == c.Param("id") {
-					data["entity"] = entity
-					break
-				}
+		for _, entity := range entities {
+			if entity.Id == c.Param("id") {
+				data["entity"] = entity
+				break
 			}
 		}
 		if token, ok := data["Token"].(string); ok {
@@ -418,35 +411,31 @@ func (s SettingsController) GetRoleDelete() echo.HandlerFunc {
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		redisResponseString, err := redis.ReadJSONDocument("role", ".")
+		if s.Error.ErrOrNil(redisResponseString, err) != nil {
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+		}
+		responseString := *redisResponseString
+		if responseString[0] != '[' {
+			responseString = fmt.Sprintf("[%s]", responseString)
+		}
+		entities := acl.Roles{}
+		err = json.Unmarshal([]byte(responseString), &entities)
+		if err != nil {
+			s.Error.Err(err)
+			data["error"] = err.Error()
+			return c.Render(http.DefaultMaxHeaderBytes, ERRORTPL, data)
+		}
+		newEntities := acl.Roles{}
+		for _, entity := range entities {
+			if entity.Id != c.Param("id") {
+				newEntities = append(newEntities, entity)
+			}
+		}
+		err = redis.UpdateJSONDocument(newEntities, "role", ".")
 		if err != nil {
 			s.Error.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		if redisResponseString != nil {
-			responseString := *redisResponseString
-			if responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			entities := acl.Roles{}
-			err = json.Unmarshal([]byte(responseString), &entities)
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
-				return c.Render(http.DefaultMaxHeaderBytes, ERRORTPL, data)
-			}
-			newEntities := acl.Roles{}
-			for _, entity := range entities {
-				if entity.Id != c.Param("id") {
-					newEntities = append(newEntities, entity)
-				}
-			}
-			err = redis.UpdateJSONDocument(newEntities, "role", ".")
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-			}
 		}
 		if token, ok := data["Token"].(string); ok {
 			claims, err := acl.DecodeJWT(token, []byte("secret"))

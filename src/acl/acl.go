@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/google/uuid"
 )
 
 var logger = log.New(os.Stdout, "\n\n", log.LstdFlags | log.Lshortfile)
@@ -21,6 +22,69 @@ type Policy struct {
 	Resource string `json:"resource"`
 	Permission Permission `json:"permission"`
 	IsContent bool `json:"isContent"`
+}
+
+func (c Policy) New() (*Policy, error) {
+	var err error
+	policy := c
+	attributesPtr, err := c.Attributes.New()
+	if err != nil {
+		return nil, err
+	}
+	if attributesPtr == nil {
+		return nil, fmt.Errorf("attributes is nil")
+	}
+	policy.Attributes = *attributesPtr
+	if err != nil {
+		return nil, err
+	}
+	policy.Attributes.ContentType = "policy"
+	return &policy, nil
+}
+
+func (c Policy) ToContent() (*types.Content, error) {
+	content := types.Content{}
+	content.Attributes = c.Attributes
+	jbytes, err := json.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+	content.Content = jbytes
+	return &content, nil
+}
+
+func (c Policy) PGRead() (*Policy, error) {
+	contentPtr, err := types.Content{}.Read(c.Attributes.Id)
+	if err != nil {
+		return nil, err
+	}
+	if contentPtr == nil {
+		return nil, fmt.Errorf("content is nil")
+	}
+	content := *contentPtr
+	policy := c
+	err = json.Unmarshal(content.Content, &policy)
+	if err != nil {
+		return nil, err
+	}
+
+	return &policy, nil
+}
+
+func (c Policy) PGCreate() error {
+	return types.Content{}.Create(c)
+}
+
+func (c Policy) PGUpdate() error {
+	content, err := c.ToContent()
+	if err != nil {
+		return nil
+	}
+	return content.Update()
+}
+
+func (c Policy) PGDelete() error {
+	return types.Content{}.Delete(c.Attributes.Id)
 }
 
 func (c Policy) IsDocument() bool {
@@ -221,10 +285,73 @@ func CreateSystemPolicies() error {
 }
 
 type Role struct {
-	Id string `json:"id"`
+	types.Attributes
 	Name string `json:"name"`
 	Policies Policies `json:"policies"`
 	DefaultPermisison string `json:"defaultPermission"`
+}
+
+func (c Role) New() (*Role, error) {
+	role := c
+	attributesPtr, err := c.Attributes.New()
+	if err != nil {
+		return nil, err
+	}
+	if attributesPtr == nil {
+		return nil, fmt.Errorf("attributes is nil")
+	}
+
+	role.Attributes = *attributesPtr
+	role.Attributes.ContentType = "role"
+	return &role, nil
+}
+
+func (c Role) ToContent() (*types.Content, error) {
+	content := types.Content{}
+	content.Attributes = c.Attributes
+	jbytes, err := json.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+	content.Content = jbytes
+	return &content, nil
+}
+
+func (c Role) PGRead() (*Role, error) {
+	contentPtr, err := c.ToContent()
+	if err != nil {
+		return nil, err
+	}
+	if contentPtr == nil {
+		return nil, fmt.Errorf("content is nil")
+	}
+	content := *contentPtr
+	role := c
+	err = json.Unmarshal(content.Content, &role)
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
+
+func (c Role) PGCreate() error {
+	return types.Content{}.Create(c)
+}
+
+func (c Role) PGUpdate() error {
+	contentPtr, err := c.ToContent()
+	if err != nil {
+		return err
+	}
+	if contentPtr == nil {
+		return fmt.Errorf("content is nil")
+	}
+	content := *contentPtr
+	return content.Update()
+}
+
+func (c Role) PGDelete() error {
+	return types.Content{}.Delete(c.Attributes.Id)
 }
 
 func (c Role) IsDocument() bool {
@@ -306,8 +433,64 @@ func (c Roles) ToMSI() (map[string]interface{}, error) {
 }
 
 type Resource struct {
+	types.Attributes
 	Id string `json:"id"`
 	URL string `json:"url"`
+}
+
+func (c Resource) New() (*Resource, error) {
+	resource := c
+	resource.Id = uuid.NewString()
+	return &resource, nil
+}
+
+func (c Resource) ToContent() (*types.Content, error) {
+	content := types.Content{}
+	content.Attributes.Id = c.Id
+	content.Attributes.ContentType = "resource"
+	jbytes, err := json.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+	content.Content = jbytes
+	return &content, nil
+}
+
+func (c Resource) PGRead() (*Resource, error) {
+	contentPtr, err := types.Content{}.Read(c.Id)
+	if err != nil {
+		return nil, err
+	}
+	if contentPtr == nil {
+		return nil, fmt.Errorf("content is nil")
+	}
+	content := *contentPtr
+	resource := c
+	err = json.Unmarshal(content.Content, &resource)
+	if err != nil {
+		return nil, err
+	}
+	return &resource, nil
+}
+
+func (c Resource) PGCreate() error {
+	return types.Content{}.Create(c)
+}
+
+func (c Resource) PGUpdate() error {
+	contentPtr, err := c.ToContent()
+	if err != nil {
+		return err
+	}
+	if contentPtr == nil {
+		return fmt.Errorf("content is nil")
+	}
+	content := *contentPtr
+	return content.Update()
+}
+
+func (c Resource) PGDelete() error {
+	return types.Content{}.Delete(c.Attributes.Id)
 }
 
 func (c Resource) IsDocument() bool {

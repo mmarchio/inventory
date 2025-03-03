@@ -6,6 +6,10 @@ import (
 	"inventory/src/db"
 	"log"
 	"os"
+	"regexp"
+	"strings"
+
+	"github.com/labstack/echo/v4"
 )
 
 var logger = log.New(os.Stdout, "\n\n", log.LstdFlags | log.Lshortfile)
@@ -86,4 +90,15 @@ func GetMSIAttribute(name string, msi map[string]interface{}) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("attribute %s not found", name)
+}
+
+func GetContentIdFromUrl(c echo.Context) (string, error) {
+	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+	r := regexp.MustCompile(pattern)
+	url := c.Request().RequestURI
+	segments := strings.Split(url, "/")
+	if r.Match([]byte(segments[len(segments)-1])) {
+		return segments[len(segments)-1], nil
+	}
+	return "", fmt.Errorf("content id not found in url")
 }

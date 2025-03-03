@@ -75,43 +75,37 @@ func main() {
 			panic(err)
 		}
 		redisResponseString, err := redis.ReadJSONDocument("auth", ".")
-		if err != nil {
+		if errors.ErrOrNil(redisResponseString, err) != nil {
 			panic(err)
 		}
-		if redisResponseString != nil {
-			responseString := *redisResponseString
-			if responseString == "" || responseString == "{}" {
-				err = system_init.CreateSystemUser()
-				if err != nil {
-					panic(err)
-				}
+		responseString := *redisResponseString
+		if responseString == "" || responseString == "{}" {
+			err = system_init.CreateSystemUser()
+			if err != nil {
+				panic(err)
 			}
 		}
 		redisResponseString, err = redis.ReadJSONDocument("policy", ".")
-		if err != nil {
+		if errors.ErrOrNil(redisResponseString, err) != nil {
 			panic(err)
 		}
-		if redisResponseString != nil {
-			responseString := *redisResponseString
-			if responseString == "" || responseString == "{}" {
-				err = acl.CreateSystemPolicies()
-				if err != nil {
-					panic(err)
-				}
+		responseString = *redisResponseString
+		if responseString == "" || responseString == "{}" {
+			err = acl.CreateSystemPolicies()
+			if err != nil {
+				panic(err)
 			}
 		}
 
 		redisResponseString, err = redis.ReadJSONDocument("role", ".")
-		if err != nil {
+		if errors.ErrOrNil(redisResponseString, err) != nil {
 			panic(err)
 		}
-		if redisResponseString != nil {
-			responseString := *redisResponseString
-			if responseString == "" || responseString == "[]" {
-				err = system_init.CreateAdminRole()
-				if err != nil {
-					panic(err)
-				}
+		responseString = *redisResponseString
+		if responseString == "" || responseString == "[]" {
+			err = system_init.CreateAdminRole()
+			if err != nil {
+				panic(err)
 			}
 		}
 

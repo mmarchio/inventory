@@ -35,16 +35,28 @@ func CreateSystemUser() error {
 		Username: u.Username,
 		Password: hash,
 	}
-	
-	redis, err := db.NewRedisClient()
+	attributesPtr, err := creds.Attributes.New()
 	if err != nil {
 		return err
 	}
-	err = redis.CreateJSONDocument(creds, "auth", ".", false)
-	if err != nil {
-		return err
+	if attributesPtr == nil {
+		return fmt.Errorf("attributes is nil")
 	}
-	err = redis.CreateJSONDocument(u, "user", ".", false)
+	creds.Attributes = *attributesPtr
+
+	// redis, err := db.NewRedisClient()
+	// if err != nil {
+	// 	return err
+	// }
+	// err = redis.CreateJSONDocument(creds, "auth", ".", false)
+	// if err != nil {
+	// 	return err
+	// }
+	// err = redis.CreateJSONDocument(u, "user", ".", false)
+	// if err != nil {
+	// 	return err
+	// }
+	err = creds.PGCreate()
 	if err != nil {
 		return err
 	}
@@ -57,8 +69,16 @@ func CreateAdminRole() error {
 	if err != nil {
 		return err
 	}
-	role := acl.Role{
-		Id: uuid.NewString(),
+	role := acl.Role{}
+	attributesPtr, err := role.Attributes.New()
+	if err != nil {
+		return err
+	}
+	if attributesPtr == nil {
+		return fmt.Errorf("attributes is nil")
+	}
+	role = acl.Role{
+		Attributes: *attributesPtr,
 		Name: "admin",
 		Policies: acl.Policies{},
 		DefaultPermisison: "all",
