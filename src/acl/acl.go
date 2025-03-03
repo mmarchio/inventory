@@ -388,6 +388,23 @@ func GetRole(id string) (*Role, error) {
 	return nil, fmt.Errorf("role id: %s not found", id)
 }
 
+func GetRoles() (*Roles, error) {
+	contents, err := types.Content{}.FindAll("role")
+	if err != nil {
+		return nil, err
+	}
+	roles := Roles{}
+	for _, content := range contents {
+		role := Role{}
+		err = json.Unmarshal(content.Content, &role)
+		if err != nil {
+			return nil, err
+		}
+		roles = append(roles, role)
+	}
+	return &roles, nil
+}
+
 type Roles []Role
 
 func (c Roles) In(id string) bool {

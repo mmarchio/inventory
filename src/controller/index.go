@@ -35,7 +35,7 @@ func (s IndexController) Get() echo.HandlerFunc {
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
-		user, err := getUser(claims)
+		user, err := acl.GetUser(claims)
 		if err != nil {
 			s.Error.Err(err)
 			data["error"] = err.Error()

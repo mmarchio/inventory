@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"inventory/src/acl"
-	"inventory/src/db"
 	"inventory/src/errors"
 	"inventory/src/types"
 	"net/http"
@@ -107,7 +106,7 @@ func (s LocationController) GetEdit() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
-			userPtr, err := getUser(claims)
+			userPtr, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
@@ -127,27 +126,22 @@ func (s LocationController) GetEdit() echo.HandlerFunc {
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
 
-			msiPtr, err := types.GetContent(contentId)
+			contentPtr, err := types.GetContent(contentId)
 			if err != nil {
 				data["error"] = err.Error()
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
-			if msiPtr == nil {
+			if contentPtr == nil {
 				err = fmt.Errorf("content pointer is nil")
 				s.Error.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
-			msi := *msiPtr
-			l := types.Location{}
-			
-			location, err := l.Hydrate(msi, user)
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-			}
+			content := *contentPtr
+			location := types.Location{}
+
+			err = json.Unmarshal(content.Content, &location)
 			data["Location"] = location
 			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
 			return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
@@ -245,32 +239,13 @@ func (s LocationController) PostApiEdit() echo.HandlerFunc {
 			}
 
 			updatedLocation := *updatedLocationPtr
-			fmt.Printf("\noldLocation: %#v\n", oldLocation)
-			fmt.Printf("\nnewLocation: %#v\n", newLocation)
-			fmt.Printf("\nupdatedLocation: %#v\n", updatedLocation)
-
-			locations, err := types.GetLocations()
-			if err != nil {
-				s.Error.Err(err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			newLocations := types.Locations{}
-			for _, l := range locations {
-				if l.Attributes.Id == newLocation.Attributes.Id {
-					continue
-				}
-				newLocations = append(newLocations, l)
-			}
-			newLocations = append(newLocations, updatedLocation)
-
-			fmt.Printf("\nnewLocations: %#v", newLocations)
-			err = newLocations.Save()
+			err = updatedLocation.PGUpdate()
 			if err != nil {
 				s.Error.Err(err)
 				data["error"] = err.Error()
 				return c.JSON(http.StatusInternalServerError, data)
 			}
-			data["id"] = newLocation.Attributes.Id
+			data["id"] = updatedLocation.Attributes.Id
 			return c.JSON(204, data)
 		}
 		err = fmt.Errorf("invalid token")

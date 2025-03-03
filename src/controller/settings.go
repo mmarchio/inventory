@@ -1,17 +1,14 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"inventory/src/acl"
-	"inventory/src/db"
 	"inventory/src/errors"
 	"inventory/src/login"
 	"inventory/src/types"
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -77,7 +74,7 @@ func (s SettingsController) Get() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -110,7 +107,7 @@ func (s SettingsController) GetUserCreate() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -186,7 +183,7 @@ func (s SettingsController) GetUserEdit() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -245,7 +242,7 @@ func (s SettingsController) GetRoleCreate() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -303,34 +300,6 @@ func (s SettingsController) GetRoleEdit() echo.HandlerFunc {
 				data["permissions"] = permissions
 			}
 		}
-
-		redis, err := db.NewRedisClient()
-		if err != nil {
-			s.Error.Err(err)
-			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		redisResponseString, err := redis.ReadJSONDocument("role", ".")
-		if s.Error.ErrOrNil(redisResponseString, err) != nil {
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		responseString := *redisResponseString
-		if responseString[0] != '[' {
-			responseString = fmt.Sprintf("[%s]", responseString)
-		}
-		entities := acl.Roles{}
-		err = json.Unmarshal([]byte(responseString), &entities)
-		if err != nil {
-			s.Error.Err(err)
-			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		for _, entity := range entities {
-			if entity.Id == c.Param("id") {
-				data["entity"] = entity
-				break
-			}
-		}
 		if token, ok := data["Token"].(string); ok {
 			claims, err := acl.DecodeJWT(token, []byte("secret"))
 			if err != nil {
@@ -363,34 +332,9 @@ func (s SettingsController) GetRoleDelete() echo.HandlerFunc {
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
-		redis, err := db.NewRedisClient()
-		if err != nil {
-			s.Error.Err(err)
-			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		redisResponseString, err := redis.ReadJSONDocument("role", ".")
-		if s.Error.ErrOrNil(redisResponseString, err) != nil {
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		responseString := *redisResponseString
-		if responseString[0] != '[' {
-			responseString = fmt.Sprintf("[%s]", responseString)
-		}
-		entities := acl.Roles{}
-		err = json.Unmarshal([]byte(responseString), &entities)
-		if err != nil {
-			s.Error.Err(err)
-			data["error"] = err.Error()
-			return c.Render(http.DefaultMaxHeaderBytes, ERRORTPL, data)
-		}
-		newEntities := acl.Roles{}
-		for _, entity := range entities {
-			if entity.Id != c.Param("id") {
-				newEntities = append(newEntities, entity)
-			}
-		}
-		err = redis.UpdateJSONDocument(newEntities, "role", ".")
+		role := acl.Role{}
+		role.Attributes.Id = c.Param("id")
+		err = role.PGDelete()
 		if err != nil {
 			s.Error.Err(err)
 			data["error"] = err.Error()
@@ -402,7 +346,7 @@ func (s SettingsController) GetRoleDelete() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -435,7 +379,7 @@ func (s SettingsController) GetPolicyCreate() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -467,7 +411,7 @@ func (s SettingsController) GetPolicyEdit() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -499,7 +443,7 @@ func (s SettingsController) GetPolicyDelete() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -521,12 +465,6 @@ func (s SettingsController) PostApiUserCreate() echo.HandlerFunc {
 				return c.JSON(http.StatusOK, data)
 			}
 			s.Error.Err(err)
-			return c.JSON(http.StatusInternalServerError, data)
-		}
-		redis, err := db.NewRedisClient()
-		if err != nil {
-			s.Error.Err(err)
-			data["error"] = fmt.Sprintf("db init: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		requestBody, err := GetRequestData(c)
@@ -560,6 +498,12 @@ func (s SettingsController) PostApiUserCreate() echo.HandlerFunc {
 			data["error"] = fmt.Sprintf("user hydrate: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, err)
 		}
+		err = user.PGCreate()
+		if err != nil {
+			s.Error.Err(err)
+			data["error"] = err.Error()
+			return c.JSON(http.StatusInternalServerError, err)
+		}
 
 		hash, err := login.HashPassword(user.Password)
 		if err != nil {
@@ -575,18 +519,10 @@ func (s SettingsController) PostApiUserCreate() echo.HandlerFunc {
 		attributes := types.NewAttributes(nil)
 		user.Attributes = *attributes
 		user.Password = ""
-	
-		err = redis.CreateJSONDocument(user, "user", ".", false)
+		err = creds.PGCreate()
 		if err != nil {
 			s.Error.Err(err)
-			data["error"] = fmt.Sprintf("db write: %s", err.Error())
-			return c.JSON(http.StatusInternalServerError, data)
-		}
-	
-		err = redis.CreateJSONDocument(creds, "auth", ".", false)
-		if err != nil {
-			s.Error.Err(err)
-			data["error"] = fmt.Sprintf("redis: %s", err.Error())
+			data["error"] = err.Error()
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		return c.JSON(http.StatusOK, user.Id)
@@ -648,62 +584,63 @@ func (s SettingsController) PostApiUserEdit() echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 
-		redis, err := db.NewRedisClient()
+		userPtr, err := types.GetUser(c.Param("id"))
+		if err != nil {
+			s.Error.Err(err)
+			return c.JSON(http.StatusInternalServerError, data)
+		}
+		if userPtr == nil {
+			err = fmt.Errorf("user pointer is nil")
+			s.Error.Err(err)
+			return c.JSON(http.StatusInternalServerError, data)
+		}
+		dbUser := *userPtr
+		bodyPtr, err := GetRequestData(c)
+		if err != nil {
+			s.Error.Err(err)
+			data["error"] = err.Error()
+			return c.JSON(http.StatusInternalServerError, data)
+		}
+		if bodyPtr == nil {
+			err = fmt.Errorf("body pointer is nil")
+			s.Error.Err(err)
+			data["error"] = err.Error()
+			return c.JSON(http.StatusInternalServerError, data)
+		}
+		body := *bodyPtr
+		inputUserPtr, err := types.User{}.Hydrate(body)
+		if err != nil {
+			s.Error.Err(err)
+			data["error"] = err.Error()
+			return c.JSON(http.StatusInternalServerError, data)
+		}
+		if inputUserPtr == nil {
+			err = fmt.Errorf("input user pointer is nil")
+			s.Error.Err(err)
+			data["error"] = err.Error()
+			return c.JSON(http.StatusInternalServerError, data)
+		}
+		inputUser := *inputUserPtr
+		newUserPtr, err := inputUser.Merge(dbUser, inputUser)
+		if err != nil {
+			s.Error.Err(err)
+			data["error"] = err.Error()
+			return c.JSON(http.StatusInternalServerError, data)
+		}
+		if newUserPtr == nil {
+			err = fmt.Errorf("new user pointer is nil")
+			s.Error.Err(err)
+			data["error"] = err.Error()
+			return c.JSON(http.StatusInternalServerError, data)
+		}
+		newUser := *newUserPtr
+		err = newUser.PGUpdate()
 		if err != nil {
 			s.Error.Err(err)
 			data["error"] = err.Error()
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 
-		redisRepsonseString, err := redis.ReadJSONDocument("user", ".")
-		if err != nil {
-			s.Error.Err(err)
-			data["error"] = err.Error()
-			return c.JSON(http.StatusInternalServerError, data)
-		}
-		if redisRepsonseString != nil {
-			responseString := *redisRepsonseString
-			if responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			entities := types.Users{}
-			err = json.Unmarshal([]byte(responseString), &entities)
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
-				return c.JSON(http.StatusInternalServerError, data)
-			}
-			for _, u := range entities {
-				if u.Attributes.Id == c.Param("id") {
-					body, err := GetRequestData(c)
-					if err != nil {
-						s.Error.Err(err)
-						data["error"] = err.Error()
-						return c.JSON(http.StatusInternalServerError, data)
-					}
-					if body != nil {
-						msi := *body
-						newEntity, err := u.Hydrate(msi)
-						if err != nil {
-							s.Error.Err(err)
-							data["error"] = err.Error()
-							return c.JSON(http.StatusInternalServerError, data)
-						}
-						if newEntity != nil {
-							newEntity.Attributes.UpdatedAt = time.Now()
-							err = redis.UpdateJSONDocument(*newEntity, "user", ".")
-							if err != nil {
-								s.Error.Err(err)
-								data["error"] = err.Error()
-								return c.JSON(http.StatusInternalServerError, data)
-							}
-						}
-					}
-					break
-				}
-			}
-
-		}
 		data["msg"] = "ok"
 		return c.JSON(http.StatusOK, data)
 	}
@@ -764,28 +701,17 @@ func (s SettingsController) PostApiPolicyCreate() echo.HandlerFunc {
 			values["permission"] = v
 		}
 		policyPtr := acl.NewPolicy(values["name"], values["role"], values["resource"], values["permission"])
-		redis, err := db.NewRedisClient()
+		if policyPtr == nil {
+			fmt.Errorf("policy pointer is nil")
+			s.Error.Err(err)
+			return err
+		}
+		policy := *policyPtr
+		err = policy.PGCreate()
 		if err != nil {
 			s.Error.Err(err)
 			return err
 		}
-		policiesPtr, err := acl.GetPolicies()
-		if err != nil {
-			s.Error.Err(err)
-			return err
-		}
-		if policiesPtr != nil {
-			policies := *policiesPtr
-			if policyPtr != nil {
-				policies = append(policies, *policyPtr)
-			}
-			err = redis.CreateJSONDocument(policies, "policy", ".", true)
-			if err != nil {
-				s.Error.Err(err)
-				return err
-			}
-		}
-
 		return nil
 	}
 }

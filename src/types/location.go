@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"inventory/src/db"
 
 	"github.com/labstack/echo/v4"
 )
@@ -174,11 +173,13 @@ func (c Location) Load(e echo.Context, user User) (*Location, error) {
 		err = fmt.Errorf("content is nil")
 		return nil, err
 	}
-	outPtr, err := c.Hydrate(*contentPtr, user)
+	content := *contentPtr
+	location := c
+	err = json.Unmarshal(content.Content, &location)
 	if err != nil {
 		return nil, err
 	}
-	return outPtr, nil
+	return &location, nil
 }
 
 func (c Location) Merge(oldInput, newInput interface{}, user User) (*Location, error) {
@@ -225,22 +226,6 @@ func (c Location) Merge(oldInput, newInput interface{}, user User) (*Location, e
 	c.Address = *addressPtr
 
 	return &c, nil
-}
-
-func (c Location) Save() error {
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return err
-	}
-	return redis.CreateJSONDocument(c, "content", ".", false)
-}
-
-func (c Location) Update() error {
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return err
-	}
-	return redis.UpdateJSONDocument(c, "content", ".")
 }
 
 func GetRequestData(c echo.Context) (*map[string]interface{}, error) {
@@ -298,70 +283,6 @@ func (c Locations) Hydrate(msi []map[string]interface{}, user User) (*Locations,
 	return &locations, nil
 }
 
-func (c Locations) MergeLocations(msi map[string]interface{}, user User) (string, error) {
-	l := Location{}
-	h, err := l.Hydrate(msi, user)
-	if err != nil {
-		return "", err
-	}
-	if h == nil {
-		return "", fmt.Errorf("hydrated location is nil")
-	}
-	loc := *h
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		logger.Printf("%#v", err)
-		return "", err
-	}
-	redisResponseString, err := redis.ReadJSONDocument("content", ".")
-	if err != nil {
-		logger.Printf("%#v", err)
-		return "", err
-	}
-	locations := Locations{}
-	if redisResponseString != nil {
-		responseString := *redisResponseString
-		if JSONValidate([]byte(responseString), c) {
-			if responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			err := json.Unmarshal([]byte(responseString), &c)
-			if err != nil {
-				logger.Printf("%#v", err)
-				return "", err
-			}
-
-			for _, l := range c {
-				if l.Attributes.Id != loc.Attributes.Id {
-					locations = append(locations, l)
-				} else {
-					locations = append(locations, loc)
-				}
-			}
-		} else {
-			locations = c
-			locations = append(locations, loc)
-		}
-		err = redis.CreateJSONDocument(locations, "content", ".", true)
-		if err != nil {
-			logger.Printf("%#v", err)
-			return "", err
-		}
-	} else {
-		logger.Printf("%#v", "db response is nil")
-		return "", fmt.Errorf("db response is nil")
-	}
-	return loc.Attributes.Id, nil
-}
-
-func (c Locations) Save() error {
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return err
-	}
-	return redis.CreateJSONDocument(c, "content", ".", true)
-}
-
 func (c Locations) In(id string) bool {
 	for _, l := range c {
 		if l.Attributes.Id == id {
@@ -371,26 +292,6 @@ func (c Locations) In(id string) bool {
 	return false
 }
 
-func GetLocations() (Locations, error) {
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return nil, err
-	}
-	redisResponseString, err := redis.ReadJSONDocument("content", ".")
-	if err != nil {
-		return nil, err
-	}
-	if redisResponseString == nil {
-		return nil, fmt.Errorf("response is nil")
-	}
-	responseString := *redisResponseString
-	if len(responseString) > 0 && responseString[0] != '[' {
-		responseString = fmt.Sprintf("[%s]", responseString)
-	}
-	locations := Locations{}
-	err = json.Unmarshal([]byte(responseString), &locations)
-	if err != nil {
-		return nil, err
-	}
-	return locations, nil
+func GetLocations() (*Locations, error) {
+	return Locations{}.FindAll()
 }

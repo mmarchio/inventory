@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"inventory/src/db"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -191,92 +190,26 @@ func (c Users) In(id string) bool {
 	return false
 }
 
+func (c Users) FindAll() (*Users, error) {
+	jstring := "{\"contentType\": \"location\"}"
+	contents, err := Content{}.FindAll(jstring)
+	if err != nil {
+		return nil, err
+	}
+	users := c
+	for _, content := range contents {
+		user := User{}
+		err = json.Unmarshal(content.Content, &user)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return &users, nil
+}
+
 func GetUsers() (*Users, error) {
-	users := Users{}
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return nil, err
-	}
-	redisRepsonseString, err := redis.ReadJSONDocument("user", ".")
-	if err != nil {
-		return nil, err
-	}
-	if redisRepsonseString != nil {
-		responseString := *redisRepsonseString
-		if responseString != "" {
-			err = json.Unmarshal([]byte(responseString), &users)
-			if err != nil {
-				return nil, err
-			}
-			return &users, nil
-		}
-	}
-	return nil, fmt.Errorf("users not found")
-}
-
-func SetUser(u *User) (string, error) {
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return "", err
-	}
-
-	if u != nil {
-		value, err := json.Marshal(u)
-		if err != nil {
-			return "", err
-		}
-		d := db.Document{
-			ID:    u.Id,
-			Name:  "user",
-			Value: string(value),
-		}
-		err = redis.UpdateDocument(&d)
-		if err != nil {
-			return "", err
-		}
-		return u.Id, nil
-	}
-	return "", fmt.Errorf("user is nil")
-}
-
-func CreateUser(u *User) (string, error) {
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return "", err
-	}
-
-	if u != nil {
-		value, err := json.Marshal(u)
-		if err != nil {
-			return "", err
-		}
-		d := db.Document{
-			ID: u.Id,
-			Name:  "user",
-			Value: string(value),
-		}
-		err = redis.CreateDocument(&d)
-		if err != nil {
-			return "", err
-		}
-		return u.Id, nil
-	}
-	return "", fmt.Errorf("user is nil")
-}
-
-func DeleteUser(u *User) error {
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return err
-	}
-
-	if u != nil {
-		err = redis.DeleteDocument(u.Id)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return Users{}.FindAll()
 }
 
 func (i User) MarshalBinary() ([]byte, error) {

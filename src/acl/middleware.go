@@ -214,20 +214,11 @@ func PermissionsHandler(c echo.Context, p Policy) (bool, error) {
 		case "all":
 			return true, nil
 		case "created":
-			createdBy, err := types.GetMSIAttribute("createdBy", content)
-			if err != nil {
-				logger.Printf(err.Error())
-				return false, nil
-			}
-			if user.Attributes.Id == createdBy {
+			if user.Attributes.Id == content.Attributes.CreatedBy {
 				return true, nil
 			}
 		case "owned":
-			ownedBy, err := types.GetMSIAttribute("owner", content)
-			if err != nil {
-				return false, err
-			}
-			if user.Attributes.Id == ownedBy {
+			if user.Attributes.Id == content.Attributes.Owner {
 				return true, nil
 			}
 		default:

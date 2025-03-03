@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"inventory/src/db"
 	"log"
 	"os"
 	"regexp"
@@ -37,50 +36,8 @@ func JSONValidate(data []byte, dest interface{}) bool {
 	return err == nil
 }
 
-func GetContent(id string) (*map[string]interface{}, error) {
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		logger.Printf(err.Error())
-		return nil, err
-	}
-	redisResponseString, err := redis.ReadJSONDocument("content", ".")
-	if err != nil {
-		logger.Printf(err.Error())
-		return nil, err
-	}
-	if redisResponseString == nil {
-		err := fmt.Errorf("redis response is nil")
-		logger.Printf(err.Error())
-		return nil, err
-	}
-	responseString := *redisResponseString
-	if responseString == "" || responseString == " " {
-		err := fmt.Errorf("empty redis response")
-		logger.Printf(err.Error())
-		return nil, err
-	}
-	msi := make([]map[string]interface{}, 0)
-	if !JSONValidate([]byte(responseString), msi) {
-		err := fmt.Errorf("redis response does not contain valid json\n\n %s", responseString)
-		logger.Printf(err.Error())
-		return nil, err
-	}
-	err = json.Unmarshal([]byte(responseString), &msi)
-	if err != nil {
-		logger.Printf(err.Error())
-		return nil, err
-	}
-	for _, m := range msi {
-		cid, err := GetMSIAttribute("id", m)
-		if err != nil {
-			logger.Printf(err.Error())
-			return nil, err
-		}
-		if id == cid {
-			return &m, nil
-		}
-	}
-	return nil, fmt.Errorf("content not found")
+func GetContent(id string) (*Content, error) {
+	return Content{}.Read(id)
 }
 
 func GetMSIAttribute(name string, msi map[string]interface{}) (string, error) {

@@ -32,7 +32,7 @@ func (s ContainerController) GetCreate() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -62,7 +62,7 @@ func (s ContainerController) GetEdit() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -92,7 +92,7 @@ func (s ContainerController) GetDelete() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -147,7 +147,7 @@ func (s ContainerController) PostApiEdit() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())

@@ -31,7 +31,7 @@ func (s ZoneController) GetCreate() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
@@ -61,7 +61,7 @@ func (s ZoneController) GetEdit() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
@@ -91,7 +91,7 @@ func (s ZoneController) GetDelete() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
@@ -119,7 +119,7 @@ func (s ZoneController) PostApiCreate() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
@@ -146,7 +146,7 @@ func (s ZoneController) PostApiEdit() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())

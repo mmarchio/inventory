@@ -1,12 +1,9 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"inventory/src/acl"
-	"inventory/src/db"
 	"inventory/src/errors"
-	"inventory/src/types"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -35,7 +32,7 @@ func (s RoomController) GetCreate() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
@@ -70,31 +67,6 @@ func (s RoomController) GetEdit() echo.HandlerFunc {
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			data["User"] = user
-			redis, err := db.NewRedisClient()
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-
-			}
-			redisResponseString, err := redis.ReadJSONDocument("content", ".")
-			if s.Error.ErrOrNil(redisResponseString, err) != nil {
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-			}
-			responseString := *redisResponseString
-			if len(responseString) > 0 && responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			if types.JSONValidate([]byte(responseString), &types.Locations{}) {
-				locations := types.Locations{}
-				err = json.Unmarshal([]byte(responseString), &locations)
-				if err != nil {
-					s.Error.Err(err)
-					data["error"] = err.Error()
-					return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-				}
-				data["Locations"] = locations
-			}
 			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
 			return c.Render(http.StatusOK, "content.locations.tpl.html", data)
 		}
@@ -121,7 +93,7 @@ func (s RoomController) GetDelete() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
@@ -149,7 +121,7 @@ func (s RoomController) PostApiCreate() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
@@ -176,7 +148,7 @@ func (s RoomController) PostApiEdit() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.JSON(http.StatusInternalServerError, err.Error())
