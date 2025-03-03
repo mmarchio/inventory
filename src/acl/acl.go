@@ -3,8 +3,6 @@ package acl
 import (
 	"encoding/json"
 	"fmt"
-	"inventory/src/db"
-	"inventory/src/login"
 	"inventory/src/types"
 	"log"
 	"os"
@@ -80,7 +78,7 @@ func (c Policy) PGUpdate() error {
 	if err != nil {
 		return nil
 	}
-	return content.Update()
+	return content.Update(c)
 }
 
 func (c Policy) PGDelete() error {
@@ -90,7 +88,6 @@ func (c Policy) PGDelete() error {
 func (c Policy) IsDocument() bool {
 	return true
 }
-
 
 func (c Policy) ToMSI() (map[string]interface{}, error) {
 	r := make(map[string]interface{})
@@ -107,8 +104,34 @@ func (c Policy) ToMSI() (map[string]interface{}, error) {
 
 type Policies []Policy
 
+func (c Policies) In(id string) bool {
+	for _, o := range c {
+		if o.Attributes.Id == id {
+			return true
+		}
+	}
+	return false
+}
+
 func (c Policies) IsDocument() bool {
 	return true
+}
+
+func (c Policies) FindPolicies() (*Policies, error) {
+	content, err := types.Content{}.FindAll("policy")
+	if err != nil {
+		return nil, err
+	}
+	r := Policies{}
+	for _, c := range content {
+		policy := Policy{}
+		err = json.Unmarshal(c.Content, &policy)
+		if err != nil {
+			return nil, err
+		}
+		r = append(r, policy)
+	}
+	return &r, nil
 }
 
 func (c Policies) ToMSI() (map[string]interface{}, error) {
@@ -133,11 +156,7 @@ func CreatePolicy(name, role, resource string) error {
 		pol := NewPolicy(name, role, resource, rolePtr.DefaultPermisison)
 		if pol != nil {
 			p := *pol
-			redis, err := db.NewRedisClient()
-			if err != nil {
-				return err
-			}
-			err = redis.CreateJSONDocument(p, "policy", ".", false)
+			err = p.PGCreate()
 			if err != nil {
 				return err
 			}
@@ -166,29 +185,14 @@ func NewPolicy(name, role, resource, permission string) *Policy {
 }
 
 func GetPolicies() (*Policies, error) {
-	redis, err := db.NewRedisClient()
+	policiesPtr, err := Policies{}.FindPolicies()
 	if err != nil {
 		return nil, err
 	}
-	redisResponseString, err := redis.ReadJSONDocument("policy", ".")
-	if err != nil {
-		return nil, err
+	if policiesPtr == nil {
+		return nil, fmt.Errorf("policies is nil")
 	}
-	if redisResponseString != nil {
-		responseString := *redisResponseString
-		if responseString != "" {
-			if responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			policies := Policies{}
-			err := json.Unmarshal([]byte(responseString), &policies)
-			if err != nil {
-				return nil, err
-			}
-			return &policies, nil
-		}
-	}
-	return nil, fmt.Errorf("no policies found")
+	return policiesPtr, nil
 }
 
 func GetPolicyByRole(role string) (*Policies, error) {
@@ -271,16 +275,13 @@ func CreateSystemPolicies() error {
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return err
-	}
+	
 	for _, p := range policies {
-		err = redis.CreateJSONDocument(p, "policy", ".", false)
+		err := p.PGCreate()
 		if err != nil {
 			return err
 		}
-		}
+	}
 	return nil
 }
 
@@ -347,7 +348,7 @@ func (c Role) PGUpdate() error {
 		return fmt.Errorf("content is nil")
 	}
 	content := *contentPtr
-	return content.Update()
+	return content.Update(c)
 }
 
 func (c Role) PGDelete() error {
@@ -372,7 +373,7 @@ func (c Role) ToMSI() (map[string]interface{}, error) {
 }
 
 func GetRole(id string) (*Role, error) {
-	rolesPtr, err := GetRoles()
+	rolesPtr, err := FindRoles()
 	if err != nil {
 		return nil, err
 	}
@@ -389,30 +390,30 @@ func GetRole(id string) (*Role, error) {
 
 type Roles []Role
 
-func GetRoles() (*Roles, error) {
-	roles := Roles{}
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return nil, err
-	}
-	redisRepsonseString, err := redis.ReadJSONDocument("role", ".")
-	if err != nil {
-		return nil, err
-	}
-	if redisRepsonseString != nil {
-		responseString := *redisRepsonseString
-		if responseString != "" {
-			if responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			err = json.Unmarshal([]byte(responseString), &roles)
-			if err != nil {
-				return nil, err
-			}
-			return &roles, nil
+func (c Roles) In(id string) bool {
+	for _, o := range c {
+		if o.Attributes.Id == id {
+			return true
 		}
 	}
-	return nil, fmt.Errorf("roles not found")
+	return false
+}
+
+func FindRoles() (*Roles, error) {
+	content, err := types.Content{}.FindAll("role")
+	if err != nil {
+		return nil, err
+	}
+	r := Roles{}
+	for _, c := range content {
+		role := Role{}
+		err = json.Unmarshal(c.Content, &role)
+		if err != nil {
+			return nil, err
+		}
+		r = append(r, role)
+	}
+	return &r, nil
 }
 
 func (c Roles) IsDocument() bool {
@@ -486,7 +487,7 @@ func (c Resource) PGUpdate() error {
 		return fmt.Errorf("content is nil")
 	}
 	content := *contentPtr
-	return content.Update()
+	return content.Update(c)
 }
 
 func (c Resource) PGDelete() error {
@@ -512,6 +513,15 @@ func (c Resource) ToMSI() (map[string]interface{}, error) {
 
 type Resources []Resource
 
+func (c Resources) In(id string) bool {
+	for _, o := range c {
+		if o.Attributes.Id == id {
+			return true
+		}
+	}
+	return false
+}
+
 func (c Resources) IsDocument() bool {
 	return true
 }
@@ -529,60 +539,21 @@ func (c Resources) ToMSI() (map[string]interface{}, error) {
 	return r, nil
 }
 
-func GetResource(url string) (*Resource, error) {
-	redis, err := db.NewRedisClient()
+func FindResources() (*Resources, error) {
+	content, err := types.Content{}.FindAll("resource")
 	if err != nil {
 		return nil, err
 	}
-
-	redisResponseString, err := redis.ReadJSONDocument("resource", ".")
-	if err != nil {
-		return nil, err
-	}
-	if redisResponseString != nil {
-		responseString := *redisResponseString
-		if responseString == "" {
-			return nil, nil
-		} 
-		if responseString[0] != '[' {
-			responseString = fmt.Sprintf("[%s]", responseString)
-		}
-		resources := Resources{}
-		err = json.Unmarshal([]byte(responseString), &resources)
+	r := Resources{}
+	for _, c := range content {
+		resource := Resource{}
+		err = json.Unmarshal(c.Content, &resource)
 		if err != nil {
 			return nil, err
 		}
-		for _, r := range resources {
-		if r.URL == url {
-			return &r, nil
-		}
-		}
+		r = append(r, resource)
 	}
-
-	err = fmt.Errorf("not found")
-	return nil, err
-}
-
-func authenticateToken(c echo.Context) (map[string]interface{}, error){
-	data := make(map[string]interface{})
-	bearer := c.Request().Header.Get("AUTHORIZATION")
-	if bearer == "" {
-		data["Authenticated"] = false
-		return data, fmt.Errorf("bearer not found")
-	}
-	fmt.Printf("bearer: %s\n", bearer)
-	bearerParts := strings.Split(bearer, " ")
-	var token string
-	if len(bearerParts) > 1 {
-		token = bearerParts[1]
-		fmt.Printf("token: %s\n", token)
-	}
-	fmt.Printf("request: %s\n\n", c.Request().RequestURI)
-
-	login.ExtendToken(token, []byte("secret"))
-	data["Authenticated"] = true
-	data["Token"] = token
-	return data, nil
+	return &r, nil
 }
 
 type Permission struct {
@@ -591,6 +562,23 @@ type Permission struct {
 }
 
 type Permissions []Permission
+
+func FindPermissions() (*Permissions, error) {
+	content, err := types.Content{}.FindAll("permission")
+	if err != nil {
+		return nil, err
+	}
+	r := Permissions{}
+	for _, c := range content {
+		permission := Permission{}
+		err = json.Unmarshal(c.Content, &permission)
+		if err != nil {
+			return nil, err
+		}
+		r = append(r, permission)
+	}
+	return &r, nil
+}
 
 func GetBearerToken(c echo.Context) (string, error) {
 	bearer := c.Request().Header.Get("AUTHORIZATION")

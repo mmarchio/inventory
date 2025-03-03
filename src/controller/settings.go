@@ -211,57 +211,16 @@ func (s SettingsController) GetUserDelete() echo.HandlerFunc {
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
-		redis, err := db.NewRedisClient()
+		user := types.User{}
+		user.Attributes.Id = c.Param("id")
+		err = user.PGDelete()
 		if err != nil {
 			s.Error.Err(err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		redisResponseString, err := redis.ReadJSONDocument("user", ".")
-		responseString := *redisResponseString
-
-		if s.Error.ErrOrNil(redisResponseString, err) != nil {
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		if responseString[0] != '[' {
-			responseString = fmt.Sprintf("[%s]", responseString)
-		}
-		entities := types.Users{}
-		err = json.Unmarshal([]byte(responseString), &entities)
-		if err != nil {
-			s.Error.Err(err)
-			data["error"] = err.Error()
-			return c.Render(http.DefaultMaxHeaderBytes, ERRORTPL, data)
-		}
-		newEntities := types.Users{}
-		for _, entity := range entities {
-			if entity.Attributes.Id != c.Param("id") {
-				newEntities = append(newEntities, entity)
-			}
-		}
-		err = redis.UpdateJSONDocument(newEntities, "user", ".")
-		if err != nil {
-			s.Error.Err(err)
-			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-
-		if token, ok := data["Token"].(string); ok {
-			claims, err := acl.DecodeJWT(token, []byte("secret"))
-			if err != nil {
-				s.Error.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			user, err := getUser(claims)
-			if err != nil {
-				s.Error.Err(err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
 		}
 
 		data["msg"] = "user deleted"
-		data["PageTitle"] = "Inventory Management"
 		return c.Render(http.StatusOK, "dashboard.tpl.html", data)
 	}
 }
@@ -378,7 +337,7 @@ func (s SettingsController) GetRoleEdit() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())

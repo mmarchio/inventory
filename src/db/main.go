@@ -178,6 +178,13 @@ type PostgresClient struct {
     Tx pgx.Tx
 }
 
+func NewPostgresClient() (*PostgresClient, error) {
+    pg := PostgresClient{
+        Ctx: context.Background(),
+    }
+    return &pg, nil
+}
+
 func (c *PostgresClient) Open() error {
 	conn, err := pgx.Connect(c.Ctx, os.Getenv("POSTGRES_URL"))
 	if err != nil {

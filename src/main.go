@@ -10,7 +10,6 @@ import (
 
 	"inventory/src/acl"
 	"inventory/src/controller"
-	"inventory/src/db"
 	"inventory/src/errors"
 	system_init "inventory/src/init"
 
@@ -70,43 +69,19 @@ func main() {
 			templates: template.Must(template.ParseGlob("view/tpl/*.tpl.html")),
 		}
 
-		redis, err := db.NewRedisClient()
+		err = system_init.CreateSystemUser()
 		if err != nil {
 			panic(err)
 		}
-		redisResponseString, err := redis.ReadJSONDocument("auth", ".")
-		if errors.ErrOrNil(redisResponseString, err) != nil {
+
+		err = acl.CreateSystemPolicies()
+		if err != nil {
 			panic(err)
-		}
-		responseString := *redisResponseString
-		if responseString == "" || responseString == "{}" {
-			err = system_init.CreateSystemUser()
-			if err != nil {
-				panic(err)
-			}
-		}
-		redisResponseString, err = redis.ReadJSONDocument("policy", ".")
-		if errors.ErrOrNil(redisResponseString, err) != nil {
-			panic(err)
-		}
-		responseString = *redisResponseString
-		if responseString == "" || responseString == "{}" {
-			err = acl.CreateSystemPolicies()
-			if err != nil {
-				panic(err)
-			}
 		}
 
-		redisResponseString, err = redis.ReadJSONDocument("role", ".")
-		if errors.ErrOrNil(redisResponseString, err) != nil {
+		err = system_init.CreateAdminRole()
+		if err != nil {
 			panic(err)
-		}
-		responseString = *redisResponseString
-		if responseString == "" || responseString == "[]" {
-			err = system_init.CreateAdminRole()
-			if err != nil {
-				panic(err)
-			}
 		}
 
 		logger := log.New(os.Stdout, "", log.LstdFlags | log.Lshortfile)

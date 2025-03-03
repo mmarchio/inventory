@@ -59,3 +59,12 @@ func (c Zones) Hydrate(msi []map[string]interface{}) (*Zones, error) {
 	}
 	return &zones, nil
 }
+
+func (c Zones) In(id string) bool {
+	for _, o := range c {
+		if o.Attributes.Id == id {
+			return true
+		}
+	}
+	return false
+}

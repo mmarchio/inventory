@@ -1,10 +1,8 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"inventory/src/acl"
-	"inventory/src/db"
 	"inventory/src/errors"
 	"inventory/src/login"
 	"inventory/src/types"
@@ -90,12 +88,6 @@ func (s LoginController) ApiLoginHandler() echo.HandlerFunc{
 		s.Error.Function = "ApiLoginHandler"
 		s.Error.RequestUri = c.Request().RequestURI
 		msg := make(map[string]interface{})
-		redis, err := db.NewRedisClient()
-		if err != nil {
-			s.Error.Err(err)
-			msg["error"] = fmt.Sprintf("redis: %s", err.Error())
-			return c.JSON(http.StatusInternalServerError, msg)
-		}
 		requestBody, err := GetRequestData(c) 
 		if err != nil {
 			s.Error.Err(err)
@@ -113,48 +105,47 @@ func (s LoginController) ApiLoginHandler() echo.HandlerFunc{
 		if v, ok := body["password"].(string); ok {
 			creds.Password = v
 		}
-		res, err := redis.ReadJSONDocument("auth", ".")
+		jstring := fmt.Sprintf("{\"username\":\"%s\"}", creds.Username)
+		authPtr, err := login.Credentials{}.FindBy(jstring)
+		if err != nil {
+			s.Error.Err(err)
+			msg["error"] = err.Error()
+			return c.JSON(http.StatusBadRequest, msg)
+		}
+		if authPtr == nil {
+			err = fmt.Errorf("auth ptr is nil")
+			s.Error.Err(err)
+			msg["error"] = err.Error()
+			return c.JSON(http.StatusBadRequest, msg)
+		}
+		dbCreds := *authPtr
+		auth, err := login.Login(creds.Username, creds.Password, dbCreds.Password)
 		if err != nil {
 			s.Error.Err(err)
 			msg["error"] = fmt.Sprintf("redis: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, msg)
 		}
-		var jsonRes string
-		if res != nil {
-			jsonRes = *res
-		}
-		if jsonRes[0] != '[' {
-			jsonRes = fmt.Sprintf("[%s]", jsonRes)
-		}
-		users := types.Users{}
-		err = json.Unmarshal([]byte(jsonRes), &users)
-		if err != nil {
-			s.Error.Err(err)
-			msg["error"] = fmt.Sprintf("json: %s", err.Error())
-			msg["input"] = jsonRes
-			return c.JSON(http.StatusInternalServerError, msg)
-		}
-	
-		for _, u := range users {
-			if u.Username == creds.Username {
-				auth, err := login.Login(u.Username, creds.Password, u.Password)
-				if err != nil {
-					s.Error.Err(err)
-					msg["error"] = fmt.Sprintf("auth: %s", err.Error())
-					return c.JSON(http.StatusInternalServerError, msg)
-				}
-				if auth != nil {
-					c.SetCookie(auth)
-					c.Set("Authenticated", true)
-					c.Set("user", u)
-					c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", auth.Value))
-					msg["authenticated"] = true
-					msg["token"] = auth.Value;
-					return c.JSON(http.StatusOK, msg)
-				}
+		if auth != nil {
+			userPtr, err := types.User{}.FindBy(jstring)
+			if err != nil {
+				s.Error.Err(err)
+				msg["error"] = err.Error()
+				return c.JSON(http.StatusInternalServerError, msg)
 			}
+			if userPtr == nil {
+				err := fmt.Errorf("user point is nil")
+				s.Error.Err(err)
+				msg["error"] = fmt.Sprintf("redis: %s", err.Error())
+				return c.JSON(http.StatusInternalServerError, msg)
+			}
+			c.SetCookie(auth)
+			c.Set("Authenticated", true)
+			c.Set("user", *userPtr)
+			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", auth.Value))
+			msg["authenticated"] = true
+			msg["token"] = auth.Value;
+			return c.JSON(http.StatusOK, msg)
 		}
-	
 		msg["error"] = "user not found"
 		return c.JSON(http.StatusNotFound, msg)
 	}

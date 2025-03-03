@@ -34,31 +34,19 @@ func (s LocationController) Get() echo.HandlerFunc {
 			c.Set("user", user.Id)
 			data["Authenticated"] = true
 			data["User"] = user
-			redis, err := db.NewRedisClient()
+			locationsPtr, err := types.Locations{}.FindAll()
 			if err != nil {
 				data["error"] = err.Error()
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-
 			}
-			redisResponseString, err := redis.ReadJSONDocument("content", ".")
-			if s.Error.ErrOrNil(redisResponseString, err) != nil {
+			if locationsPtr == nil {
+				data["error"] = fmt.Errorf("locations is nil")
+				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
-			responseString := *redisResponseString
-			if len(responseString) > 0 && responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			if types.JSONValidate([]byte(responseString), &types.Locations{}) {
-				locations := types.Locations{}
-				err = json.Unmarshal([]byte(responseString), &locations)
-				if err != nil {
-					data["error"] = err.Error()
-					s.Error.Err(err)
-					return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-				}
-				data["Locations"] = locations
-			}
+			locations := *locationsPtr
+			data["Locations"] = locations
 			if token, ok := data["Token"].(string); ok {
 				c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
 			}
@@ -89,7 +77,7 @@ func (s LocationController) GetCreate() echo.HandlerFunc {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
-			user, err := getUser(claims)
+			user, err := acl.GetUser(claims)
 			if err != nil {
 				s.Error.Err(err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
@@ -182,41 +170,13 @@ func (s LocationController) GetDelete() echo.HandlerFunc {
 		data["PageTitle"] = "Inventory Management"
 		if user, ok := data["User"].(types.User); ok {
 			data["User"] = user
-			locations := types.Locations{}
-			redis, err := db.NewRedisClient()
+			l := types.Location{}
+			l.Attributes.Id = c.Param("id")
+			err = l.PGDelete()
 			if err != nil {
 				s.Error.Err(err)
 				data["error"] = err.Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-			}
-			redisResponseString, err := redis.ReadJSONDocument("content", ".")
-			if s.Error.ErrOrNil(redisResponseString, err) != nil {
-				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-			}
-			responseString := *redisResponseString
-			if len(responseString) > 0 && responseString != "" && responseString != " " {
-				if responseString[0] != '[' {
-					responseString = fmt.Sprintf("[%s]", responseString)
-				}
-				err = json.Unmarshal([]byte(responseString), &locations)
-				if err != nil {
-					s.Error.Err(err)
-					data["error"] = err.Error()
-					return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-				}
-				newLocations := types.Locations{}
-				for _, l := range locations {
-					if l.Attributes.Id == c.Param("id") {
-						continue
-					} 
-					newLocations = append(newLocations, l)
-				}
-				err = redis.CreateJSONDocument(newLocations, "content", ".", true)
-				if err != nil {
-					s.Error.Err(err)
-					data["error"] = err.Error()
-					return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-				}
 			}
 		}
 		data["PageTitle"] = "Inventory Management"
@@ -240,37 +200,13 @@ func (s LocationController) PostApiCreate() echo.HandlerFunc {
 			if s.Error.ErrOrNil(locationPtr, err) != nil {
 				return c.JSON(http.StatusInternalServerError, data)
 			}
-			locations := types.Locations{}
 			location := *locationPtr
-			redis, err := db.NewRedisClient()
+			err = location.PGCreate()
 			if err != nil {
 				s.Error.Err(err)
 				data["error"] = err.Error()
 				c.JSON(http.StatusInternalServerError, data)
 			}
-			redisResponseString, err := redis.ReadJSONDocument("content", ".")
-			if s.Error.ErrOrNil(redisResponseString, err) != nil {
-				return c.JSON(http.StatusInternalServerError, data)
-			}
-			responseString := *redisResponseString
-
-			if len(responseString) > 0 && responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
-			}
-			err = json.Unmarshal([]byte(responseString), &locations)
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
-				c.JSON(http.StatusInternalServerError, data)
-			}
-			locations = append(locations, location)
-			err = redis.CreateJSONDocument(locations, "content", ".", true)
-			if err != nil {
-				s.Error.Err(err)
-				data["error"] = err.Error()
-				c.JSON(http.StatusInternalServerError, data)
-			}
-
 			return c.JSON(http.StatusCreated, location.Attributes.Id)
 		}
 		err = fmt.Errorf("invalid token")

@@ -165,6 +165,32 @@ func GetUser(id string) (*User, error) {
 	return nil, fmt.Errorf("user id: %s not found", id)
 }
 
+func (c User) FindBy(jstring string) (*User, error) {
+	contentPtr, err := Content{}.FindBy(jstring)
+	if err != nil {
+		return nil, err
+	}
+	if contentPtr == nil {
+		return nil, fmt.Errorf("content is nil")
+	}
+	content := *contentPtr
+	user := User{}
+	err = json.Unmarshal(content.Content, &user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (c Users) In(id string) bool {
+	for _, o := range c {
+		if o.Attributes.Id == id {
+			return true
+		}
+	}
+	return false
+}
+
 func GetUsers() (*Users, error) {
 	users := Users{}
 	redis, err := db.NewRedisClient()
@@ -317,7 +343,7 @@ func (c User) PGUpdate() error {
 	if err != nil {
 		return err
 	}
-	return content.Update()
+	return content.Update(c)
 }
 
 func (c User) PGDelete() error {

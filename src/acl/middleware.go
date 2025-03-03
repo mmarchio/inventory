@@ -3,7 +3,6 @@ package acl
 import (
 	"encoding/json"
 	"fmt"
-	"inventory/src/db"
 	"inventory/src/errors"
 	"inventory/src/types"
 	"os"
@@ -107,73 +106,45 @@ func DecodeJWT(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
 }
 
 func GetUser(claims jwt.MapClaims) (*types.User, error) {
-	redis, err := db.NewRedisClient()
+	b, err := json.Marshal(claims)
 	if err != nil {
 		return nil, err
 	}
-	redisResponseString, err := redis.ReadJSONDocument("user", ".")
+	msi := make(map[string]interface{})
+	err = json.Unmarshal(b, &msi)
 	if err != nil {
 		return nil, err
 	}
-	if redisResponseString != nil {
-		responseString := *redisResponseString
-		if responseString[0] != '[' {
-			responseString = fmt.Sprintf("[%s]", responseString)
-		}
-		var users types.Users
-		err = json.Unmarshal([]byte(responseString), &users)
-		if err != nil {
-			return nil, err
-		}
-		for _, u := range users {
-			b, err := json.Marshal(claims)
-			if err != nil {
-				return nil, err
-			}
-			msi := make(map[string]interface{})
-			err = json.Unmarshal(b, &msi)
-			if v, ok := msi["username"].(string); ok {
-				if u.Username == v {
-					return &u, nil
-				}
-			}
-		}
+	var jstring string
+	if v, ok := msi["username"].(string); ok {
+		jstring = fmt.Sprintf("{\"username\": \"%s\"}", v)
 	}
-	err = fmt.Errorf("bad redis response")
-	return nil, err
+	userPtr, err := types.User{}.FindBy(jstring)
+	if err != nil {
+		return nil, err
+	}
+	if userPtr == nil {
+		return nil, fmt.Errorf("user is nil")
+	}
+	return userPtr, nil
 }
 
 func getResourcePolicy(u types.User, resource string) (*Policy, error) {
-	
-	redis, err := db.NewRedisClient()
+	policiesPtr, err := Policies{}.FindPolicies()
 	if err != nil {
 		return nil, err
 	}
-	redisResponseString, err := redis.ReadJSONDocument("policy", ".")
-	if err != nil {
-		return nil, err
+	if policiesPtr == nil {
+		return nil, fmt.Errorf("policies is nil")
 	}
-	if redisResponseString != nil {
-		responseString := *redisResponseString
-
-		if responseString[0] != '[' {
-			responseString = fmt.Sprintf("[%s]", responseString)
-		}		
-
-		policies := Policies{}
-		err = json.Unmarshal([]byte(responseString),&policies)
-		if err != nil {
-			return nil, err
-		}
-		for _, p := range policies {
-			resource = pathToResource(resource)
-			if resource == p.Resource && u.HasRole(p.Role) {
-				return &p, nil
-			}
+	policies := *policiesPtr
+	for _, p := range policies {
+		resource = pathToResource(resource)
+		if resource == p.Resource && u.HasRole(p.Role) {
+			return &p, nil
 		}
 	}
-	err = fmt.Errorf("%s", resource)
-	return nil, err
+	return nil, fmt.Errorf("%s", resource)
 }
 
 func skipper(c echo.Context) bool {

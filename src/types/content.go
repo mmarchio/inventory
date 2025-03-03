@@ -44,7 +44,7 @@ func (c Content) Create(object IContent) error {
 	newVals := make([]interface{}, 0)
 	newVals = append(newVals, vals...)
 	if pg.Pgx == nil {
-		panic("sqlx is nil")
+		panic("pgx is nil")
 	}
 	_, err = pg.Pgx.Exec(
 		pg.Ctx,
@@ -52,8 +52,8 @@ func (c Content) Create(object IContent) error {
 		content.Attributes.Id, 
 		content.Attributes.ParentId, 
 		content.Attributes.RootId,
-		content.Attributes.CreatedAt.Format(FORMAT),
-		content.Attributes.UpdatedAt.Format(FORMAT),
+		content.Attributes.CreatedAt.Unix(),
+		content.Attributes.UpdatedAt.Unix(),
 		content.Attributes.CreatedBy,
 		content.Attributes.Owner,
 		content.Attributes.Name,
@@ -84,7 +84,7 @@ func (c Content) Read(id string) (*Content, error) {
 	}
 	defer pg.Close()
 
-	rows, err := pg.Sqlx.Query("SELECT * FROM content WHERE id = ?", id)
+	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE id = $1", id)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,50 @@ func (c Content) Read(id string) (*Content, error) {
 	return &c, nil
 }
 
-func (c Content) Update() error {
+func (c Content) FindAll(t string) ([]Content, error) {
+	pg, err := db.NewPostgresClient()
+	if err != nil {
+		return nil, err
+	}
+	err = pg.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer pg.Close()
+	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE content_type = $1", t)
+	if err != nil {
+		return nil, err
+	}
+	r := make([]Content, 0)
+	for rows.Next() {
+		content := Content{}
+		err = rows.Scan(&content)
+		if err != nil {
+			return nil, err
+		}
+		r = append(r, content)
+	}
+	return r, nil
+}
+
+func (c Content) FindBy(jstring string) (*Content, error) {
+	pg, err := db.NewPostgresClient()
+	if err != nil {
+		return nil, err
+	}
+	r := c
+	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE content @> $1", jstring)
+	if err != nil {
+		return nil, err
+	}
+	err = rows.Scan(&r)
+	if err != nil {
+		return nil, err
+	}
+	return &r, nil
+}
+
+func (c Content) Update(object IContent) error {
 	pg := db.PostgresClient{
 		Ctx: context.Background(),
 	}
@@ -105,12 +148,20 @@ func (c Content) Update() error {
 		return err
 	}
 	defer pg.Close()
-	q := fmt.Sprintf("UPDATE ? SET %s WHERE id = ?", c.UpdateString())
-	_, values := c.Values()
-	_, err = pg.Sqlx.Query(q, c.ContentType, values)
+	err = c.Delete(c.Attributes.Id)
 	if err != nil {
 		return err
 	}
+	err = c.Create(object)
+	if err != nil {
+		return err
+	}
+	// q := fmt.Sprintf("UPDATE content SET %s WHERE id = ?", c.UpdateString())
+	// _, values := c.Values()
+	// _, err = pg.Sqlx.Query(q, c.ContentType, values)
+	// if err != nil {
+	// 	return err
+	// }
 	return nil
 }
 
@@ -132,7 +183,7 @@ func (c Content) Delete(id string) error {
 		return err
 	}
 	defer pg.Close()
-	_, err = pg.Sqlx.Query("DELETE FROM ? WHERE id = ?", c.ContentType, id)
+	_, err = pg.Sqlx.Query("DELETE FROM content WHERE id = $1", id)
 	if err != nil {
 		return err
 	}

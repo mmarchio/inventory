@@ -44,6 +44,15 @@ func (c Item) Hydrate(msi map[string]interface{}) (*Item, error) {
 
 type Items []Item 
 
+func (c Items) In(id string) bool {
+	for _, o := range c {
+		if o.Attributes.Id == id {
+			return true
+		}
+	}
+	return false
+}
+
 func (c Items) Hydrate(msi []map[string]interface{}) (*Items, error) {
 	items := c
 	for _, r := range msi {

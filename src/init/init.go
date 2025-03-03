@@ -7,8 +7,6 @@ import (
 	"inventory/src/types"
 	"time"
 
-	"inventory/src/db"
-
 	"github.com/google/uuid"
 )
 
@@ -44,31 +42,27 @@ func CreateSystemUser() error {
 	}
 	creds.Attributes = *attributesPtr
 
-	// redis, err := db.NewRedisClient()
-	// if err != nil {
-	// 	return err
-	// }
-	// err = redis.CreateJSONDocument(creds, "auth", ".", false)
-	// if err != nil {
-	// 	return err
-	// }
-	// err = redis.CreateJSONDocument(u, "user", ".", false)
-	// if err != nil {
-	// 	return err
-	// }
+	creds.Attributes.ParentId = creds.Attributes.Id
+	creds.Attributes.RootId = creds.Attributes.Id
+	creds.Attributes.Owner = creds.Attributes.Id
+	creds.Attributes.ContentType = "credentials"
 	err = creds.PGCreate()
 	if err != nil {
 		return err
+	}
+	u.Attributes.ParentId = u.Attributes.Id
+	u.Attributes.RootId = u.Attributes.Id
+	u.Attributes.Owner = u.Attributes.Id
+	u.Attributes.ContentType = "user"
+	err = u.PGCreate()
+	if err != nil {
+		return nil
 	}
 	fmt.Printf("System user created:\nUsername: system\nPassword: %s", password)
 	return nil
 }
 
 func CreateAdminRole() error {
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return err
-	}
 	role := acl.Role{}
 	attributesPtr, err := role.Attributes.New()
 	if err != nil {
@@ -83,7 +77,7 @@ func CreateAdminRole() error {
 		Policies: acl.Policies{},
 		DefaultPermisison: "all",
 	}
-	err = redis.CreateJSONDocument(role, "role", ".", false)
+	err = role.PGCreate()
 	if err != nil {
 		return err
 	}
@@ -92,6 +86,11 @@ func CreateAdminRole() error {
 	policies := acl.Policies{}
 	policies = append(policies, *logoutPolicy)
 	policies = append(policies, *createPolicyPolicy)
-	err = redis.CreateJSONDocument(logoutPolicy, "policy", ".", false)
-	return err
+	for _, p := range policies {
+		err = p.PGCreate()
+		if err != nil {
+			return err
+		}
+	}
+	return logoutPolicy.PGCreate()
 }

@@ -75,7 +75,7 @@ func (c Location) PGUpdate() error {
 	}
 	content := *contentPtr
 	
-	return content.Update()
+	return content.Update(c)
 }
 
 func (c Location) PGDelete() error {
@@ -258,6 +258,26 @@ func (c Locations) IsDocument() bool {
 	return true
 }
 
+func (c Locations) FindAll() (*Locations, error) {
+	content, err := Content{}.FindAll("location")
+	if err != nil {
+		return nil, err
+	}
+	if content == nil {
+		return nil, err
+	}
+	locations := c 
+	for _, cont := range content {
+		location := Location{}
+		err = json.Unmarshal(cont.Content, &location)
+		if err != nil {
+			return nil, err
+		}
+		locations = append(locations, location)
+	}
+	return &locations, nil
+}
+
 func (c Locations) ToMSI() (map[string]interface{}, error) {
 	return toMSI(c)
 }
@@ -340,6 +360,15 @@ func (c Locations) Save() error {
 		return err
 	}
 	return redis.CreateJSONDocument(c, "content", ".", true)
+}
+
+func (c Locations) In(id string) bool {
+	for _, l := range c {
+		if l.Attributes.Id == id {
+			return true
+		}
+	}
+	return false
 }
 
 func GetLocations() (Locations, error) {

@@ -4,13 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"inventory/src/acl"
-	"inventory/src/db"
 	"inventory/src/login"
-	"inventory/src/types"
 	"regexp"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,45 +17,6 @@ type IDocument interface {
 	IsDocument() bool
 	ToMSI() (map[string]interface{}, error)
 	Hydrate(map[string]interface{}) error
-}
-
-func getUser(claims jwt.MapClaims) (*types.User, error) {
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return nil, err
-	}
-	redisResponseString, err := redis.ReadJSONDocument("user", ".")
-	if err != nil {
-		return nil, err
-	}
-	if redisResponseString != nil {
-		responseString := *redisResponseString
-		if responseString[0] != '[' {
-			responseString = fmt.Sprintf("[%s]", responseString)
-		}
-		var users types.Users
-		err = json.Unmarshal([]byte(responseString), &users)
-		if err != nil {
-			return nil, err
-		}
-		for _, u := range users {
-			b, err := json.Marshal(claims)
-			if err != nil {
-				return nil, err
-			}
-			msi := make(map[string]interface{})
-			err = json.Unmarshal(b, &msi)
-			if err != nil {
-				return nil, err
-			}
-			if v, ok := msi["username"].(string); ok {
-				if u.Username == v {
-					return &u, nil
-				}
-			}
-		}
-	}
-	return nil, fmt.Errorf("bad redis response")
 }
 
 func GetRequestData(c echo.Context) (*map[string]interface{}, error) {
@@ -135,11 +93,7 @@ func UpdateRole(id string, resources acl.Resources) error {
 		}
 		role.Policies = append(role.Policies, *polPtr)
 	}
-	redis, err := db.NewRedisClient()
-	if err != nil {
-		return err
-	}
-	err = redis.CreateJSONDocument(role, "role", ".", true) 
+	err = role.PGCreate()
 	if err != nil {
 		return err
 	}
@@ -174,53 +128,40 @@ func UpdatePolicy(role string, resources acl.Resources) error {
 				}
 			}
 		}
-		redis, err := db.NewRedisClient()
-		if err != nil {
-			return err
-		}
-		err = redis.CreateJSONDocument(dbPolicies, "policy", ".", true)
-		if err != nil {
-			return err
+		for _, policy := range dbPolicies {
+			err = policy.PGCreate()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil	
 }
 
 func UpdateResources(resources acl.Resources) error {
-	redis, err := db.NewRedisClient()
+	dbResourcesPtr, err := acl.FindResources()
 	if err != nil {
 		return err
 	}
-	redisResponseString, err := redis.ReadJSONDocument("resource", ".")
-	if err != nil {
-		return err
+	if dbResourcesPtr == nil {
+		return fmt.Errorf("resources is nil")
 	}
-	if redisResponseString != nil {
-		responseString := *redisResponseString
-		if responseString != "" {
-			if responseString[0] != '[' {
-				responseString = fmt.Sprintf("[%s]", responseString)
+	dbResources := *dbResourcesPtr
+	oldLen := len(dbResources)
+	for _, outer := range resources {
+		for _, inner := range dbResources {
+			if outer.URL == inner.URL {
+				continue
 			}
-			dbResources := acl.Resources{}
-			err = json.Unmarshal([]byte(responseString), &dbResources)
+		}
+		dbResources = append(dbResources, outer)				
+	}
+	newLen := len(dbResources)
+	if oldLen != newLen {
+		for _, r := range dbResources {
+			err = r.PGCreate()
 			if err != nil {
 				return err
-			}
-			oldLen := len(dbResources)
-			for _, outer := range resources {
-				for _, inner := range dbResources {
-					if outer.URL == inner.URL {
-						continue
-					}
-				}
-				dbResources = append(dbResources, outer)				
-			}
-			newLen := len(dbResources)
-			if oldLen != newLen {
-				err = redis.CreateJSONDocument(dbResources, "resource", ".", true)
-				if err != nil {
-					return err
-				}
 			}
 		}
 	}
@@ -248,7 +189,7 @@ func AuthenticateToken(c echo.Context) (map[string]interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		userPtr, err := getUser(claims)
+		userPtr, err := acl.GetUser(claims)
 		if err != nil {
 			return nil, err
 		}

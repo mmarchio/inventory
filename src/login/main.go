@@ -95,11 +95,28 @@ func (c Credentials) PGUpdate() error {
         return fmt.Errorf("content is nil")
     }
     content := *contentPtr
-    return content.Update()
+    return content.Update(c)
 }
 
 func (c Credentials) PGDelete() error {
     return types.Content{}.Delete(c.Id)
+}
+
+func (c Credentials) FindBy(jstring string) (*Credentials, error) {
+    contentPtr, err := types.Content{}.FindBy(jstring)
+    if err != nil {
+        return nil, err
+    }
+    if contentPtr == nil {
+        return nil, fmt.Errorf("content pointer is nil")
+    }
+    content := *contentPtr
+    credentials := c
+    err = json.Unmarshal(content.Content, &credentials)
+    if err != nil {
+        return nil, err
+    }
+    return &credentials, nil
 }
 
 func (c Credentials) MSIHydrate(msi map[string]interface{}) (Credentials, error) {
