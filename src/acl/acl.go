@@ -5,14 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"inventory/src/types"
-	"log"
-	"os"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 )
-
-var logger = log.New(os.Stdout, "\n\n", log.LstdFlags | log.Lshortfile)
 
 type Permission struct {
 	Name string `json:"name"`
