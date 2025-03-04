@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -23,9 +24,9 @@ type User struct {
 	Token       string
 }
 
-func (c User) New() (*User, error) {
+func (c User) New(ctx context.Context) (*User, error) {
 	user := c
-	attributesPtr, err := c.Attributes.New()
+	attributesPtr, err := c.Attributes.New(ctx, )
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func (c User) New() (*User, error) {
 	return &user, nil
 }
 
-func (c User) ToContent() (*Content, error) {
+func (c User) ToContent(ctx context.Context) (*Content, error) {
 	content := Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
@@ -48,8 +49,8 @@ func (c User) ToContent() (*Content, error) {
 	return &content, nil
 }
 
-func (c User) Merge(old, new User) (*User, error) {
-	attributesPtr, err := c.Attributes.Merge(old.Attributes, new.Attributes)
+func (c User) Merge(ctx context.Context, old, new User) (*User, error) {
+	attributesPtr, err := c.Attributes.Merge(ctx, old.Attributes, new.Attributes)
 	if err != nil {
 		return nil, err
 	}
@@ -83,30 +84,30 @@ func (c User) Merge(old, new User) (*User, error) {
 	return &new, nil
 }
 
-func (c User) ToMSI() (map[string]interface{}, error) {
-	return toMSI(c)
+func (c User) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+	return toMSI(ctx, c)
 }
 
 type Users []User
 
-func (c Users) IsDocument() bool {
+func (c Users) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Users) ToMSI() (map[string]interface{}, error) {
-	return toMSI(c)
+func (c Users) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+	return toMSI(ctx, c)
 }
 
-func NewUser() *User {
+func NewUser(ctx context.Context) *User {
 	u := User{}
-	u.Attributes = *NewAttributes(nil)
+	u.Attributes = *NewAttributes(ctx, nil)
 	return &u
 }
 
-func (c User) Hydrate(msi map[string]interface{}) (*User, error) {
+func (c User) Hydrate(ctx context.Context, msi map[string]interface{}) (*User, error) {
 	u := User{}
 	if m, ok := msi["attributes"].(map[string]interface{}); ok {
-		u.Attributes.MSIHydrate(m)
+		u.Attributes.MSIHydrate(ctx, m)
 	}
 	if v, ok := msi["roles"].(string); ok {
 		u.Roles = []string{v}
@@ -148,8 +149,8 @@ func (c User) Hydrate(msi map[string]interface{}) (*User, error) {
 	return &u, nil
 }
 
-func GetUser(id string) (*User, error) {
-	usersPtr, err := GetUsers()
+func GetUser(ctx context.Context, id string) (*User, error) {
+	usersPtr, err := GetUsers(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +165,8 @@ func GetUser(id string) (*User, error) {
 	return nil, fmt.Errorf("user id: %s not found", id)
 }
 
-func (c User) FindBy(jstring string) (*User, error) {
-	contentPtr, err := Content{}.FindBy(jstring)
+func (c User) FindBy(ctx context.Context, jstring string) (*User, error) {
+	contentPtr, err := Content{}.FindBy(ctx, jstring)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +182,7 @@ func (c User) FindBy(jstring string) (*User, error) {
 	return &user, nil
 }
 
-func (c Users) In(id string) bool {
+func (c Users) In(ctx context.Context, id string) bool {
 	for _, o := range c {
 		if o.Attributes.Id == id {
 			return true
@@ -190,9 +191,9 @@ func (c Users) In(id string) bool {
 	return false
 }
 
-func (c Users) FindAll() (*Users, error) {
+func (c Users) FindAll(ctx context.Context) (*Users, error) {
 	jstring := "{\"contentType\": \"location\"}"
-	contents, err := Content{}.FindAll(jstring)
+	contents, err := Content{}.FindAll(ctx, jstring)
 	if err != nil {
 		return nil, err
 	}
@@ -208,19 +209,19 @@ func (c Users) FindAll() (*Users, error) {
 	return &users, nil
 }
 
-func GetUsers() (*Users, error) {
-	return Users{}.FindAll()
+func GetUsers(ctx context.Context) (*Users, error) {
+	return Users{}.FindAll(ctx)
 }
 
-func (i User) MarshalBinary() ([]byte, error) {
+func (i User) MarshalBinary(ctx context.Context) ([]byte, error) {
 	return json.Marshal(i)
 }
 
-func (c User) IsDocument() bool {
+func (c User) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c User) HasRole(role string) bool {
+func (c User) HasRole(ctx context.Context, role string) bool {
 	for _, v := range c.Roles {
 		if v == role {
 			return true
@@ -229,9 +230,9 @@ func (c User) HasRole(role string) bool {
 	return false
 }
 
-func (c User) PGHydrate(content Content) (*User, error) {
+func (c User) PGHydrate(ctx context.Context, content Content) (*User, error) {
 	user := c
-	attributesPtr := c.Attributes.PGHydrate(content)
+	attributesPtr := c.Attributes.PGHydrate(ctx, content)
 	if attributesPtr == nil {
 		return nil, fmt.Errorf("attributes are nil")
 	}
@@ -243,8 +244,8 @@ func (c User) PGHydrate(content Content) (*User, error) {
 	return &user, nil
 }
 
-func (c User) PGRead(id string) (*User, error) {
-	contentPtr, err := Content{}.Read(id)
+func (c User) PGRead(ctx context.Context, id string) (*User, error) {
+	contentPtr, err := Content{}.Read(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -252,38 +253,39 @@ func (c User) PGRead(id string) (*User, error) {
 		return nil, fmt.Errorf("content is nil")
 	}
 	content := *contentPtr
-	return c.PGHydrate(content)
+	return c.PGHydrate(ctx, content)
 }
 
-func (c User) PGCreate() error {
-	err := Content{}.Create(c)
+func (c User) PGCreate(ctx context.Context) error {
+	err := Content{}.Create(ctx, c)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c User) PGUpdate() error {
-	columns := c.Columns()
-	values := c.Values()
+func (c User) PGUpdate(ctx context.Context) error {
+	columns := c.Columns(ctx)
+	values := c.Values(ctx)
 	sets := []string{}
 	if len(columns) == len(values) {
 		for i := range columns {
 			sets = append(sets, fmt.Sprintf("%s = ?", columns[i]))
 		}
 	}
-	content, err := c.ToContent()
+	content, err := c.ToContent(ctx)
 	if err != nil {
 		return err
 	}
-	return content.Update(c)
+	return content.Update(ctx, c)
 }
 
-func (c User) PGDelete() error {
-	return Content{}.Delete(c.Attributes.Id)
+func (c User) PGDelete(ctx context.Context) error {
+	return Content{}.Delete(ctx, c.Attributes.Id)
 }
 
 func (c User) ScanRow(rows pgx.Rows) error {
+	ctx := context.Background()
 	defer rows.Close()
 	content := Content{}
 	err := rows.Scan(&content)
@@ -292,7 +294,7 @@ func (c User) ScanRow(rows pgx.Rows) error {
 	}
 
 	if content.ContentType == "user" {
-		attributesPtr := c.Attributes.PGHydrate(content)
+		attributesPtr := c.Attributes.PGHydrate(ctx, content)
 		if attributesPtr == nil {
 			return fmt.Errorf("attributes is nil")
 		}
@@ -302,7 +304,7 @@ func (c User) ScanRow(rows pgx.Rows) error {
 		if err != nil {
 			return err
 		}
-		userPtr, err := c.Hydrate(msi)
+		userPtr, err := c.Hydrate(ctx, msi)
 		if err != nil {
 			return err
 		}
@@ -316,19 +318,19 @@ func (c User) ScanRow(rows pgx.Rows) error {
 	return nil
 }
 
-func (c User) Columns() []string {
-	columns := c.Attributes.Columns()
+func (c User) Columns(ctx context.Context) []string {
+	columns := c.Attributes.Columns(ctx)
 	return columns
 }
 
-func (c User) Values() []interface{} {
-	values := c.Attributes.Values()
+func (c User) Values(ctx context.Context) []interface{} {
+	values := c.Attributes.Values(ctx)
 	return values
 }
 
-func UserPGRead(id string) (*User, error) {
+func UserPGRead(ctx context.Context, id string) (*User, error) {
 	u := &User{}
-	u, err := u.PGRead(id)
+	u, err := u.PGRead(ctx, id)
 	if err != nil {
 		return nil, err
 	}

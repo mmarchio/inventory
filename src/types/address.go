@@ -1,6 +1,9 @@
 package types
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type Address struct {
 	Attributes
@@ -12,19 +15,19 @@ type Address struct {
 	Country  string `json:"country"`
 }
 
-func NewAddress(createdBy *User) (*Address, error) {
+func NewAddress(ctx context.Context, createdBy *User) (*Address, error) {
 	address := Address{}
-	attributesPtr := NewAttributes(createdBy)
+	attributesPtr := NewAttributes(ctx, createdBy)
 	if attributesPtr != nil {
 		address.Attributes = *attributesPtr
 	}
 	return &address, nil
 }
 
-func (c Address) Merge(oldInput, newInput interface{}) (*Address, error) {
+func (c Address) Merge(ctx context.Context, oldInput, newInput interface{}) (*Address, error) {
 	var old, new Address
 	if o, ok := oldInput.(map[string]interface{}); ok {
-		oldPtr, err := c.Hydrate(o)
+		oldPtr, err := c.Hydrate(ctx, o)
 		if err != nil {
 			return nil, err
 		}
@@ -35,7 +38,7 @@ func (c Address) Merge(oldInput, newInput interface{}) (*Address, error) {
 		old = *oldPtr
 	}
 	if o, ok := newInput.(map[string]interface{}); ok {
-		newPtr, err := c.Hydrate(o)
+		newPtr, err := c.Hydrate(ctx, o)
 		if err != nil {
 			return nil, err
 		}
@@ -52,7 +55,7 @@ func (c Address) Merge(oldInput, newInput interface{}) (*Address, error) {
 		new = o
 	}
 	
-	attributesPtr, err := old.Attributes.Merge(old.Attributes, new.Attributes)
+	attributesPtr, err := old.Attributes.Merge(ctx, old.Attributes, new.Attributes)
 	if err != nil {
 		return nil, err
 	}
@@ -77,18 +80,18 @@ func (c Address) Merge(oldInput, newInput interface{}) (*Address, error) {
 	return &new, nil
 }
 
-func (c Address) IsDocument() bool {
+func (c Address) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Address) ToMSI() (map[string]interface{}, error) {
-	return toMSI(c)
+func (c Address) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+	return toMSI(ctx, c)
 }
 
-func (c Address) Hydrate(msi map[string]interface{}) (*Address, error) {
+func (c Address) Hydrate(ctx context.Context, msi map[string]interface{}) (*Address, error) {
 	address := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
-		err := c.Attributes.MSIHydrate(v)
+		err := c.Attributes.MSIHydrate(ctx, v)
 		if err != nil {
 			return nil, err
 		}

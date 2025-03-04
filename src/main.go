@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"io"
@@ -47,6 +48,7 @@ func JWTSkipper(c echo.Context) bool {
 }
 
 func main() {
+	ctx := context.Background()
 		ierr := errors.Error{
 			Package: "main",
 		}
@@ -59,7 +61,7 @@ func main() {
 		wd, err := os.Getwd()
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 		e.Static("/", wd+"/static")
@@ -75,25 +77,24 @@ func main() {
 			templates: template.Must(template.ParseGlob("view/tpl/*.tpl.html")),
 		}
 
-		err = system_init.CreateSystemUser()
+		err = system_init.CreateSystemUser(ctx)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
-		err = acl.CreateSystemPolicies()
+		err = acl.CreateSystemPolicies(ctx)
 		if err != nil {
-			fmt.Println("\ntrace(0): main:createsystempolicies:exec:panic\n")
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
-		err = system_init.CreateAdminRole()
+		err = system_init.CreateAdminRole(ctx)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
@@ -109,7 +110,7 @@ func main() {
 		err = indexController.RegisterResources(e)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
@@ -123,7 +124,7 @@ func main() {
 		err = dashboardController.RegisterResources(e)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
@@ -137,7 +138,7 @@ func main() {
 		err = settingsController.RegisterResources(e)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
@@ -150,7 +151,7 @@ func main() {
 		err = locationController.RegisterResources(e)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
@@ -163,7 +164,7 @@ func main() {
 		err = roomController.RegisterResources(e)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
@@ -176,7 +177,7 @@ func main() {
 		err = zoneController.RegisterResources(e)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
@@ -189,7 +190,7 @@ func main() {
 		err = containerController.RegisterResources(e)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
@@ -202,7 +203,7 @@ func main() {
 		err = itemController.RegisterResources(e)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 
@@ -215,7 +216,7 @@ func main() {
 		err = loginController.RegisterResources(e)
 		if err != nil {
 			ierr.Error = err
-			ierr.Err(err)
+			ierr.Err(ctx, err)
 			panic(err)
 		}
 

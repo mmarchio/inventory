@@ -1,6 +1,7 @@
 package login
 
 import (
+    "context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,9 +33,9 @@ type Credentials struct {
     Password string `json:"password"`
 }
 
-func (c Credentials) New() (*Credentials, error) {
+func (c Credentials) New(ctx context.Context) (*Credentials, error) {
     credentials := c
-    attributesPtr, err := c.Attributes.New()
+    attributesPtr, err := c.Attributes.New(ctx)
     if err != nil {
         return nil, err
     }
@@ -46,7 +47,7 @@ func (c Credentials) New() (*Credentials, error) {
     return &credentials, nil
 }
 
-func (c Credentials) ToContent() (*types.Content, error) {
+func (c Credentials) ToContent(ctx context.Context) (*types.Content, error) {
     content := types.Content{}
     content.Id = c.Id
     jbytes, err := json.Marshal(c)
@@ -57,8 +58,8 @@ func (c Credentials) ToContent() (*types.Content, error) {
     return &content, nil
 }
 
-func (c Credentials) PGRead() (*Credentials, error) {
-    contentPtr, err := types.Content{}.Read(c.Id)
+func (c Credentials) PGRead(ctx context.Context) (*Credentials, error) {
+    contentPtr, err := types.Content{}.Read(ctx, c.Id)
     if err != nil {
         return nil, err
     }
@@ -74,8 +75,8 @@ func (c Credentials) PGRead() (*Credentials, error) {
     return &credentials, nil
 }
 
-func (c Credentials) PGCreate() error {
-    contentPtr, err := c.ToContent()
+func (c Credentials) PGCreate(ctx context.Context) error {
+    contentPtr, err := c.ToContent(ctx)
     if err != nil {
         return err
     }
@@ -83,11 +84,11 @@ func (c Credentials) PGCreate() error {
         return fmt.Errorf("content is nil")
     }
     content := *contentPtr
-    return content.Create(c)
+    return content.Create(ctx, c)
 }
 
-func (c Credentials) PGUpdate() error {
-    contentPtr, err := c.ToContent()
+func (c Credentials) PGUpdate(ctx context.Context) error {
+    contentPtr, err := c.ToContent(ctx)
     if err != nil {
         return err
     }
@@ -95,15 +96,15 @@ func (c Credentials) PGUpdate() error {
         return fmt.Errorf("content is nil")
     }
     content := *contentPtr
-    return content.Update(c)
+    return content.Update(ctx, c)
 }
 
-func (c Credentials) PGDelete() error {
-    return types.Content{}.Delete(c.Id)
+func (c Credentials) PGDelete(ctx context.Context) error {
+    return types.Content{}.Delete(ctx, c.Id)
 }
 
-func (c Credentials) FindBy(jstring string) (*Credentials, error) {
-    contentPtr, err := types.Content{}.FindBy(jstring)
+func (c Credentials) FindBy(ctx context.Context, jstring string) (*Credentials, error) {
+    contentPtr, err := types.Content{}.FindBy(ctx, jstring)
     if err != nil {
         return nil, err
     }
@@ -119,7 +120,7 @@ func (c Credentials) FindBy(jstring string) (*Credentials, error) {
     return &credentials, nil
 }
 
-func (c Credentials) MSIHydrate(msi map[string]interface{}) (Credentials, error) {
+func (c Credentials) MSIHydrate(ctx context.Context, msi map[string]interface{}) (Credentials, error) {
     r := Credentials{}
     if v, ok := msi["username"].(string); ok {
         r.Username = v
@@ -130,7 +131,7 @@ func (c Credentials) MSIHydrate(msi map[string]interface{}) (Credentials, error)
     return r, nil
 }
 
-func (c Credentials) ToMSI() (map[string]interface{}, error) {
+func (c Credentials) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
@@ -143,7 +144,7 @@ func (c Credentials) ToMSI() (map[string]interface{}, error) {
 	return r, nil
 }
 
-func (c Credentials) IsDocument() bool {
+func (c Credentials) IsDocument(ctx context.Context) bool {
     return true
 }
 
@@ -152,7 +153,7 @@ type Claims struct {
     jwt.StandardClaims
 }
 
-func Login(username, userValue, dbValue string) (*http.Cookie, error) {
+func Login(ctx context.Context, username, userValue, dbValue string) (*http.Cookie, error) {
     creds := Credentials{
         Username: username,
     }
@@ -175,7 +176,7 @@ func Login(username, userValue, dbValue string) (*http.Cookie, error) {
         return nil, err
     }
 
-    test, err := decodeJWT(tokenString, []byte("secret"))
+    test, err := decodeJWT(ctx, tokenString, []byte("secret"))
     if err != nil {
         return nil, err
     }
@@ -197,8 +198,8 @@ func Login(username, userValue, dbValue string) (*http.Cookie, error) {
     return r, nil
 }
 
-func ExtendToken(tokenString string, secret []byte) (*string, error) {
-    claims, err := decodeJWT(tokenString, secret)
+func ExtendToken(ctx context.Context, tokenString string, secret []byte) (*string, error) {
+    claims, err := decodeJWT(ctx, tokenString, secret)
     if err != nil {
         return nil, err
     }
@@ -311,7 +312,7 @@ func VerifyPassword(password, hash string) bool {
     return err == nil
 }
 
-func decodeJWT(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
+func decodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Verify the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

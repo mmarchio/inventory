@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"inventory/src/acl"
@@ -19,7 +20,7 @@ type IDocument interface {
 	Hydrate(map[string]interface{}) error
 }
 
-func GetRequestData(c echo.Context) (*map[string]interface{}, error) {
+func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
 	body := make(map[string]interface{})
 	err := json.NewDecoder(c.Request().Body).Decode(&body)
 	if err != nil {
@@ -28,7 +29,7 @@ func GetRequestData(c echo.Context) (*map[string]interface{}, error) {
 	return &body, nil
 }
 
-func authenticateToken(c echo.Context) (map[string]interface{}, error){
+func authenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error){
 	data := make(map[string]interface{})
 	bearer := c.Request().Header.Get("AUTHORIZATION")
 	if bearer == "" {
@@ -41,13 +42,13 @@ func authenticateToken(c echo.Context) (map[string]interface{}, error){
 		token = bearerParts[1]
 	}
 	data["Token"] = token
-	_, err := acl.DecodeJWT(token, []byte("secret"))
+	_, err := acl.DecodeJWT(ctx, token, []byte("secret"))
 	if err != nil {
 		fmt.Printf("test err: %s\n", err.Error())
 		data["error"] = err.Error()
 		return data, err
 	}
-	tokenPtr, err := login.ExtendToken(token, []byte("secret"))
+	tokenPtr, err := login.ExtendToken(ctx, token, []byte("secret"))
 	if err != nil {
 		return data, err
 	}
@@ -58,7 +59,7 @@ func authenticateToken(c echo.Context) (map[string]interface{}, error){
 	return data, nil
 }
 
-func CreatePolicy(resource, role, permission string) (*acl.Policy, error) {
+func CreatePolicy(ctx context.Context, resource, role, permission string) (*acl.Policy, error) {
 	segments := strings.Split(resource, "/")
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
@@ -70,15 +71,15 @@ func CreatePolicy(resource, role, permission string) (*acl.Policy, error) {
 	} else {
 		name = fmt.Sprintf("%s-%s", role, strings.Join(segments[0:len(segments)-1], "-"))
 	}
-	polPtr := acl.NewPolicy(name, role, resource, permission)
+	polPtr := acl.NewPolicy(ctx, name, role, resource, permission)
 	if polPtr != nil {
 		return polPtr, nil
 	}
 	return nil, fmt.Errorf("unable to create policy")
 }
 
-func UpdateRole(id string, resources acl.Resources) error {
-	rolePtr, err := acl.GetRole(id)
+func UpdateRole(ctx context.Context, id string, resources acl.Resources) error {
+	rolePtr, err := acl.GetRole(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -87,21 +88,21 @@ func UpdateRole(id string, resources acl.Resources) error {
 		role = *rolePtr
 	}
 	for _, resource := range resources {
-		polPtr, err := CreatePolicy(resource.URL, role.Name, role.DefaultPermisison)
+		polPtr, err := CreatePolicy(ctx, resource.URL, role.Name, role.DefaultPermisison)
 		if err != nil || polPtr == nil {
 			return err
 		}
 		role.Policies = append(role.Policies, *polPtr)
 	}
-	err = role.PGCreate()
+	err = role.PGCreate(ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpdatePolicy(role string, resources acl.Resources) error {
-	dbPoliciesPtr, err := acl.GetPolicyByRole(role)
+func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) error {
+	dbPoliciesPtr, err := acl.GetPolicyByRole(ctx, role)
 	if err != nil {
 		return err
 	}
@@ -116,12 +117,12 @@ func UpdatePolicy(role string, resources acl.Resources) error {
 			}
 			segments := strings.Split(outer.URL, "/")
 			segments = append([]string{role}, segments...)
-			rolePtr, err := acl.GetRole(role)
+			rolePtr, err := acl.GetRole(ctx, role)
 			if err != nil {
 				return err
 			}
 			if rolePtr != nil {
-				polPtr := acl.NewPolicy(strings.Join(segments, "-"), role, outer.URL, rolePtr.DefaultPermisison)
+				polPtr := acl.NewPolicy(ctx, strings.Join(segments, "-"), role, outer.URL, rolePtr.DefaultPermisison)
 				if polPtr != nil {
 					pol := *polPtr
 					dbPolicies = append(dbPolicies, pol)
@@ -129,7 +130,7 @@ func UpdatePolicy(role string, resources acl.Resources) error {
 			}
 		}
 		for _, policy := range dbPolicies {
-			err = policy.PGCreate()
+			err = policy.PGCreate(ctx)
 			if err != nil {
 				return err
 			}
@@ -138,8 +139,8 @@ func UpdatePolicy(role string, resources acl.Resources) error {
 	return nil	
 }
 
-func UpdateResources(resources acl.Resources) error {
-	dbResourcesPtr, err := acl.FindResources()
+func UpdateResources(ctx context.Context, resources acl.Resources) error {
+	dbResourcesPtr, err := acl.FindResources(ctx)
 	if err != nil {
 		return err
 	}
@@ -159,7 +160,7 @@ func UpdateResources(resources acl.Resources) error {
 	newLen := len(dbResources)
 	if oldLen != newLen {
 		for _, r := range dbResources {
-			err = r.PGCreate()
+			err = r.PGCreate(ctx)
 			if err != nil {
 				return err
 			}
@@ -168,7 +169,7 @@ func UpdateResources(resources acl.Resources) error {
 	return nil
 }
 
-func GetContentIdFromUrl(c echo.Context) (string, error) {
+func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
 	url := c.Request().RequestURI
@@ -179,17 +180,17 @@ func GetContentIdFromUrl(c echo.Context) (string, error) {
 	return "", fmt.Errorf("content id not found in url")
 }
 
-func AuthenticateToken(c echo.Context) (map[string]interface{}, error) {
-	data, err := authenticateToken(c)
+func AuthenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error) {
+	data, err := authenticateToken(ctx, c)
 	if err != nil {
 		return nil, err
 	}
 	if token, ok := data["Token"].(string); ok {
-		claims, err := acl.DecodeJWT(token, []byte("secret"))
+		claims, err := acl.DecodeJWT(ctx, token, []byte("secret"))
 		if err != nil {
 			return nil, err
 		}
-		userPtr, err := acl.GetUser(claims)
+		userPtr, err := acl.GetUser(ctx, claims)
 		if err != nil {
 			return nil, err
 		}

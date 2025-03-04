@@ -1,6 +1,7 @@
 package acl
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"inventory/src/types"
@@ -20,8 +21,8 @@ type Permission struct {
 
 type Permissions []Permission
 
-func FindPermissions() (*Permissions, error) {
-	content, err := types.Content{}.FindAll("permission")
+func FindPermissions(ctx context.Context) (*Permissions, error) {
+	content, err := types.Content{}.FindAll(ctx, "permission")
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func FindPermissions() (*Permissions, error) {
 	return &r, nil
 }
 
-func GetBearerToken(c echo.Context) (string, error) {
+func GetBearerToken(ctx context.Context, c echo.Context) (string, error) {
 	bearer := c.Request().Header.Get("AUTHORIZATION")
 	if bearer == "" {
 		err := fmt.Errorf("authorization header not found")
@@ -51,16 +52,16 @@ func GetBearerToken(c echo.Context) (string, error) {
 	return parts[1], nil
 }
 
-func GetUserFromContext(c echo.Context) (*types.User, error) {
-	token, err := GetBearerToken(c)
+func GetUserFromContext(ctx context.Context, c echo.Context) (*types.User, error) {
+	token, err := GetBearerToken(ctx, c)
 	if err != nil {
 		return nil, err
 	}
-	jwt, err := DecodeJWT(token, []byte("secret"))
+	jwt, err := DecodeJWT(ctx, token, []byte("secret"))
 	if err != nil {
 		return nil, err
 	}
-	userPtr, err := GetUser(jwt)
+	userPtr, err := GetUser(ctx, jwt)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -18,7 +19,7 @@ type IDocument interface {
 	GetAttribute(string) (string, error)
 }
 
-func toMSI(c interface{}) (map[string]interface{}, error) {
+func toMSI(ctx context.Context, c interface{}) (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
@@ -31,16 +32,16 @@ func toMSI(c interface{}) (map[string]interface{}, error) {
 	return r, nil
 }
 
-func JSONValidate(data []byte, dest interface{}) bool {
+func JSONValidate(ctx context.Context, data []byte, dest interface{}) bool {
 	err := json.Unmarshal(data, &dest)
 	return err == nil
 }
 
-func GetContent(id string) (*Content, error) {
-	return Content{}.Read(id)
+func GetContent(ctx context.Context, id string) (*Content, error) {
+	return Content{}.Read(ctx, id)
 }
 
-func GetMSIAttribute(name string, msi map[string]interface{}) (string, error) {
+func GetMSIAttribute(ctx context.Context, name string, msi map[string]interface{}) (string, error) {
 	if a, ok := msi["attributes"].(map[string]interface{}); ok {
 		if v, ok := a[name].(string); ok {
 			return v, nil
@@ -49,7 +50,7 @@ func GetMSIAttribute(name string, msi map[string]interface{}) (string, error) {
 	return "", fmt.Errorf("attribute %s not found", name)
 }
 
-func GetContentIdFromUrl(c echo.Context) (string, error) {
+func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
 	url := c.Request().RequestURI

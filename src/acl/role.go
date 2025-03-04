@@ -1,6 +1,7 @@
 package acl
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"inventory/src/types"
@@ -13,9 +14,9 @@ type Role struct {
 	DefaultPermisison string `json:"defaultPermission"`
 }
 
-func (c Role) New() (*Role, error) {
+func (c Role) New(ctx context.Context) (*Role, error) {
 	role := c
-	attributesPtr, err := c.Attributes.New()
+	attributesPtr, err := c.Attributes.New(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +29,7 @@ func (c Role) New() (*Role, error) {
 	return &role, nil
 }
 
-func (c Role) ToContent() (*types.Content, error) {
+func (c Role) ToContent(ctx context.Context) (*types.Content, error) {
 	content := types.Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
@@ -39,8 +40,8 @@ func (c Role) ToContent() (*types.Content, error) {
 	return &content, nil
 }
 
-func (c Role) PGRead() (*Role, error) {
-	contentPtr, err := c.ToContent()
+func (c Role) PGRead(ctx context.Context) (*Role, error) {
+	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +57,12 @@ func (c Role) PGRead() (*Role, error) {
 	return &role, nil
 }
 
-func (c Role) PGCreate() error {
-	return types.Content{}.Create(c)
+func (c Role) PGCreate(ctx context.Context) error {
+	return types.Content{}.Create(ctx, c)
 }
 
-func (c Role) PGUpdate() error {
-	contentPtr, err := c.ToContent()
+func (c Role) PGUpdate(ctx context.Context) error {
+	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
 		return err
 	}
@@ -69,18 +70,18 @@ func (c Role) PGUpdate() error {
 		return fmt.Errorf("content is nil")
 	}
 	content := *contentPtr
-	return content.Update(c)
+	return content.Update(ctx, c)
 }
 
-func (c Role) PGDelete() error {
-	return types.Content{}.Delete(c.Attributes.Id)
+func (c Role) PGDelete(ctx context.Context) error {
+	return types.Content{}.Delete(ctx, c.Attributes.Id)
 }
 
-func (c Role) IsDocument() bool {
+func (c Role) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Role) ToMSI() (map[string]interface{}, error) {
+func (c Role) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	b, err := json.Marshal(c)
 	if err != nil {
@@ -93,8 +94,8 @@ func (c Role) ToMSI() (map[string]interface{}, error) {
 	return r, nil
 }
 
-func GetRole(id string) (*Role, error) {
-	rolesPtr, err := FindRoles()
+func GetRole(ctx context.Context, id string) (*Role, error) {
+	rolesPtr, err := FindRoles(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +110,8 @@ func GetRole(id string) (*Role, error) {
 	return nil, fmt.Errorf("role id: %s not found", id)
 }
 
-func GetRoles() (*Roles, error) {
-	contents, err := types.Content{}.FindAll("role")
+func GetRoles(ctx context.Context) (*Roles, error) {
+	contents, err := types.Content{}.FindAll(ctx, "role")
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +129,7 @@ func GetRoles() (*Roles, error) {
 
 type Roles []Role
 
-func (c Roles) In(id string) bool {
+func (c Roles) In(ctx context.Context, id string) bool {
 	for _, o := range c {
 		if o.Attributes.Id == id {
 			return true
@@ -137,8 +138,8 @@ func (c Roles) In(id string) bool {
 	return false
 }
 
-func FindRoles() (*Roles, error) {
-	content, err := types.Content{}.FindAll("role")
+func FindRoles(ctx context.Context) (*Roles, error) {
+	content, err := types.Content{}.FindAll(ctx, "role")
 	if err != nil {
 		return nil, err
 	}
@@ -154,11 +155,11 @@ func FindRoles() (*Roles, error) {
 	return &r, nil
 }
 
-func (c Roles) IsDocument() bool {
+func (c Roles) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Roles) ToMSI() (map[string]interface{}, error) {
+func (c Roles) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {

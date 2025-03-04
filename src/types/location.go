@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -13,8 +14,8 @@ type Location struct {
 	Address    Address    `json:"address"`
 }
 
-func (c Location) New() (*Location, error) {
-	attributesPtr, err := c.Attributes.New()
+func (c Location) New(ctx context.Context) (*Location, error) {
+	attributesPtr, err := c.Attributes.New(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +28,7 @@ func (c Location) New() (*Location, error) {
 	return &location, nil
 }
 
-func (c Location) ToContent() (*Content, error) {
+func (c Location) ToContent(ctx context.Context) (*Content, error) {
 	content := Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
@@ -38,8 +39,8 @@ func (c Location) ToContent() (*Content, error) {
 	return &content, nil
 }
 
-func (c Location) PGRead() (*Location, error) {
-	content, err := Content{}.Read(c.Attributes.Id)
+func (c Location) PGRead(ctx context.Context) (*Location, error) {
+	content, err := Content{}.Read(ctx, c.Attributes.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +52,8 @@ func (c Location) PGRead() (*Location, error) {
 	return &location, nil
 }
 
-func (c Location) PGCreate() error {
-	contentPtr, err := c.ToContent()
+func (c Location) PGCreate(ctx context.Context) error {
+	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
 		return err
 	}
@@ -61,11 +62,11 @@ func (c Location) PGCreate() error {
 	}
 	content := *contentPtr
 
-	return content.Create(c)
+	return content.Create(ctx, c)
 }
 
-func (c Location) PGUpdate() error {
-	contentPtr, err := c.ToContent()
+func (c Location) PGUpdate(ctx context.Context) error {
+	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
 		return err
 	}
@@ -74,37 +75,37 @@ func (c Location) PGUpdate() error {
 	}
 	content := *contentPtr
 	
-	return content.Update(c)
+	return content.Update(ctx, c)
 }
 
-func (c Location) PGDelete() error {
-	return Content{}.Delete(c.Attributes.Id)
+func (c Location) PGDelete(ctx context.Context) error {
+	return Content{}.Delete(ctx, c.Attributes.Id)
 }
 
-func NewLocation(createdBy User) *Location {
+func NewLocation(ctx context.Context, createdBy User) *Location {
 	r := Location{}
-	a := NewAttributes(&createdBy)
+	a := NewAttributes(ctx, &createdBy)
 	if a != nil {
 		r.Attributes = *a
 	}
 	return &r
 }
 
-func (c Location) IsDocument() bool {
+func (c Location) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Location) ToMSI() (map[string]interface{}, error) {
-	return toMSI(c)
+func (c Location) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+	return toMSI(ctx, c)
 }
 
-func (c Location) Hydrate(msi map[string]interface{}, user User) (*Location, error) {
+func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user User) (*Location, error) {
 	r := Location{}
 	if a, ok := msi["attributes"].(map[string]interface{}); ok {
-		r.Attributes.MSIHydrate(a)
+		r.Attributes.MSIHydrate(ctx, a)
 	}
 	if v, ok := msi["rooms"].([]map[string]interface{}); ok {
-		roomsPtr, err := r.Rooms.Hydrate(v)
+		roomsPtr, err := r.Rooms.Hydrate(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -113,21 +114,21 @@ func (c Location) Hydrate(msi map[string]interface{}, user User) (*Location, err
 			r.Rooms = rooms
 		}
 	}
-	a, err := r.Address.Hydrate(msi)
+	a, err := r.Address.Hydrate(ctx, msi)
 	if err != nil {
 		return nil, err
 	}
 	if a != nil {
 		r.Address = *a
 		if r.Address.Attributes.Id == "" {
-			addressPtr := NewAttributes(&user)
+			addressPtr := NewAttributes(ctx, &user)
 			if addressPtr != nil {
 				r.Address.Attributes = *addressPtr
 			}
 		}
 	}
 	if r.Attributes.Id == "" {
-		addressPtr := NewAttributes(&user)
+		addressPtr := NewAttributes(ctx, &user)
 		if addressPtr != nil {
 			r.Attributes = *addressPtr
 		} 
@@ -139,8 +140,8 @@ func (c Location) Hydrate(msi map[string]interface{}, user User) (*Location, err
 	return &r, nil
 }
 
-func (c Location) HydrateFromRequest(e echo.Context, user User) (*Location, error) {
-	bodyPtr, err := GetRequestData(e)
+func (c Location) HydrateFromRequest(ctx context.Context, e echo.Context, user User) (*Location, error) {
+	bodyPtr, err := GetRequestData(ctx, e)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +150,7 @@ func (c Location) HydrateFromRequest(e echo.Context, user User) (*Location, erro
 		return nil, err
 	}
 	body := *bodyPtr
-	locationPtr, err := c.Hydrate(body, user)
+	locationPtr, err := c.Hydrate(ctx, body, user)
 	if err != nil {
 		return nil, err
 	}
@@ -160,12 +161,12 @@ func (c Location) HydrateFromRequest(e echo.Context, user User) (*Location, erro
 	return locationPtr, nil
 }
 
-func (c Location) Load(e echo.Context, user User) (*Location, error) {
-	contentId, err := GetContentIdFromUrl(e)
+func (c Location) Load(ctx context.Context, e echo.Context, user User) (*Location, error) {
+	contentId, err := GetContentIdFromUrl(ctx, e)
 	if err != nil {
 		return nil, err
 	}
-	contentPtr, err := GetContent(contentId)
+	contentPtr, err := GetContent(ctx, contentId)
 	if err != nil {
 		return nil, err
 	}
@@ -182,17 +183,17 @@ func (c Location) Load(e echo.Context, user User) (*Location, error) {
 	return &location, nil
 }
 
-func (c Location) Merge(oldInput, newInput interface{}, user User) (*Location, error) {
+func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, user User) (*Location, error) {
 	var old, new Location
 	if o, ok := oldInput.(map[string]interface{}); ok {
-		ptr, err := c.Hydrate(o, user)
+		ptr, err := c.Hydrate(ctx, o, user)
 		if err != nil {
 			return nil, err
 		}
 		old = *ptr
 	}
 	if o, ok := newInput.(map[string]interface{}); ok {
-		ptr, err := c.Hydrate(o, user)
+		ptr, err := c.Hydrate(ctx, o, user)
 		if err != nil {
 			return nil, err
 		}
@@ -205,7 +206,7 @@ func (c Location) Merge(oldInput, newInput interface{}, user User) (*Location, e
 		new = o
 	}
 
-	attributesPtr, err := c.Attributes.Merge(old.Attributes, new.Attributes)
+	attributesPtr, err := c.Attributes.Merge(ctx, old.Attributes, new.Attributes)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +216,7 @@ func (c Location) Merge(oldInput, newInput interface{}, user User) (*Location, e
 	}
 	c.Attributes = *attributesPtr
 
-	addressPtr, err := c.Address.Merge(old.Address, new.Address)
+	addressPtr, err := c.Address.Merge(ctx, old.Address, new.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +229,7 @@ func (c Location) Merge(oldInput, newInput interface{}, user User) (*Location, e
 	return &c, nil
 }
 
-func GetRequestData(c echo.Context) (*map[string]interface{}, error) {
+func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
 	body := make(map[string]interface{})
 	err := json.NewDecoder(c.Request().Body).Decode(&body)
 	if err != nil {
@@ -239,12 +240,12 @@ func GetRequestData(c echo.Context) (*map[string]interface{}, error) {
 
 type Locations []Location
 
-func (c Locations) IsDocument() bool {
+func (c Locations) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Locations) FindAll() (*Locations, error) {
-	content, err := Content{}.FindAll("location")
+func (c Locations) FindAll(ctx context.Context) (*Locations, error) {
+	content, err := Content{}.FindAll(ctx, "location")
 	if err != nil {
 		return nil, err
 	}
@@ -263,15 +264,15 @@ func (c Locations) FindAll() (*Locations, error) {
 	return &locations, nil
 }
 
-func (c Locations) ToMSI() (map[string]interface{}, error) {
-	return toMSI(c)
+func (c Locations) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+	return toMSI(ctx, c)
 }
 
-func (c Locations) Hydrate(msi []map[string]interface{}, user User) (*Locations, error) {
+func (c Locations) Hydrate(ctx context.Context, msi []map[string]interface{}, user User) (*Locations, error) {
 	locations := Locations{}
 	for _, r := range msi {
 		location := Location{}
-		locationPtr, err := location.Hydrate(r, user)
+		locationPtr, err := location.Hydrate(ctx, r, user)
 		if err != nil {
 			logger.Printf("%#v", err)
 			return nil, err
@@ -283,7 +284,7 @@ func (c Locations) Hydrate(msi []map[string]interface{}, user User) (*Locations,
 	return &locations, nil
 }
 
-func (c Locations) In(id string) bool {
+func (c Locations) In(ctx context.Context, id string) bool {
 	for _, l := range c {
 		if l.Attributes.Id == id {
 			return true
@@ -292,6 +293,6 @@ func (c Locations) In(id string) bool {
 	return false
 }
 
-func GetLocations() (*Locations, error) {
-	return Locations{}.FindAll()
+func GetLocations(ctx context.Context) (*Locations, error) {
+	return Locations{}.FindAll(ctx)
 }

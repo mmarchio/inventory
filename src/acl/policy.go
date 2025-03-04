@@ -1,6 +1,7 @@
 package acl
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"inventory/src/types"
@@ -15,10 +16,10 @@ type Policy struct {
 	IsContent  bool       `json:"isContent"`
 }
 
-func (c Policy) New() (*Policy, error) {
+func (c Policy) New(ctx context.Context) (*Policy, error) {
 	var err error
 	policy := c
-	attributesPtr, err := c.Attributes.New()
+	attributesPtr, err := c.Attributes.New(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -26,14 +27,11 @@ func (c Policy) New() (*Policy, error) {
 		return nil, fmt.Errorf("attributes is nil")
 	}
 	policy.Attributes = *attributesPtr
-	if err != nil {
-		return nil, err
-	}
 	policy.Attributes.ContentType = "policy"
 	return &policy, nil
 }
 
-func (c Policy) ToContent() (*types.Content, error) {
+func (c Policy) ToContent(ctx context.Context) (*types.Content, error) {
 	content := types.Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
@@ -44,8 +42,8 @@ func (c Policy) ToContent() (*types.Content, error) {
 	return &content, nil
 }
 
-func (c Policy) PGRead() (*Policy, error) {
-	contentPtr, err := types.Content{}.Read(c.Attributes.Id)
+func (c Policy) PGRead(ctx context.Context) (*Policy, error) {
+	contentPtr, err := types.Content{}.Read(ctx, c.Attributes.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -53,45 +51,40 @@ func (c Policy) PGRead() (*Policy, error) {
 		return nil, fmt.Errorf("content is nil")
 	}
 	content := *contentPtr
-	policy := c
-	err = json.Unmarshal(content.Content, &policy)
-	if err != nil {
-		return nil, err
+	policy := Policy{}
+	if content.Content != nil {
+		err = json.Unmarshal(content.Content, &policy)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, nil
 	}
 
 	return &policy, nil
 }
 
-func (c Policy) PGCreate() error {
-	contentPtr, err := c.PGRead()
-	if err != nil {
-		fmt.Println("\ntrace(3): policy:PGCreate:read:err\n")
-		return err
-	}
-	if contentPtr == nil {
-		fmt.Println("\ntrace(4): policy:PGCreate:content:isNil\n")
-		return types.Content{}.Create(c)
-	}
-	return nil
+func (c Policy) PGCreate(ctx context.Context) error {
+	return types.Content{}.Create(ctx, c)
 }
 
-func (c Policy) PGUpdate() error {
-	content, err := c.ToContent()
+func (c Policy) PGUpdate(ctx context.Context) error {
+	content, err := c.ToContent(ctx)
 	if err != nil {
 		return nil
 	}
-	return content.Update(c)
+	return content.Update(ctx, c)
 }
 
-func (c Policy) PGDelete() error {
-	return types.Content{}.Delete(c.Attributes.Id)
+func (c Policy) PGDelete(ctx context.Context) error {
+	return types.Content{}.Delete(ctx, c.Attributes.Id)
 }
 
-func (c Policy) IsDocument() bool {
+func (c Policy) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Policy) ToMSI() (map[string]interface{}, error) {
+func (c Policy) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
@@ -106,7 +99,7 @@ func (c Policy) ToMSI() (map[string]interface{}, error) {
 
 type Policies []Policy
 
-func (c Policies) In(id string) bool {
+func (c Policies) In(ctx context.Context, id string) bool {
 	for _, o := range c {
 		if o.Attributes.Id == id {
 			return true
@@ -115,12 +108,36 @@ func (c Policies) In(id string) bool {
 	return false
 }
 
-func (c Policies) IsDocument() bool {
+func (c Policies) SelectIn(ctx context.Context) (*Policies, error) {
+	var ids []string
+	for _, policy := range c {
+		ids = append(ids, policy.Attributes.Id)
+	}
+	contentsPtr, err := types.Content{}.SelectIn(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	policies := Policies{}
+	for _, contentPtr := range contentsPtr {
+		if contentPtr != nil {
+			content := *contentPtr
+			policy := Policy{}
+			err = json.Unmarshal(content.Content, &policy)
+			if err != nil {
+				return nil, err
+			}
+			policies = append(policies, policy)
+		}
+	}
+	return &policies, nil
+}
+
+func (c Policies) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Policies) FindPolicies() (*Policies, error) {
-	content, err := types.Content{}.FindAll("policy")
+func (c Policies) FindPolicies(ctx context.Context) (*Policies, error) {
+	content, err := types.Content{}.FindAll(ctx, "policy")
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +153,7 @@ func (c Policies) FindPolicies() (*Policies, error) {
 	return &r, nil
 }
 
-func (c Policies) ToMSI() (map[string]interface{}, error) {
+func (c Policies) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
@@ -149,16 +166,36 @@ func (c Policies) ToMSI() (map[string]interface{}, error) {
 	return r, nil
 }
 
-func CreatePolicy(name, role, resource string) error {
-	rolePtr, err := GetRole(role)
+func (c Policies) CreateMany(ctx context.Context) error {
+	contents := make([]types.Content, 0)
+	for _, policy := range c {
+		contentPtr, err := policy.ToContent(ctx)
+		if err != nil {
+			return err
+		}
+		if contentPtr == nil {
+			return fmt.Errorf("content pointer is nil")
+		}
+	
+		contents = append(contents, *contentPtr)
+	}
+	err := types.Content{}.CreateMany(ctx, contents)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CreatePolicy(ctx context.Context, name, role, resource string) error {
+	rolePtr, err := GetRole(ctx, role)
 	if err != nil {
 		return err
 	}
 	if rolePtr != nil {
-		pol := NewPolicy(name, role, resource, rolePtr.DefaultPermisison)
+		pol := NewPolicy(ctx, name, role, resource, rolePtr.DefaultPermisison)
 		if pol != nil {
 			p := *pol
-			err = p.PGCreate()
+			err = p.PGCreate(ctx)
 			if err != nil {
 				return err
 			}
@@ -168,8 +205,8 @@ func CreatePolicy(name, role, resource string) error {
 	return fmt.Errorf("unable to create policy")
 }
 
-func NewPolicy(name, role, resource, permission string) *Policy {
-	a := types.NewAttributes(nil)
+func NewPolicy(ctx context.Context, name, role, resource, permission string) *Policy {
+	a := types.NewAttributes(ctx, nil)
 	if a != nil {
 		att := *a
 		p := Policy{
@@ -186,8 +223,8 @@ func NewPolicy(name, role, resource, permission string) *Policy {
 	return nil
 }
 
-func GetPolicies() (*Policies, error) {
-	policiesPtr, err := Policies{}.FindPolicies()
+func GetPolicies(ctx context.Context) (*Policies, error) {
+	policiesPtr, err := Policies{}.FindPolicies(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -197,8 +234,8 @@ func GetPolicies() (*Policies, error) {
 	return policiesPtr, nil
 }
 
-func GetPolicyByRole(role string) (*Policies, error) {
-	dbPoliciesPtr, err := GetPolicies()
+func GetPolicyByRole(ctx context.Context, role string) (*Policies, error) {
+	dbPoliciesPtr, err := GetPolicies(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -215,8 +252,8 @@ func GetPolicyByRole(role string) (*Policies, error) {
 	return nil, fmt.Errorf("no policies found for role %s", role)
 }
 
-func GetPolicyById(id string) (*Policy, error) {
-	dbPoliciesPtr, err := GetPolicies()
+func GetPolicyById(ctx context.Context, id string) (*Policy, error) {
+	dbPoliciesPtr, err := GetPolicies(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -231,58 +268,56 @@ func GetPolicyById(id string) (*Policy, error) {
 	return nil, fmt.Errorf("no policy found for role %s", id)
 }
 
-func CreateSystemPolicies() error {
+func CreateSystemPolicies(ctx context.Context) error {
 	policies := Policies{}
-	pol := NewPolicy("system-create-user", "system", "/api/user/create", "all")
+	pol := NewPolicy(ctx, "system-create-user", "system", "/api/user/create", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	pol = NewPolicy("system-login", "system", "/api/login", "all")
+	pol = NewPolicy(ctx, "system-login", "system", "/api/login", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	pol = NewPolicy("system-index", "system", "/", "all")
+	pol = NewPolicy(ctx, "system-index", "system", "/", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	pol = NewPolicy("system-settings", "system", "/settings", "all")
+	pol = NewPolicy(ctx, "system-settings", "system", "/settings", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	pol = NewPolicy("system-settings-create-user", "system", "/settings/user/create", "all")
+	pol = NewPolicy(ctx, "system-settings-create-user", "system", "/settings/user/create", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	pol = NewPolicy("system-dashboard", "system", "/dashboard", "all")
+	pol = NewPolicy(ctx, "system-dashboard", "system", "/dashboard", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	pol = NewPolicy("system-settings-role-create", "system", "/settings/role/create", "all")
+	pol = NewPolicy(ctx, "system-settings-role-create", "system", "/settings/role/create", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	pol = NewPolicy("system-settings-role-edit", "system", "/settings/role/edit", "all")
+	pol = NewPolicy(ctx, "system-settings-role-edit", "system", "/settings/role/edit", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	pol = NewPolicy("sytsem-api-role-edit", "system", "/api/role/edit", "all")
+	pol = NewPolicy(ctx, "sytsem-api-role-edit", "system", "/api/role/edit", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	pol = NewPolicy("system-api-role-create", "system", "/api/role/create", "all")
+	pol = NewPolicy(ctx, "system-api-role-create", "system", "/api/role/create", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
-	pol = NewPolicy("system-logout", "system", "/logout", "all")
+	pol = NewPolicy(ctx, "system-logout", "system", "/logout", "all")
 	if pol != nil {
 		policies = append(policies, *pol)
 	}
 
 	for _, p := range policies {
-		fmt.Println("\ntrace(1): acl:createsystempolicies:iterate\n")
-		err := p.PGCreate()
+		err := p.PGCreate(ctx)
 		if err != nil {
-			fmt.Println("\ntrace(2): acl:createsystempolicies:iterate:err\n")
 			return err
 		}
 	}

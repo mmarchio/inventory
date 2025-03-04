@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -20,7 +21,7 @@ type Error struct {
 	Error error
 }
 
-func (c Error) Err(e error) error {
+func (c Error) Err(ctx context.Context, e error) error {
 	if c.Error != nil {
 		c.Error = e
 		c.Message = c.Error.Error()
@@ -32,7 +33,7 @@ func (c Error) Err(e error) error {
 	return nil
 }
 
-func (c Error) ErrOrNil(ptr interface{}, e error) error {
+func (c Error) ErrOrNil(ctx context.Context, ptr interface{}, e error) error {
 	if ptr == nil {
 		c.Error = fmt.Errorf("pointer is nil")
 		c.Message = c.Error.Error()
@@ -41,12 +42,12 @@ func (c Error) ErrOrNil(ptr interface{}, e error) error {
 		return c.Error
 	}
 	if e != nil {
-		return c.Err(e)
+		return c.Err(ctx, e)
 	}
 	return nil
 }
 
-func ErrOrNil(ptr interface{}, e error) error {
+func ErrOrNil(ctx context.Context, ptr interface{}, e error) error {
 	err := Error{}
-	return err.ErrOrNil(ptr, e)	
+	return err.ErrOrNil(ctx, ptr, e)	
 }

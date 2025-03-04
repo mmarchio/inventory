@@ -1,6 +1,7 @@
 package init
 
 import (
+	"context"
 	"fmt"
 	"inventory/src/acl"
 	"inventory/src/login"
@@ -10,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func CreateSystemUser() error {
+func CreateSystemUser(ctx context.Context) error {
 	now := time.Now()
 	u := types.User{
 		Roles: []string{"system"},
@@ -20,7 +21,7 @@ func CreateSystemUser() error {
 		DOB: &now,
 		Username: "system",
 	}
-	a := types.NewAttributes(nil)
+	a := types.NewAttributes(ctx, nil)
 	if a != nil {
 		u.Attributes = *a
 	}
@@ -33,7 +34,7 @@ func CreateSystemUser() error {
 		Username: u.Username,
 		Password: hash,
 	}
-	attributesPtr, err := creds.Attributes.New()
+	attributesPtr, err := creds.Attributes.New(ctx)
 	if err != nil {
 		return err
 	}
@@ -46,7 +47,7 @@ func CreateSystemUser() error {
 	creds.Attributes.RootId = creds.Attributes.Id
 	creds.Attributes.Owner = creds.Attributes.Id
 	creds.Attributes.ContentType = "credentials"
-	err = creds.PGCreate()
+	err = creds.PGCreate(ctx)
 	if err != nil {
 		return err
 	}
@@ -54,7 +55,7 @@ func CreateSystemUser() error {
 	u.Attributes.RootId = u.Attributes.Id
 	u.Attributes.Owner = u.Attributes.Id
 	u.Attributes.ContentType = "user"
-	err = u.PGCreate()
+	err = u.PGCreate(ctx)
 	if err != nil {
 		return nil
 	}
@@ -62,9 +63,9 @@ func CreateSystemUser() error {
 	return nil
 }
 
-func CreateAdminRole() error {
+func CreateAdminRole(ctx context.Context) error {
 	role := acl.Role{}
-	attributesPtr, err := role.Attributes.New()
+	attributesPtr, err := role.Attributes.New(ctx)
 	if err != nil {
 		return err
 	}
@@ -77,20 +78,29 @@ func CreateAdminRole() error {
 		Policies: acl.Policies{},
 		DefaultPermisison: "all",
 	}
-	err = role.PGCreate()
+	err = role.PGCreate(ctx)
 	if err != nil {
 		return err
 	}
-	logoutPolicy := acl.NewPolicy("admin-logout", "admin", "/logout", "all")
-	createPolicyPolicy := acl.NewPolicy("admin-policy-create", "admin", "/settings/policy/create", "all")
+	logoutPolicy := acl.NewPolicy(ctx, "admin-logout", "admin", "/logout", "all")
+	createPolicyPolicy := acl.NewPolicy(ctx, "admin-policy-create", "admin", "/settings/policy/create", "all")
 	policies := acl.Policies{}
 	policies = append(policies, *logoutPolicy)
 	policies = append(policies, *createPolicyPolicy)
-	for _, p := range policies {
-		err = p.PGCreate()
-		if err != nil {
-			return err
-		}
+	existingPolicies, err := policies.SelectIn(ctx)
+	if err != nil {
+		return err
 	}
-	return logoutPolicy.PGCreate()
+	newPolicies := acl.Policies{}
+	for _, policy := range policies {
+		if existingPolicies.In(ctx, policy.Attributes.Id) {
+			continue
+		}
+		newPolicies = append(newPolicies, policy)
+	}
+	err = newPolicies.CreateMany(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }

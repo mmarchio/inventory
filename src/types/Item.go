@@ -1,14 +1,16 @@
 package types
 
+import "context"
+
 type Item struct {
 	Attributes Attributes `json:"attributes"`
-	Quantity float64 `json:"quantity"`
-	UOMS string `json:"oums"`
+	Quantity   float64    `json:"quantity"`
+	UOMS       string     `json:"oums"`
 }
 
-func NewItem(createdBy *User) (*Item, error) {
+func NewItem(ctx context.Context, createdBy *User) (*Item, error) {
 	item := Item{}
-	attributesPtr := NewAttributes(createdBy)
+	attributesPtr := NewAttributes(ctx, createdBy)
 	if attributesPtr != nil {
 		item.Attributes = *attributesPtr
 	}
@@ -19,14 +21,14 @@ func (c Item) IsDocument() bool {
 	return true
 }
 
-func (c Item) ToMSI() (map[string]interface{}, error) {
-	return toMSI(c)
+func (c Item) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+	return toMSI(ctx, c)
 }
 
-func (c Item) Hydrate(msi map[string]interface{}) (*Item, error) {
+func (c Item) Hydrate(ctx context.Context, msi map[string]interface{}) (*Item, error) {
 	r := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
-		err := r.Attributes.MSIHydrate(v)
+		err := r.Attributes.MSIHydrate(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -42,9 +44,9 @@ func (c Item) Hydrate(msi map[string]interface{}) (*Item, error) {
 	return &r, nil
 }
 
-type Items []Item 
+type Items []Item
 
-func (c Items) In(id string) bool {
+func (c Items) In(ctx context.Context, id string) bool {
 	for _, o := range c {
 		if o.Attributes.Id == id {
 			return true
@@ -53,11 +55,11 @@ func (c Items) In(id string) bool {
 	return false
 }
 
-func (c Items) Hydrate(msi []map[string]interface{}) (*Items, error) {
+func (c Items) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Items, error) {
 	items := c
 	for _, r := range msi {
 		item := Item{}
-		itemPtr, err := item.Hydrate(r)
+		itemPtr, err := item.Hydrate(ctx, r)
 		if err != nil {
 			return nil, err
 		}

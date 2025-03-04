@@ -10,7 +10,7 @@ import (
 )
 
 type IContent interface {
-	ToContent() (*Content, error)
+	ToContent(context.Context) (*Content, error)
 }
 
 type Content struct {
@@ -18,9 +18,9 @@ type Content struct {
 	Content []byte `json:"content"`
 }
 
-func (c Content) Create(object IContent) error {
+func (c Content) Create(ctx context.Context, object IContent) error {
 	pg := db.PostgresClient{
-		Ctx: context.Background(),
+		Ctx: ctx,
 	}
 
 	err := pg.Open()
@@ -30,7 +30,7 @@ func (c Content) Create(object IContent) error {
 
 	defer pg.Close()
 
-	contentPtr, err := object.ToContent()
+	contentPtr, err := object.ToContent(ctx)
 	if err != nil {
 		return err
 	}
@@ -48,23 +48,91 @@ func (c Content) Create(object IContent) error {
 		return err
 	}
 	defer pg.Tx.Commit(pg.Ctx)
-	ctag, err := pg.Tx.Conn().Exec(
+	columns := content.Columns(ctx)
+	values := content.Values(ctx)
+	q := fmt.Sprintf("INSERT INTO content (%s) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", columns)
+	_, err = pg.Tx.Conn().Exec(
 		pg.Ctx,
-		"INSERT INTO content (id, parent_id, root_id, created_at, updated_at, created_by, owned, name, content_type, content) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-		content.Attributes.Id, 
-		content.Attributes.ParentId, 
-		content.Attributes.RootId,
-		content.Attributes.CreatedAt.Unix(),
-		content.Attributes.UpdatedAt.Unix(),
-		content.Attributes.CreatedBy,
-		content.Attributes.Owner,
-		content.Attributes.Name,
-		content.Attributes.ContentType,
-		content.Content,
+		q,
+		values...
 	)
 	if err != nil {
-		fmt.Printf("\nctag: %s\n", ctag.String())
-		fmt.Printf("\ncontent: %#v", content)
+		rollbackErr := pg.Tx.Rollback(pg.Ctx)
+		if rollbackErr != nil {
+			return rollbackErr
+		}
+	}
+
+	return nil
+}
+
+func (c Content) Columns(ctx context.Context) string {
+	cols := []string{"id", "parent_id", "root_id", "created_at", "updated_at", "created_by", "owned", "name", "content_type", "content"}
+	return fmt.Sprintf("%s", strings.Join(cols, ", "))
+}
+
+func (c Content) Values(ctx context.Context) []interface{} {
+	vals := []interface{}{
+		c.Attributes.Id, 
+		c.Attributes.ParentId, 
+		c.Attributes.RootId,
+		c.Attributes.CreatedAt.Unix(),
+		c.Attributes.UpdatedAt.Unix(),
+		c.Attributes.CreatedBy,
+		c.Attributes.Owner,
+		c.Attributes.Name,
+		c.Attributes.ContentType,
+		c.Content,
+	}
+	return vals
+}
+
+func (c Content) CreateMany(ctx context.Context, objects []Content) error {
+	pg := db.PostgresClient{
+		Ctx: ctx,
+	}
+
+	err := pg.Open()
+	if err != nil {
+		return err
+	}
+
+	defer pg.Close()
+	var cvs []any
+	baseString := "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)"
+	var placeholders []string
+	for i, object := range objects {
+		var ctr int64
+		if i == 0 {
+			ctr = 0
+		} else {
+			ctr = int64(i)*int64(10)
+		}
+		var vals []int64
+		for i := 1; i < 11; i++ {
+			vals = append(vals, int64(ctr)+int64(i))
+		}
+		placeholders = append(placeholders, fmt.Sprintf(baseString, vals))
+		objectValues := object.Values(ctx)
+		cvs = append(cvs, objectValues...)
+	}
+	q := fmt.Sprintf("INSERT INTO content (%s) VALUES %s", Content{}.Columns(ctx), strings.Join(placeholders, ", "))
+	fmt.Printf("\n%s\n", q)
+
+	if pg.Pgx == nil {
+		panic("pgx is nil")
+	}
+	pg.Tx, err = pg.Pgx.Begin(pg.Ctx)
+	if err != nil {
+		return err
+	}
+	defer pg.Tx.Commit(pg.Ctx)
+	_, err = pg.Tx.Conn().Exec(
+		pg.Ctx,
+		q,
+		cvs...
+	)
+	if err != nil {
 		rollbackErr := pg.Tx.Rollback(pg.Ctx)
 		if rollbackErr != nil {
 			return rollbackErr
@@ -82,20 +150,18 @@ func (c Content) ScanRow(rows pgx.Rows) error {
 	return nil
 }
 
-func (c Content) Read(id string) (*Content, error) {
+func (c Content) Read(ctx context.Context, id string) (*Content, error) {
 	pg := db.PostgresClient{
-		Ctx: context.Background(),
+		Ctx: ctx,
 	}
 	err := pg.Open()
 	if err != nil {
-		fmt.Println("\ntrace(5): content:read:open:err\n")
 		return nil, err
 	}
 	defer pg.Close()
 
 	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE id = $1", id)
 	if err != nil {
-		fmt.Println("\ntrace(6): content:read:query:err\n")
 		return nil, err
 	}
 	if rows.Next() {
@@ -108,8 +174,8 @@ func (c Content) Read(id string) (*Content, error) {
 	return &c, nil
 }
 
-func (c Content) FindAll(t string) ([]Content, error) {
-	pg, err := db.NewPostgresClient()
+func (c Content) FindAll(ctx context.Context, t string) ([]Content, error) {
+	pg, err := db.NewPostgresClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -134,8 +200,8 @@ func (c Content) FindAll(t string) ([]Content, error) {
 	return r, nil
 }
 
-func (c Content) FindBy(jstring string) (*Content, error) {
-	pg, err := db.NewPostgresClient()
+func (c Content) FindBy(ctx context.Context, jstring string) (*Content, error) {
+	pg, err := db.NewPostgresClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +217,35 @@ func (c Content) FindBy(jstring string) (*Content, error) {
 	return &r, nil
 }
 
-func (c Content) Update(object IContent) error {
+func (c Content) SelectIn(ctx context.Context, ids []string) ([]*Content, error) {
+	pg, err := db.NewPostgresClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = pg.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer pg.Close()
+
+	q := fmt.Sprintf("SELECT * FROM content WHERE id IN ('%s')", strings.Join(ids, "', '"))
+	rows, err := pg.Pgx.Query(pg.Ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	contents := make([]*Content, 0)
+	if rows.Next() {
+		content := Content{}
+		err = rows.Scan(&content)
+		if err != nil {
+			return nil, err
+		}
+		contents = append(contents, &content)
+	}
+	return contents, nil
+}
+
+func (c Content) Update(ctx context.Context, object IContent) error {
 	pg := db.PostgresClient{
 		Ctx: context.Background(),
 	}
@@ -160,11 +254,11 @@ func (c Content) Update(object IContent) error {
 		return err
 	}
 	defer pg.Close()
-	err = c.Delete(c.Attributes.Id)
+	err = c.Delete(ctx, c.Attributes.Id)
 	if err != nil {
 		return err
 	}
-	err = c.Create(object)
+	err = c.Create(ctx, object)
 	if err != nil {
 		return err
 	}
@@ -177,16 +271,7 @@ func (c Content) Update(object IContent) error {
 	return nil
 }
 
-func (c Content) UpdateString() string {
-	cols := c.Columns()
-	var s []string
-	for _, col := range cols {
-		s = append(s, fmt.Sprintf("%s = ?", col))
-	}
-	return strings.Join(s, ", ")
-}
-
-func (c Content) Delete(id string) error {
+func (c Content) Delete(ctx context.Context, id string) error {
 	pg := db.PostgresClient{
 		Ctx: context.Background(),
 	}
@@ -200,21 +285,4 @@ func (c Content) Delete(id string) error {
 		return err
 	}
 	return err
-}
-
-func (c Content) Columns() []string {
-	cols := c.Attributes.Columns()
-	cols = append(cols, "content")
-	return cols
-}
-
-func (c Content) Values() (string, []interface{}) {
-	vals := c.Attributes.Values()
-	vals = append(vals, c.Content)
-	l := len(vals)
-	var s []string
-	for i := 0; i < l; i++ {
-		s = append(s, "?")
-	}
-	return strings.Join(s, ", "), vals
 }

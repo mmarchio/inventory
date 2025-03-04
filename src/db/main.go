@@ -71,7 +71,7 @@ func (r *RedisClient) CreateJSONDocument(doc IDocument, key, path string, overwr
     smsi := make([]map[string]interface{}, 0)
     if !overwrite {
         redisResponseString, err := r.ReadJSONDocument(key, path)
-        if errors.ErrOrNil(redisResponseString, err) != nil {
+        if errors.ErrOrNil(ctx, redisResponseString, err) != nil {
             return err
         }
         responseString := *redisResponseString
@@ -178,9 +178,9 @@ type PostgresClient struct {
     Tx pgx.Tx
 }
 
-func NewPostgresClient() (*PostgresClient, error) {
+func NewPostgresClient(ctx context.Context) (*PostgresClient, error) {
     pg := PostgresClient{
-        Ctx: context.Background(),
+        Ctx: ctx,
     }
     return &pg, nil
 }

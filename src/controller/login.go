@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"inventory/src/acl"
 	"inventory/src/errors"
@@ -16,13 +17,14 @@ import (
 
 type LoginController struct{
 	Error errors.Error
+	Ctx context.Context
 }
 
-func (c LoginController) RegisterResources(e *echo.Echo) error {
-	c.Error.Function = "RegisterResources"
+func (s LoginController) RegisterResources(e *echo.Echo) error {
+	s.Error.Function = "RegisterResources"
 
-	e.GET("/logout", c.LogoutHandler())
-	e.POST("/api/login", c.ApiLoginHandler())
+	e.GET("/logout", s.LogoutHandler())
+	e.POST("/api/login", s.ApiLoginHandler())
 
 	resources := acl.Resources{}
 	res := acl.Resource{
@@ -31,25 +33,25 @@ func (c LoginController) RegisterResources(e *echo.Echo) error {
 	}
 	resources = append(resources, res)
 
-	adminRolePtr, err := acl.GetRole("admin")
+	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
 	if err != nil {
-		return c.Error.Err(err)
+		return s.Error.Err(s.Ctx, err)
 	}
 	var adminRole acl.Role
 	if adminRolePtr != nil {
 		adminRole = *adminRolePtr
-		err = UpdateRole(adminRole.Id, resources)
+		err = UpdateRole(s.Ctx, adminRole.Id, resources)
 		if err != nil {
-			return c.Error.Err(err)
+			return s.Error.Err(s.Ctx, err)
 		}
 	}
-	err = UpdateResources(resources)
+	err = UpdateResources(s.Ctx, resources)
 	if err != nil {
-		return c.Error.Err(err)
+		return s.Error.Err(s.Ctx, err)
 	}
-	err = UpdatePolicy("admin", resources)
+	err = UpdatePolicy(s.Ctx, "admin", resources)
 	if err != nil {
-		return c.Error.Err(err)
+		return s.Error.Err(s.Ctx, err)
 	}
 	return nil
 }
@@ -67,7 +69,7 @@ func (s LoginController) LogoutHandler() echo.HandlerFunc {
 		domain := os.Getenv("APP_DOMAIN")
 		if domain == "" {
 			err := fmt.Errorf("app domain not found")
-			s.Error.Err(err)
+			s.Error.Err(s.Ctx, err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
@@ -88,9 +90,9 @@ func (s LoginController) ApiLoginHandler() echo.HandlerFunc{
 		s.Error.Function = "ApiLoginHandler"
 		s.Error.RequestUri = c.Request().RequestURI
 		msg := make(map[string]interface{})
-		requestBody, err := GetRequestData(c) 
+		requestBody, err := GetRequestData(s.Ctx, c) 
 		if err != nil {
-			s.Error.Err(err)
+			s.Error.Err(s.Ctx, err)
 			msg["error"] = fmt.Sprintf("json: %s", err.Error())
 		}
 		if requestBody == nil {
@@ -106,35 +108,35 @@ func (s LoginController) ApiLoginHandler() echo.HandlerFunc{
 			creds.Password = v
 		}
 		jstring := fmt.Sprintf("{\"username\":\"%s\"}", creds.Username)
-		authPtr, err := login.Credentials{}.FindBy(jstring)
+		authPtr, err := login.Credentials{}.FindBy(s.Ctx, jstring)
 		if err != nil {
-			s.Error.Err(err)
+			s.Error.Err(s.Ctx, err)
 			msg["error"] = err.Error()
 			return c.JSON(http.StatusBadRequest, msg)
 		}
 		if authPtr == nil {
 			err = fmt.Errorf("auth ptr is nil")
-			s.Error.Err(err)
+			s.Error.Err(s.Ctx, err)
 			msg["error"] = err.Error()
 			return c.JSON(http.StatusBadRequest, msg)
 		}
 		dbCreds := *authPtr
-		auth, err := login.Login(creds.Username, creds.Password, dbCreds.Password)
+		auth, err := login.Login(s.Ctx, creds.Username, creds.Password, dbCreds.Password)
 		if err != nil {
-			s.Error.Err(err)
+			s.Error.Err(s.Ctx, err)
 			msg["error"] = fmt.Sprintf("redis: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, msg)
 		}
 		if auth != nil {
-			userPtr, err := types.User{}.FindBy(jstring)
+			userPtr, err := types.User{}.FindBy(s.Ctx, jstring)
 			if err != nil {
-				s.Error.Err(err)
+				s.Error.Err(s.Ctx, err)
 				msg["error"] = err.Error()
 				return c.JSON(http.StatusInternalServerError, msg)
 			}
 			if userPtr == nil {
 				err := fmt.Errorf("user point is nil")
-				s.Error.Err(err)
+				s.Error.Err(s.Ctx, err)
 				msg["error"] = fmt.Sprintf("redis: %s", err.Error())
 				return c.JSON(http.StatusInternalServerError, msg)
 			}

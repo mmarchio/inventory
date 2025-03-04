@@ -1,6 +1,7 @@
 package acl
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"inventory/src/errors"
@@ -21,6 +22,7 @@ type IDocument interface{
 
 func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		ctx := context.Background()
 		e := errors.Error{
 			RequestUri: c.Request().RequestURI,
 			Package: "acl",
@@ -32,57 +34,57 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 		if skipper(c) {
 			return nil
 		}
-		token, err := GetBearerToken(c)
+		token, err := GetBearerToken(ctx, c)
 		if err != nil {
-			return e.Err(err)
+			return e.Err(ctx, err)
 		}
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
 			err := fmt.Errorf("secret not found")
-			return e.Err(err)
+			return e.Err(ctx, err)
 		}
 		// if authorization[len(authorization)-2:len(authorization)-1] != "==" {
 		// 	authorization = fmt.Sprintf("%s==", authorization)
 		// }
 
-		claims, err := DecodeJWT(token, []byte("secret"))
+		claims, err := DecodeJWT(ctx, token, []byte("secret"))
 		if err != nil {
-			return e.Err(err)
+			return e.Err(ctx, err)
 		}
-		user, err := GetUser(claims)
+		user, err := GetUser(ctx, claims)
 		if err != nil {
-			return e.Err(err)
+			return e.Err(ctx, err)
 		}
 		if user != nil {
 			us := *user
-			policyPtr, err := getResourcePolicy(us, c.Request().URL.Path)
-			if e.Err(err) != nil {
+			policyPtr, err := getResourcePolicy(ctx, us, c.Request().URL.Path)
+			if e.Err(ctx, err) != nil {
 				return err
 			}
 			if policyPtr == nil {
 				err = fmt.Errorf("policy is nil")
-				return e.Err(err)
+				return e.Err(ctx, err)
 			}
 			policy := *policyPtr
 			if policy.IsContent {
-				auth, err := PermissionsHandler(c, policy)
+				auth, err := PermissionsHandler(ctx, c, policy)
 				if err != nil {
-					return e.Err(err)
+					return e.Err(ctx, err)
 				}
 				if auth {
 					return nil
 				} else {
 					err = fmt.Errorf("access forbidden")
-					return e.Err(err)
+					return e.Err(ctx, err)
 				}
 			}
 			return nil
 		}
-		return e.Err(err)
+		return e.Err(ctx, err)
 	}
 }
 
-func DecodeJWT(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
+func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Verify the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -105,7 +107,7 @@ func DecodeJWT(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
 	return nil, err
 }
 
-func GetUser(claims jwt.MapClaims) (*types.User, error) {
+func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User, error) {
 	b, err := json.Marshal(claims)
 	if err != nil {
 		return nil, err
@@ -119,7 +121,7 @@ func GetUser(claims jwt.MapClaims) (*types.User, error) {
 	if v, ok := msi["username"].(string); ok {
 		jstring = fmt.Sprintf("{\"username\": \"%s\"}", v)
 	}
-	userPtr, err := types.User{}.FindBy(jstring)
+	userPtr, err := types.User{}.FindBy(ctx, jstring)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +131,8 @@ func GetUser(claims jwt.MapClaims) (*types.User, error) {
 	return userPtr, nil
 }
 
-func getResourcePolicy(u types.User, resource string) (*Policy, error) {
-	policiesPtr, err := Policies{}.FindPolicies()
+func getResourcePolicy(ctx context.Context, u types.User, resource string) (*Policy, error) {
+	policiesPtr, err := Policies{}.FindPolicies(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -139,8 +141,8 @@ func getResourcePolicy(u types.User, resource string) (*Policy, error) {
 	}
 	policies := *policiesPtr
 	for _, p := range policies {
-		resource = pathToResource(resource)
-		if resource == p.Resource && u.HasRole(p.Role) {
+		resource = pathToResource(ctx, resource)
+		if resource == p.Resource && u.HasRole(ctx, p.Role) {
 			return &p, nil
 		}
 	}
@@ -156,12 +158,12 @@ func skipper(c echo.Context) bool {
 	return false
 }
 
-func GetUsableClaims(c echo.Context) (*map[string]interface{}, error) {
-	token, err := GetBearerToken(c)
+func GetUsableClaims(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
+	token, err := GetBearerToken(ctx, c)
 	if err != nil {
 		return nil, err
 	}
-	jwt, err := DecodeJWT(token, []byte("secret"))
+	jwt, err := DecodeJWT(ctx, token, []byte("secret"))
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +179,7 @@ func GetUsableClaims(c echo.Context) (*map[string]interface{}, error) {
 	return &msi, nil
 }
 
-func pathToResource(url string) string {
+func pathToResource(ctx context.Context, url string) string {
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
 	segments := strings.Split(url, "/")
@@ -188,8 +190,8 @@ func pathToResource(url string) string {
 	return s
 }
 
-func PermissionsHandler(c echo.Context, p Policy) (bool, error) {
-	userPtr, err := GetUserFromContext(c)
+func PermissionsHandler(ctx context.Context, c echo.Context, p Policy) (bool, error) {
+	userPtr, err := GetUserFromContext(ctx, c)
 	if err != nil {
 		return false, err
 	}
@@ -200,7 +202,7 @@ func PermissionsHandler(c echo.Context, p Policy) (bool, error) {
 	user := *userPtr
 	segments := strings.Split(c.Request().RequestURI, "/")
 	contentId := segments[len(segments)-1]
-	contentPtr, err := types.GetContent(contentId)
+	contentPtr, err := types.GetContent(ctx, contentId)
 	if err != nil {
 		return false, err
 	}
@@ -209,7 +211,7 @@ func PermissionsHandler(c echo.Context, p Policy) (bool, error) {
 		return false, err
 	}
 	content := *contentPtr
-	if user.HasRole(p.Role) {
+	if user.HasRole(ctx, p.Role) {
 		switch p.Permission.Name {
 		case "all":
 			return true, nil

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"inventory/src/acl"
 	"inventory/src/errors"
 	"log"
@@ -14,6 +15,7 @@ import (
 type IndexController struct {
 	Logger *log.Logger
 	Error errors.Error
+	Ctx context.Context
 }
 
 func (s IndexController) Get() echo.HandlerFunc {
@@ -29,15 +31,15 @@ func (s IndexController) Get() echo.HandlerFunc {
 			return c.Render(http.StatusOK, "index.tpl.html", data)
 		}
 		token := strings.Split(bearer, " ")[1]
-		claims, err := acl.DecodeJWT(token, []byte("secret"))
+		claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
 		if err != nil {
-			s.Error.Err(err)
+			s.Error.Err(s.Ctx, err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
-		user, err := acl.GetUser(claims)
+		user, err := acl.GetUser(s.Ctx, claims)
 		if err != nil {
-			s.Error.Err(err)
+			s.Error.Err(s.Ctx, err)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
@@ -49,40 +51,40 @@ func (s IndexController) Get() echo.HandlerFunc {
 	}
 }
 
-func (c IndexController) RegisterResources(e *echo.Echo) error {
-	c.Error.Function = "GetCreate"
+func (s IndexController) RegisterResources(e *echo.Echo) error {
+	s.Error.Function = "GetCreate"
 	g := e.Group("")
-	g.GET("/", c.Get())
+	g.GET("/", s.Get())
 
 	resources := acl.Resources{}
 	resources = append(resources, acl.Resource{
 		Id: uuid.NewString(),
 		URL: "/",
 	})
-	adminRolePtr, err := acl.GetRole("admin")
+	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
 	if err != nil {
-		c.Error.Err(err)
+		s.Error.Err(s.Ctx, err)
 		return err
 	}
 	var adminRole acl.Role
 	if adminRolePtr != nil {
 		adminRole = *adminRolePtr
-		err = UpdateRole(adminRole.Id, resources)
+		err = UpdateRole(s.Ctx, adminRole.Id, resources)
 		if err != nil {
 			if err.Error() != "roles not found" {
-				c.Error.Err(err)
+				s.Error.Err(s.Ctx, err)
 				return err
 			}
 		}
 	}
-	err = UpdateResources(resources)
+	err = UpdateResources(s.Ctx, resources)
 	if err != nil {
-		c.Error.Err(err)
+		s.Error.Err(s.Ctx, err)
 		return err
 	}
-	err = UpdatePolicy("admin", resources)
+	err = UpdatePolicy(s.Ctx, "admin", resources)
 	if err != nil {
-		c.Error.Err(err)
+		s.Error.Err(s.Ctx, err)
 		return err
 	}
 	return nil

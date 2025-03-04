@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,7 +20,7 @@ type Attributes struct {
 	ContentType string `json:"contentType" db:"content_type"`
 }
 
-func (c Attributes) New() (*Attributes, error) {
+func (c Attributes) New(ctx context.Context) (*Attributes, error) {
 	a := c
 	a.Id = uuid.NewString()
 	a.CreatedAt = time.Now()
@@ -27,7 +28,7 @@ func (c Attributes) New() (*Attributes, error) {
 	return &a, nil
 }
 
-func (c Attributes) Columns() []string {
+func (c Attributes) Columns(ctx context.Context) []string {
 	cols := []string{
 		"id",
 		"parent_id",
@@ -42,7 +43,7 @@ func (c Attributes) Columns() []string {
 	return cols
 }
 
-func (c Attributes) Values() []interface{} {
+func (c Attributes) Values(ctx context.Context) []interface{} {
 	cols := make([]interface{}, 0)
 	cols = append(cols, c.Id)
 	cols = append(cols, c.ParentId)
@@ -55,7 +56,7 @@ func (c Attributes) Values() []interface{} {
 	return cols
 }
 
-func (c Attributes) PGHydrate(content Content) *Attributes {
+func (c Attributes) PGHydrate(ctx context.Context, content Content) *Attributes {
 	c.Id = content.Id
 	c.ParentId = content.ParentId
 	c.RootId = content.RootId
@@ -67,7 +68,7 @@ func (c Attributes) PGHydrate(content Content) *Attributes {
 	return &c
 }
 
-func (c *Attributes) MSIHydrate(msi map[string]interface{}) error {
+func (c *Attributes) MSIHydrate(ctx context.Context, msi map[string]interface{}) error {
 	if v, ok := msi["id"].(string); ok {
 		c.Id = v
 	}
@@ -100,17 +101,17 @@ func (c *Attributes) MSIHydrate(msi map[string]interface{}) error {
 	return nil
 }
 
-func (c Attributes) Merge(oldInput, newInput interface{}) (*Attributes, error) {
+func (c Attributes) Merge(ctx context.Context, oldInput, newInput interface{}) (*Attributes, error) {
 	var old, new Attributes
 	if o, ok := oldInput.(map[string]interface{}); ok {
-		err := c.MSIHydrate(o)
+		err := c.MSIHydrate(ctx, o)
 		if err != nil {
 			return nil, err
 		}
 		old = c
 	}
 	if o, ok := newInput.(map[string]interface{}); ok {
-		err := c.MSIHydrate(o)
+		err := c.MSIHydrate(ctx, o)
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +139,7 @@ func (c Attributes) Merge(oldInput, newInput interface{}) (*Attributes, error) {
 	return &new, nil
 } 
 
-func NewAttributes(createdBy *User) *Attributes {
+func NewAttributes(ctx context.Context, createdBy *User) *Attributes {
 	r := Attributes{
 		Id:        uuid.NewString(),
 		CreatedAt: time.Now(),

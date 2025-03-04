@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"inventory/src/acl"
 	"inventory/src/errors"
@@ -14,30 +15,31 @@ import (
 type DashboardController struct {
 	Logger *log.Logger
 	Error errors.Error
+	Ctx context.Context
 }
 
 func (s DashboardController) Get() echo.HandlerFunc {
 	return func (c echo.Context) error {
 		s.Error.Function = "Get"
 		s.Error.RequestUri = c.Request().RequestURI
-		data, err := authenticateToken(c)
+		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
-				s.Error.Err(err)
+				s.Error.Err(s.Ctx, err)
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			fmt.Printf("\nauthenticateToken err: %s\n", err.Error())
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		if token, ok := data["Token"].(string); ok {
-			claims, err := acl.DecodeJWT(token, []byte("secret"))
+			claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
 			if err != nil {
-				s.Error.Err(err)
+				s.Error.Err(s.Ctx, err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
-			user, err := acl.GetUser(claims)
+			user, err := acl.GetUser(s.Ctx, claims)
 			if err != nil {
-				s.Error.Err(err)
+				s.Error.Err(s.Ctx, err)
 				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
 			}
 			c.Set("user", user.Id)
@@ -49,45 +51,45 @@ func (s DashboardController) Get() echo.HandlerFunc {
 			return c.Render(http.StatusOK, "dashboard.tpl.html", data)
 		}
 		err = fmt.Errorf("invalid token")
-		s.Error.Err(err)
+		s.Error.Err(s.Ctx, err)
 		data["error"] = err.Error()
 
 		return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 	}
 }
 
-func (c DashboardController) RegisterResources(e *echo.Echo) error {
-	c.Error.Function = "GetCreate"
+func (s DashboardController) RegisterResources(e *echo.Echo) error {
+	s.Error.Function = "GetCreate"
 	
 	g := e.Group("")
-	g.GET("/dashboard", c.Get())
+	g.GET("/dashboard", s.Get())
 
 	resources := acl.Resources{}
 	resources = append(resources, acl.Resource{
 		Id: uuid.NewString(),
 		URL: "/dashboard",
 	})
-	adminRolePtr, err := acl.GetRole("admin")
+	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
 	if err != nil {
-		c.Error.Err(err)
+		s.Error.Err(s.Ctx, err)
 		return err
 	}
 	if adminRolePtr != nil {
 		adminRole := *adminRolePtr
-		err = UpdateRole(adminRole.Id, resources)
+		err = UpdateRole(s.Ctx, adminRole.Id, resources)
 		if err != nil {
-			c.Error.Err(err)
+			s.Error.Err(s.Ctx, err)
 			return err
 		}
 	}
-	err = UpdateResources(resources)
+	err = UpdateResources(s.Ctx, resources)
 	if err != nil {
-		c.Error.Err(err)
+		s.Error.Err(s.Ctx, err)
 		return err
 	}
-	err = UpdatePolicy("admin", resources)
+	err = UpdatePolicy(s.Ctx, "admin", resources)
 	if err != nil {
-		c.Error.Err(err)
+		s.Error.Err(s.Ctx, err)
 		return err
 	}
 	return nil
