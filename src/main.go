@@ -47,6 +47,10 @@ func JWTSkipper(c echo.Context) bool {
 }
 
 func main() {
+		ierr := errors.Error{
+			Package: "main",
+		}
+
 		err := godotenv.Load()
 		if err != nil {
 			panic(err)
@@ -54,6 +58,8 @@ func main() {
 		e := echo.New()
 		wd, err := os.Getwd()
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 		e.Static("/", wd+"/static")
@@ -71,16 +77,23 @@ func main() {
 
 		err = system_init.CreateSystemUser()
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
 		err = acl.CreateSystemPolicies()
 		if err != nil {
+			fmt.Println("\ntrace(0): main:createsystempolicies:exec:panic\n")
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
 		err = system_init.CreateAdminRole()
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
@@ -95,6 +108,8 @@ func main() {
 		}
 		err = indexController.RegisterResources(e)
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
@@ -107,6 +122,8 @@ func main() {
 		}
 		err = dashboardController.RegisterResources(e)
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
@@ -119,6 +136,8 @@ func main() {
 		}
 		err = settingsController.RegisterResources(e)
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
@@ -130,6 +149,8 @@ func main() {
 		}
 		err = locationController.RegisterResources(e)
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
@@ -141,6 +162,8 @@ func main() {
 		}
 		err = roomController.RegisterResources(e)
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
@@ -152,6 +175,8 @@ func main() {
 		}
 		err = zoneController.RegisterResources(e)
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
@@ -163,6 +188,8 @@ func main() {
 		}
 		err = containerController.RegisterResources(e)
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
@@ -174,6 +201,8 @@ func main() {
 		}
 		err = itemController.RegisterResources(e)
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 
@@ -185,6 +214,8 @@ func main() {
 		}
 		err = loginController.RegisterResources(e)
 		if err != nil {
+			ierr.Error = err
+			ierr.Err(err)
 			panic(err)
 		}
 

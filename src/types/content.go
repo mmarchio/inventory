@@ -28,7 +28,7 @@ func (c Content) Create(object IContent) error {
 		return err
 	}
 
-	//defer pg.Close()
+	defer pg.Close()
 
 	contentPtr, err := object.ToContent()
 	if err != nil {
@@ -40,13 +40,15 @@ func (c Content) Create(object IContent) error {
 	}
 
 	content := *contentPtr
-	_, vals := c.Values()
-	newVals := make([]interface{}, 0)
-	newVals = append(newVals, vals...)
 	if pg.Pgx == nil {
 		panic("pgx is nil")
 	}
-	_, err = pg.Pgx.Exec(
+	pg.Tx, err = pg.Pgx.Begin(pg.Ctx)
+	if err != nil {
+		return err
+	}
+	defer pg.Tx.Commit(pg.Ctx)
+	ctag, err := pg.Tx.Conn().Exec(
 		pg.Ctx,
 		"INSERT INTO content (id, parent_id, root_id, created_at, updated_at, created_by, owned, name, content_type, content) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
 		content.Attributes.Id, 
@@ -61,8 +63,14 @@ func (c Content) Create(object IContent) error {
 		content.Content,
 	)
 	if err != nil {
-		return err
+		fmt.Printf("\nctag: %s\n", ctag.String())
+		fmt.Printf("\ncontent: %#v", content)
+		rollbackErr := pg.Tx.Rollback(pg.Ctx)
+		if rollbackErr != nil {
+			return rollbackErr
+		}
 	}
+
 	return nil
 }
 
@@ -80,17 +88,21 @@ func (c Content) Read(id string) (*Content, error) {
 	}
 	err := pg.Open()
 	if err != nil {
+		fmt.Println("\ntrace(5): content:read:open:err\n")
 		return nil, err
 	}
 	defer pg.Close()
 
 	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE id = $1", id)
 	if err != nil {
+		fmt.Println("\ntrace(6): content:read:query:err\n")
 		return nil, err
 	}
-	err = rows.Scan(&c)
-	if err != nil {
-		return nil, err
+	if rows.Next() {
+		err = rows.Scan(&c)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &c, nil
