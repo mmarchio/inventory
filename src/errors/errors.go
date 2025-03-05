@@ -22,6 +22,9 @@ type Error struct {
 }
 
 func (c Error) Err(ctx context.Context, e error) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "errors:errors.go:Err")
+    }
 	if c.Error != nil {
 		c.Error = e
 		c.Message = c.Error.Error()
@@ -34,6 +37,9 @@ func (c Error) Err(ctx context.Context, e error) error {
 }
 
 func (c Error) ErrOrNil(ctx context.Context, ptr interface{}, e error) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "errors:error.go:Error:ErrOrNil")
+    }
 	if ptr == nil {
 		c.Error = fmt.Errorf("pointer is nil")
 		c.Message = c.Error.Error()
@@ -48,6 +54,9 @@ func (c Error) ErrOrNil(ctx context.Context, ptr interface{}, e error) error {
 }
 
 func ErrOrNil(ctx context.Context, ptr interface{}, e error) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "errors:error.go:ErrOrNil")
+    }
 	err := Error{}
 	return err.ErrOrNil(ctx, ptr, e)	
 }

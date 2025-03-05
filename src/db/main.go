@@ -179,6 +179,9 @@ type PostgresClient struct {
 }
 
 func NewPostgresClient(ctx context.Context) (*PostgresClient, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "db:main.go:NewPostgresClient")
+    }
     pg := PostgresClient{
         Ctx: ctx,
     }
@@ -186,6 +189,9 @@ func NewPostgresClient(ctx context.Context) (*PostgresClient, error) {
 }
 
 func (c *PostgresClient) Open() error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "db:main.go:PostgresClient:Open")
+    }
 	conn, err := pgx.Connect(c.Ctx, os.Getenv("POSTGRES_URL"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
@@ -211,14 +217,23 @@ func (c *PostgresClient) Open() error {
 }
 
 func (c PostgresClient) Close() error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "db:main.go:PostgresClient:Close")
+    }
     return c.Pgx.Close(c.Ctx)
 }
 
 func (c PostgresClient) Commit(tx pgx.Tx) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "db:main.go:PostgresClient:Commit")
+    }
     return tx.Conn().Close(c.Ctx)
 }
 
-func (c PostgresClient) Query(q string, rs pgx.RowScanner) error {
+func (c PostgresClient) Query(ctx context.Context, q string, rs pgx.RowScanner) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "db:main.go:PostgresClient:Open")
+    }
     err := c.Open()
     if err != nil {
         return err
