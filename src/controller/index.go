@@ -20,6 +20,9 @@ type IndexController struct {
 
 func (s IndexController) Get() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:index.go:IndexController:Get")
+		}
 		s.Error.Function = "Get"
 		s.Error.RequestUri = c.Request().RequestURI
 
@@ -52,7 +55,10 @@ func (s IndexController) Get() echo.HandlerFunc {
 }
 
 func (s IndexController) RegisterResources(e *echo.Echo) error {
-	s.Error.Function = "GetCreate"
+	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, "stack", "controllers:index.go:IndexController:RegisterResources")
+	}
+s.Error.Function = "GetCreate"
 	g := e.Group("")
 	g.GET("/", s.Get())
 

@@ -20,6 +20,9 @@ type LocationController struct{
 
 func (s LocationController) Get() echo.HandlerFunc {
 	return func (c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:Get")
+		}
 		s.Error.Function = "Get"
 		s.Error.RequestUri = c.Request().RequestURI
 		data, err := AuthenticateToken(s.Ctx, c)
@@ -62,6 +65,9 @@ func (s LocationController) Get() echo.HandlerFunc {
 
 func (s LocationController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:GetCreate")
+		}
 		s.Error.Function = "GetCreate"
 		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(s.Ctx, c)
@@ -91,6 +97,9 @@ func (s LocationController) GetCreate() echo.HandlerFunc {
 
 func (s LocationController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:GetEdit")
+		}
 		s.Error.Function = "GetEdit"
 		s.Error.RequestUri = c.Request().RequestURI
 	
@@ -154,6 +163,9 @@ func (s LocationController) GetEdit() echo.HandlerFunc {
 
 func (s LocationController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:GetDelete")
+		}
 		s.Error.Function = "GetDelete"
 		s.Error.RequestUri = c.Request().RequestURI
 
@@ -182,6 +194,9 @@ func (s LocationController) GetDelete() echo.HandlerFunc {
 
 func (s LocationController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:PostApiCreate")
+		}
 		s.Error.Function = "PostApiCreate"
 		s.Error.RequestUri = c.Request().RequestURI
 		data, err := AuthenticateToken(s.Ctx, c)
@@ -214,6 +229,9 @@ func (s LocationController) PostApiCreate() echo.HandlerFunc {
 
 func (s LocationController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:PostApiEdit")
+		}
 		s.Error.Function = "PostApiEdit"
 		s.Error.RequestUri = c.Request().RequestURI
 		data, err := AuthenticateToken(s.Ctx, c)
@@ -258,6 +276,9 @@ func (s LocationController) PostApiEdit() echo.HandlerFunc {
 }
 
 func (s LocationController) RegisterResources(e *echo.Echo) error {
+	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:RegisterResources")
+	}
 	s.Error.Function = "GetCreate"
 
 	view := e.Group("/content/location")

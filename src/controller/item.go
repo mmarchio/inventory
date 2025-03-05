@@ -17,6 +17,9 @@ type ItemController struct{
 
 func (s ItemController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:GetCreate")
+		}
 		s.Error.Function = "GetCreate"
 		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(s.Ctx, c)
@@ -46,6 +49,9 @@ func (s ItemController) GetCreate() echo.HandlerFunc {
 
 func (s ItemController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:GetEdit")
+		}
 		s.Error.Function = "GetEdit"
 		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(s.Ctx, c)
@@ -75,6 +81,9 @@ func (s ItemController) GetEdit() echo.HandlerFunc {
 
 func (s ItemController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:GetDelete")
+		}
 		s.Error.Function = "GetDelete"
 		s.Error.RequestUri = c.Request().RequestURI
 
@@ -105,6 +114,9 @@ func (s ItemController) GetDelete() echo.HandlerFunc {
 
 func (s ItemController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:PostApiCreate")
+		}
 		s.Error.Function = "PostApiCreate"
 		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(s.Ctx, c)
@@ -132,6 +144,9 @@ func (s ItemController) PostApiCreate() echo.HandlerFunc {
 
 func (s ItemController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:PostApiEdit")
+		}
 		s.Error.Function = "PostApiEdit"
 		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(s.Ctx, c)
@@ -158,7 +173,10 @@ func (s ItemController) PostApiEdit() echo.HandlerFunc {
 }
 
 func (s ItemController) RegisterResources(e *echo.Echo) error {
-	s.Error.Function = "GetCreate"
+	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:RegisterResources")
+	}
+s.Error.Function = "GetCreate"
 
 	view := e.Group("/content/item")
 	api := e.Group("/api/content/item")

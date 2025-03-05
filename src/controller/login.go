@@ -21,6 +21,9 @@ type LoginController struct{
 }
 
 func (s LoginController) RegisterResources(e *echo.Echo) error {
+	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, "stack", "controllers:login.go:LoginController:RegisterResources")
+	}
 	s.Error.Function = "RegisterResources"
 
 	e.GET("/logout", s.LogoutHandler())
@@ -58,6 +61,9 @@ func (s LoginController) RegisterResources(e *echo.Echo) error {
 
 func (s LoginController) LogoutHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:login.go:LoginController:LogoutHandler")
+		}
 		s.Error.Function = "LogoutHandler"
 
 		data := make(map[string]interface{})
@@ -86,6 +92,9 @@ func (s LoginController) LogoutHandler() echo.HandlerFunc {
 
 func (s LoginController) ApiLoginHandler() echo.HandlerFunc{
 	return func(c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:login.go:LoginController:ApiLoginHandler")
+		}
 		fmt.Println("loginController:ApiLoginHandler")
 		s.Error.Function = "ApiLoginHandler"
 		s.Error.RequestUri = c.Request().RequestURI

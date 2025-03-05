@@ -20,6 +20,9 @@ type DashboardController struct {
 
 func (s DashboardController) Get() echo.HandlerFunc {
 	return func (c echo.Context) error {
+		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, "stack", "controllers:dashboard.go:DashboardController:Get")
+		}
 		s.Error.Function = "Get"
 		s.Error.RequestUri = c.Request().RequestURI
 		data, err := authenticateToken(s.Ctx, c)
@@ -59,6 +62,9 @@ func (s DashboardController) Get() echo.HandlerFunc {
 }
 
 func (s DashboardController) RegisterResources(e *echo.Echo) error {
+	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, "stack", "controllers:dashboard.go:DashboardController:RegisterResources")
+	}
 	s.Error.Function = "GetCreate"
 	
 	g := e.Group("")

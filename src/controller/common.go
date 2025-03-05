@@ -21,6 +21,9 @@ type IDocument interface {
 }
 
 func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "controllers:common.go:GetRequestData")
+	}
 	body := make(map[string]interface{})
 	err := json.NewDecoder(c.Request().Body).Decode(&body)
 	if err != nil {
@@ -30,6 +33,9 @@ func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{
 }
 
 func authenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error){
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "controllers:common.go:authenticateToken")
+	}
 	data := make(map[string]interface{})
 	bearer := c.Request().Header.Get("AUTHORIZATION")
 	if bearer == "" {
@@ -60,6 +66,9 @@ func authenticateToken(ctx context.Context, c echo.Context) (map[string]interfac
 }
 
 func CreatePolicy(ctx context.Context, resource, role, permission string) (*acl.Policy, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "controllers:common.go:CreatePolicy")
+	}
 	segments := strings.Split(resource, "/")
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
@@ -79,6 +88,9 @@ func CreatePolicy(ctx context.Context, resource, role, permission string) (*acl.
 }
 
 func UpdateRole(ctx context.Context, id string, resources acl.Resources) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "controllers:common.go:UpdateRole")
+	}
 	rolePtr, err := acl.GetRole(ctx, id)
 	if err != nil {
 		return err
@@ -102,6 +114,9 @@ func UpdateRole(ctx context.Context, id string, resources acl.Resources) error {
 }
 
 func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "controllers:common.go:UpdatePolicy")
+	}
 	dbPoliciesPtr, err := acl.GetPolicyByRole(ctx, role)
 	if err != nil {
 		return err
@@ -140,6 +155,9 @@ func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) err
 }
 
 func UpdateResources(ctx context.Context, resources acl.Resources) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "controllers:common.go:UpdateResource")
+	}
 	dbResourcesPtr, err := acl.FindResources(ctx)
 	if err != nil {
 		return err
@@ -170,6 +188,9 @@ func UpdateResources(ctx context.Context, resources acl.Resources) error {
 }
 
 func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "controllers:common.go:GetContentIdFromUrl")
+	}
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
 	url := c.Request().RequestURI
@@ -181,6 +202,9 @@ func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
 }
 
 func AuthenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "controllers:common.go:AuthenticateToken")
+	}
 	data, err := authenticateToken(ctx, c)
 	if err != nil {
 		return nil, err
@@ -190,6 +214,7 @@ func AuthenticateToken(ctx context.Context, c echo.Context) (map[string]interfac
 		if err != nil {
 			return nil, err
 		}
+		data["claims"] = claims
 		userPtr, err := acl.GetUser(ctx, claims)
 		if err != nil {
 			return nil, err
