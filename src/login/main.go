@@ -34,6 +34,9 @@ type Credentials struct {
 }
 
 func (c Credentials) New(ctx context.Context) (*Credentials, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Credentials:New")
+    }
     credentials := c
     attributesPtr, err := c.Attributes.New(ctx)
     if err != nil {
@@ -48,6 +51,9 @@ func (c Credentials) New(ctx context.Context) (*Credentials, error) {
 }
 
 func (c Credentials) ToContent(ctx context.Context) (*types.Content, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Credentials:ToContent")
+    }
     content := types.Content{}
     content.Id = c.Id
     jbytes, err := json.Marshal(c)
@@ -59,6 +65,9 @@ func (c Credentials) ToContent(ctx context.Context) (*types.Content, error) {
 }
 
 func (c Credentials) PGRead(ctx context.Context) (*Credentials, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Credentials:PGRead")
+    }
     contentPtr, err := types.Content{}.Read(ctx, c.Id)
     if err != nil {
         return nil, err
@@ -76,6 +85,9 @@ func (c Credentials) PGRead(ctx context.Context) (*Credentials, error) {
 }
 
 func (c Credentials) PGCreate(ctx context.Context) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Credentials:PGCreate")
+    }
     contentPtr, err := c.ToContent(ctx)
     if err != nil {
         return err
@@ -88,6 +100,9 @@ func (c Credentials) PGCreate(ctx context.Context) error {
 }
 
 func (c Credentials) PGUpdate(ctx context.Context) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Credentials:PGUpdate")
+    }
     contentPtr, err := c.ToContent(ctx)
     if err != nil {
         return err
@@ -100,10 +115,16 @@ func (c Credentials) PGUpdate(ctx context.Context) error {
 }
 
 func (c Credentials) PGDelete(ctx context.Context) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Credentials:PGDelete")
+    }
     return types.Content{}.Delete(ctx, c.Id)
 }
 
 func (c Credentials) FindBy(ctx context.Context, jstring string) (*Credentials, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Credentials:FindBy")
+    }
     contentPtr, err := types.Content{}.FindBy(ctx, jstring)
     if err != nil {
         return nil, err
@@ -121,6 +142,9 @@ func (c Credentials) FindBy(ctx context.Context, jstring string) (*Credentials, 
 }
 
 func (c Credentials) MSIHydrate(ctx context.Context, msi map[string]interface{}) (Credentials, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Credentials:MSIHydrate")
+    }
     r := Credentials{}
     if v, ok := msi["username"].(string); ok {
         r.Username = v
@@ -132,6 +156,9 @@ func (c Credentials) MSIHydrate(ctx context.Context, msi map[string]interface{})
 }
 
 func (c Credentials) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Credentials:ToMSI")
+    }
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
@@ -145,6 +172,9 @@ func (c Credentials) ToMSI(ctx context.Context) (map[string]interface{}, error) 
 }
 
 func (c Credentials) IsDocument(ctx context.Context) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Credentials:IsDocument")
+    }
     return true
 }
 
@@ -154,6 +184,9 @@ type Claims struct {
 }
 
 func Login(ctx context.Context, username, userValue, dbValue string) (*http.Cookie, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:Login")
+    }
     creds := Credentials{
         Username: username,
     }
@@ -199,6 +232,9 @@ func Login(ctx context.Context, username, userValue, dbValue string) (*http.Cook
 }
 
 func ExtendToken(ctx context.Context, tokenString string, secret []byte) (*string, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "login:login.go:ExtendToken")
+    }
     claims, err := decodeJWT(ctx, tokenString, secret)
     if err != nil {
         return nil, err

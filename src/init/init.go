@@ -13,9 +13,9 @@ import (
 
 
 func CreateSystemUser(ctx context.Context) error {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "init.go:CreateSystemUser")
-	}
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "init:init.go:CreateSystemUser")
+    }
 	now := time.Now()
 	u := types.User{
 		Roles: []string{"system"},
@@ -68,9 +68,9 @@ func CreateSystemUser(ctx context.Context) error {
 }
 
 func CreateAdminRole(ctx context.Context) error {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "init.go:CreateAdminUser")
-	}
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "init:init.go:CreateAdminRole")
+    }
 	role := acl.Role{}
 	attributesPtr, err := role.Attributes.New(ctx)
 	if err != nil {
