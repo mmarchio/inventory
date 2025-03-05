@@ -21,6 +21,9 @@ type Attributes struct {
 }
 
 func (c Attributes) New(ctx context.Context) (*Attributes, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:attributes.go:Attributes:New")
+    }
 	a := c
 	a.Id = uuid.NewString()
 	a.CreatedAt = time.Now()
@@ -29,6 +32,9 @@ func (c Attributes) New(ctx context.Context) (*Attributes, error) {
 }
 
 func (c Attributes) Columns(ctx context.Context) []string {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:attributes.go:Attributes:Columns")
+    }
 	cols := []string{
 		"id",
 		"parent_id",
@@ -44,6 +50,9 @@ func (c Attributes) Columns(ctx context.Context) []string {
 }
 
 func (c Attributes) Values(ctx context.Context) []interface{} {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:attributes.go:Attributes:Values")
+    }
 	cols := make([]interface{}, 0)
 	cols = append(cols, c.Id)
 	cols = append(cols, c.ParentId)
@@ -57,6 +66,9 @@ func (c Attributes) Values(ctx context.Context) []interface{} {
 }
 
 func (c Attributes) PGHydrate(ctx context.Context, content Content) *Attributes {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:attributes.go:Attributes:PGHydrate")
+    }
 	c.Id = content.Id
 	c.ParentId = content.ParentId
 	c.RootId = content.RootId
@@ -69,6 +81,9 @@ func (c Attributes) PGHydrate(ctx context.Context, content Content) *Attributes 
 }
 
 func (c *Attributes) MSIHydrate(ctx context.Context, msi map[string]interface{}) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:attributes.go:Attributes:MSIHydrate")
+    }
 	if v, ok := msi["id"].(string); ok {
 		c.Id = v
 	}
@@ -102,6 +117,9 @@ func (c *Attributes) MSIHydrate(ctx context.Context, msi map[string]interface{})
 }
 
 func (c Attributes) Merge(ctx context.Context, oldInput, newInput interface{}) (*Attributes, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:attributes.go:Attributes:Merge")
+    }
 	var old, new Attributes
 	if o, ok := oldInput.(map[string]interface{}); ok {
 		err := c.MSIHydrate(ctx, o)
@@ -140,6 +158,9 @@ func (c Attributes) Merge(ctx context.Context, oldInput, newInput interface{}) (
 } 
 
 func NewAttributes(ctx context.Context, createdBy *User) *Attributes {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:attributes.go:NewAttributes")
+    }
 	stack := []any{}
 	if v, ok := ctx.Value("stack").([]any); ok {
 		stack = append(stack, v...)

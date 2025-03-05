@@ -16,6 +16,9 @@ type Address struct {
 }
 
 func NewAddress(ctx context.Context, createdBy *User) (*Address, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:address.go:NewAddress")
+    }
 	address := Address{}
 	attributesPtr := NewAttributes(ctx, createdBy)
 	if attributesPtr != nil {
@@ -25,6 +28,9 @@ func NewAddress(ctx context.Context, createdBy *User) (*Address, error) {
 }
 
 func (c Address) Merge(ctx context.Context, oldInput, newInput interface{}) (*Address, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:address.go:Address:Merge")
+    }
 	var old, new Address
 	if o, ok := oldInput.(map[string]interface{}); ok {
 		oldPtr, err := c.Hydrate(ctx, o)
@@ -81,14 +87,23 @@ func (c Address) Merge(ctx context.Context, oldInput, newInput interface{}) (*Ad
 }
 
 func (c Address) IsDocument(ctx context.Context) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:address.go:Address:IsDocument")
+    }
 	return true
 }
 
 func (c Address) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:address.go:Address:ToMSI")
+    }
 	return toMSI(ctx, c)
 }
 
 func (c Address) Hydrate(ctx context.Context, msi map[string]interface{}) (*Address, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:address.go:Address:Hydrate")
+    }
 	address := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
 		err := c.Attributes.MSIHydrate(ctx, v)
