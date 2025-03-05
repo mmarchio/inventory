@@ -23,6 +23,9 @@ type IDocument interface{
 func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := context.Background()
+		if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+			ctx = v(ctx, "stack", "acl:middleware.go:ACL")
+		}
 		e := errors.Error{
 			RequestUri: c.Request().RequestURI,
 			Package: "acl",
@@ -85,14 +88,16 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:middleware.go:DecodeJWT")
+	}
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Verify the signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-
-			err2 := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	// Verify the signing method
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		err2 := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		return nil, err2
-		}
-		return secretKey, nil
+	}
+	return secretKey, nil
 	})
 
 	if err != nil {
@@ -108,6 +113,9 @@ func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.M
 }
 
 func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:middleware.go:GetUser")
+	}
 	b, err := json.Marshal(claims)
 	if err != nil {
 		return nil, err
@@ -132,6 +140,9 @@ func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User, error) {
 }
 
 func getResourcePolicy(ctx context.Context, u types.User, resource string) (*Policy, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:middleware.go:getResourcePolicy")
+	}
 	policiesPtr, err := Policies{}.FindPolicies(ctx)
 	if err != nil {
 		return nil, err
@@ -159,6 +170,9 @@ func skipper(c echo.Context) bool {
 }
 
 func GetUsableClaims(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:middleware.go:GetUsableClaims")
+	}
 	token, err := GetBearerToken(ctx, c)
 	if err != nil {
 		return nil, err
@@ -180,6 +194,9 @@ func GetUsableClaims(ctx context.Context, c echo.Context) (*map[string]interface
 }
 
 func pathToResource(ctx context.Context, url string) string {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:middleware.go:pathToResource")
+	}
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
 	segments := strings.Split(url, "/")
@@ -191,6 +208,9 @@ func pathToResource(ctx context.Context, url string) string {
 }
 
 func PermissionsHandler(ctx context.Context, c echo.Context, p Policy) (bool, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:middleware.go:PermissionsHandler")
+	}
 	userPtr, err := GetUserFromContext(ctx, c)
 	if err != nil {
 		return false, err

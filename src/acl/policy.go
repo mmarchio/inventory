@@ -17,6 +17,9 @@ type Policy struct {
 }
 
 func (c Policy) New(ctx context.Context) (*Policy, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policy:New")
+	}
 	var err error
 	policy := c
 	attributesPtr, err := c.Attributes.New(ctx)
@@ -32,6 +35,9 @@ func (c Policy) New(ctx context.Context) (*Policy, error) {
 }
 
 func (c Policy) ToContent(ctx context.Context) (*types.Content, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policy:ToContent")
+	}
 	content := types.Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
@@ -43,6 +49,9 @@ func (c Policy) ToContent(ctx context.Context) (*types.Content, error) {
 }
 
 func (c Policy) PGRead(ctx context.Context) (*Policy, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policy:PGRead")
+	}
 	contentPtr, err := types.Content{}.Read(ctx, c.Attributes.Id)
 	if err != nil {
 		return nil, err
@@ -65,10 +74,16 @@ func (c Policy) PGRead(ctx context.Context) (*Policy, error) {
 }
 
 func (c Policy) PGCreate(ctx context.Context) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policy:PGCreate")
+	}
 	return types.Content{}.Create(ctx, c)
 }
 
 func (c Policy) PGUpdate(ctx context.Context) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policy:PGUpdate")
+	}
 	content, err := c.ToContent(ctx)
 	if err != nil {
 		return nil
@@ -77,14 +92,23 @@ func (c Policy) PGUpdate(ctx context.Context) error {
 }
 
 func (c Policy) PGDelete(ctx context.Context) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policy:PGDelete")
+	}
 	return types.Content{}.Delete(ctx, c.Attributes.Id)
 }
 
 func (c Policy) IsDocument(ctx context.Context) bool {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policy:IsDocument")
+	}
 	return true
 }
 
 func (c Policy) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policy:ToMSI")
+	}
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
@@ -100,6 +124,9 @@ func (c Policy) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 type Policies []Policy
 
 func (c Policies) In(ctx context.Context, id string) bool {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policies:In")
+	}
 	for _, o := range c {
 		if o.Attributes.Id == id {
 			return true
@@ -109,6 +136,9 @@ func (c Policies) In(ctx context.Context, id string) bool {
 }
 
 func (c Policies) SelectIn(ctx context.Context) (*Policies, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policies:SelectIn")
+	}
 	var ids []string
 	for _, policy := range c {
 		ids = append(ids, policy.Attributes.Id)
@@ -133,10 +163,16 @@ func (c Policies) SelectIn(ctx context.Context) (*Policies, error) {
 }
 
 func (c Policies) IsDocument(ctx context.Context) bool {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policies:IsDocument")
+	}
 	return true
 }
 
 func (c Policies) FindPolicies(ctx context.Context) (*Policies, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policies:FindPolicies")
+	}
 	content, err := types.Content{}.FindAll(ctx, "policy")
 	if err != nil {
 		return nil, err
@@ -154,6 +190,9 @@ func (c Policies) FindPolicies(ctx context.Context) (*Policies, error) {
 }
 
 func (c Policies) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policies:ToMSI")
+	}
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
@@ -167,6 +206,9 @@ func (c Policies) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 }
 
 func (c Policies) CreateMany(ctx context.Context) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:Policies:CreateMany")
+	}
 	contents := make([]types.Content, 0)
 	for _, policy := range c {
 		contentPtr, err := policy.ToContent(ctx)
@@ -187,6 +229,9 @@ func (c Policies) CreateMany(ctx context.Context) error {
 }
 
 func CreatePolicy(ctx context.Context, name, role, resource string) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:CreatePolicy")
+	}
 	rolePtr, err := GetRole(ctx, role)
 	if err != nil {
 		return err
@@ -206,6 +251,9 @@ func CreatePolicy(ctx context.Context, name, role, resource string) error {
 }
 
 func NewPolicy(ctx context.Context, name, role, resource, permission string) *Policy {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:NewPolicy")
+	}
 	a := types.NewAttributes(ctx, nil)
 	if a != nil {
 		att := *a
@@ -224,6 +272,9 @@ func NewPolicy(ctx context.Context, name, role, resource, permission string) *Po
 }
 
 func GetPolicies(ctx context.Context) (*Policies, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:GetPolicies")
+	}
 	policiesPtr, err := Policies{}.FindPolicies(ctx)
 	if err != nil {
 		return nil, err
@@ -235,6 +286,9 @@ func GetPolicies(ctx context.Context) (*Policies, error) {
 }
 
 func GetPolicyByRole(ctx context.Context, role string) (*Policies, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:GetPolicyByRole")
+	}
 	dbPoliciesPtr, err := GetPolicies(ctx)
 	if err != nil {
 		return nil, err
@@ -253,6 +307,9 @@ func GetPolicyByRole(ctx context.Context, role string) (*Policies, error) {
 }
 
 func GetPolicyById(ctx context.Context, id string) (*Policy, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:GetPolicyById")
+	}
 	dbPoliciesPtr, err := GetPolicies(ctx)
 	if err != nil {
 		return nil, err
@@ -269,6 +326,9 @@ func GetPolicyById(ctx context.Context, id string) (*Policy, error) {
 }
 
 func CreateSystemPolicies(ctx context.Context) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:policy.go:CreateSystemPolicies")
+	}
 	policies := Policies{}
 	pol := NewPolicy(ctx, "system-create-user", "system", "/api/user/create", "all")
 	if pol != nil {

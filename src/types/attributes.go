@@ -140,6 +140,11 @@ func (c Attributes) Merge(ctx context.Context, oldInput, newInput interface{}) (
 } 
 
 func NewAttributes(ctx context.Context, createdBy *User) *Attributes {
+	stack := []any{}
+	if v, ok := ctx.Value("stack").([]any); ok {
+		stack = append(stack, v...)
+		ctx = context.WithValue(ctx, "stack", stack)
+	}
 	r := Attributes{
 		Id:        uuid.NewString(),
 		CreatedAt: time.Now(),

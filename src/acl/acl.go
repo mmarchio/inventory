@@ -18,6 +18,9 @@ type Permission struct {
 type Permissions []Permission
 
 func FindPermissions(ctx context.Context) (*Permissions, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl.go:FindPermissions")
+	}
 	content, err := types.Content{}.FindAll(ctx, "permission")
 	if err != nil {
 		return nil, err
@@ -35,6 +38,9 @@ func FindPermissions(ctx context.Context) (*Permissions, error) {
 }
 
 func GetBearerToken(ctx context.Context, c echo.Context) (string, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl.go:FindPermissions")
+	}
 	bearer := c.Request().Header.Get("AUTHORIZATION")
 	if bearer == "" {
 		err := fmt.Errorf("authorization header not found")
@@ -49,6 +55,9 @@ func GetBearerToken(ctx context.Context, c echo.Context) (string, error) {
 }
 
 func GetUserFromContext(ctx context.Context, c echo.Context) (*types.User, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl.go:FindPermissions")
+	}
 	token, err := GetBearerToken(ctx, c)
 	if err != nil {
 		return nil, err

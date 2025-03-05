@@ -16,12 +16,18 @@ type Resource struct {
 }
 
 func (c Resource) New(ctx context.Context) (*Resource, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resource:New")
+	}
 	resource := c
 	resource.Id = uuid.NewString()
 	return &resource, nil
 }
 
 func (c Resource) ToContent(ctx context.Context) (*types.Content, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resource:ToContent")
+	}
 	content := types.Content{}
 	content.Attributes.Id = c.Id
 	content.Attributes.ContentType = "resource"
@@ -34,6 +40,9 @@ func (c Resource) ToContent(ctx context.Context) (*types.Content, error) {
 }
 
 func (c Resource) PGRead(ctx context.Context) (*Resource, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resource:PGRead")
+	}
 	contentPtr, err := types.Content{}.Read(ctx, c.Id)
 	if err != nil {
 		return nil, err
@@ -51,10 +60,16 @@ func (c Resource) PGRead(ctx context.Context) (*Resource, error) {
 }
 
 func (c Resource) PGCreate(ctx context.Context) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resource:PGCreate")
+	}
 	return types.Content{}.Create(ctx, c)
 }
 
 func (c Resource) PGUpdate(ctx context.Context) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resource:PGUpdate")
+	}
 	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
 		return err
@@ -67,14 +82,23 @@ func (c Resource) PGUpdate(ctx context.Context) error {
 }
 
 func (c Resource) PGDelete(ctx context.Context) error {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resource:PGDelete")
+	}
 	return types.Content{}.Delete(ctx, c.Attributes.Id)
 }
 
-func (c Resource) IsDocument() bool {
+func (c Resource) IsDocument(ctx context.Context) bool {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resource:IsDocument")
+	}
 	return true
 }
 
 func (c Resource) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resource:ToMSI")
+	}
 	r := make(map[string]interface{})
 	b, err := json.Marshal(c)
 	if err != nil {
@@ -90,6 +114,9 @@ func (c Resource) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 type Resources []Resource
 
 func (c Resources) In(ctx context.Context, id string) bool {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resources:In")
+	}
 	for _, o := range c {
 		if o.Attributes.Id == id {
 			return true
@@ -99,10 +126,16 @@ func (c Resources) In(ctx context.Context, id string) bool {
 }
 
 func (c Resources) IsDocument(ctx context.Context) bool {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resources:IsDocument")
+	}
 	return true
 }
 
 func (c Resources) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:Resources:ToMSI")
+	}
 	r := make(map[string]interface{})
 	b, err := json.Marshal(c)
 	if err != nil {
@@ -116,6 +149,9 @@ func (c Resources) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 }
 
 func FindResources(ctx context.Context) (*Resources, error) {
+	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+		ctx = v(ctx, "stack", "acl:resource.go:FindResources")
+	}
 	content, err := types.Content{}.FindAll(ctx, "resource")
 	if err != nil {
 		return nil, err
