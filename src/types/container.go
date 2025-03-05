@@ -8,6 +8,9 @@ type Container struct {
 }
 
 func NewContainer(ctx context.Context, createdBy *User) (*Container, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:container.go:NewContainer")
+    }
 	container := Container{}
 	attributesPtr := NewAttributes(ctx, createdBy)
 	if attributesPtr != nil {
@@ -17,14 +20,23 @@ func NewContainer(ctx context.Context, createdBy *User) (*Container, error) {
 }
 
 func (c Container) IsDocument(ctx context.Context) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:container.go:Container:IsDocument")
+    }
 	return true
 }
 
 func (c Container) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:container.go:Container:ToMSI")
+    }
 	return toMSI(ctx, c)
 }
 
 func (c Container) Hydrate(ctx context.Context, msi map[string]interface{}) (*Container, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:container.go:Container:Hydrate")
+    }
 	container := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
 		err := container.Attributes.MSIHydrate(ctx, v)
@@ -47,7 +59,10 @@ func (c Container) Hydrate(ctx context.Context, msi map[string]interface{}) (*Co
 
 type Containers []Container
 
-func (c Containers) In(id string) bool {
+func (c Containers) In(ctx context.Context, id string) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:container.go:Containers:In")
+    }
 	for _, o := range c {
 		if o.Attributes.Id == id {
 			return true
@@ -57,6 +72,9 @@ func (c Containers) In(id string) bool {
 }
 
 func (c Containers) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Containers, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:container.go:Container:Hydrate")
+    }
 	containers := c
 	for _, r := range msi {
 		container := Container{}

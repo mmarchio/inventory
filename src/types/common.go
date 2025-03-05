@@ -20,6 +20,9 @@ type IDocument interface {
 }
 
 func toMSI(ctx context.Context, c interface{}) (map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:common.go:toMSI")
+    }
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
@@ -33,15 +36,24 @@ func toMSI(ctx context.Context, c interface{}) (map[string]interface{}, error) {
 }
 
 func JSONValidate(ctx context.Context, data []byte, dest interface{}) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:common.go:JSONValidate")
+    }
 	err := json.Unmarshal(data, &dest)
 	return err == nil
 }
 
 func GetContent(ctx context.Context, id string) (*Content, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:common.go:GetContent")
+    }
 	return Content{}.Read(ctx, id)
 }
 
 func GetMSIAttribute(ctx context.Context, name string, msi map[string]interface{}) (string, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:common.go:GetMSIAttribute")
+    }
 	if a, ok := msi["attributes"].(map[string]interface{}); ok {
 		if v, ok := a[name].(string); ok {
 			return v, nil
@@ -51,6 +63,9 @@ func GetMSIAttribute(ctx context.Context, name string, msi map[string]interface{
 }
 
 func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:common.go:GetContentFromURL")
+    }
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
 	url := c.Request().RequestURI
