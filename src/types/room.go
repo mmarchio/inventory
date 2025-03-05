@@ -8,6 +8,9 @@ type Room struct {
 }
 
 func NewRoom(ctx context.Context, createdBy User) *Room {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:room.go:NewRoom")
+    }
 	r := Room{}
 	a := NewAttributes(ctx, &createdBy)
 	if a != nil {
@@ -17,14 +20,23 @@ func NewRoom(ctx context.Context, createdBy User) *Room {
 }
 
 func (c Room) IsDocument(ctx context.Context) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:room.go:room:IsDocument")
+    }
 	return true
 }
 
 func (c Room) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:room.go:room:ToMSI")
+    }
 	return toMSI(ctx, c)
 }
 
 func (c Room) Hydrate(ctx context.Context, msi map[string]interface{}) (*Room, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:room.go:room:Hydrate")
+    }
 	room := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
 		err := room.Attributes.MSIHydrate(ctx, v)
@@ -49,6 +61,9 @@ func (c Room) Hydrate(ctx context.Context, msi map[string]interface{}) (*Room, e
 type Rooms []Room
 
 func (c Rooms) In(ctx context.Context, id string) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:room.go:rooms:In")
+    }
 	for _, r := range c {
 		if r.Attributes.Id == id {
 			return true
@@ -58,6 +73,9 @@ func (c Rooms) In(ctx context.Context, id string) bool {
 }
 
 func (c Rooms) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Rooms, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:room.go:room:Hydrate")
+    }
 	rooms := c
 	for _, r := range msi {
 		roomPtr := &Room{}

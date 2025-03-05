@@ -25,6 +25,9 @@ type User struct {
 }
 
 func (c User) New(ctx context.Context) (*User, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:New")
+    }
 	user := c
 	attributesPtr, err := c.Attributes.New(ctx, )
 	if err != nil {
@@ -39,6 +42,9 @@ func (c User) New(ctx context.Context) (*User, error) {
 }
 
 func (c User) ToContent(ctx context.Context) (*Content, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:ToContent")
+    }
 	content := Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
@@ -50,6 +56,9 @@ func (c User) ToContent(ctx context.Context) (*Content, error) {
 }
 
 func (c User) Merge(ctx context.Context, old, new User) (*User, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:Merge")
+    }
 	attributesPtr, err := c.Attributes.Merge(ctx, old.Attributes, new.Attributes)
 	if err != nil {
 		return nil, err
@@ -85,26 +94,41 @@ func (c User) Merge(ctx context.Context, old, new User) (*User, error) {
 }
 
 func (c User) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:ToMSI")
+    }
 	return toMSI(ctx, c)
 }
 
 type Users []User
 
 func (c Users) IsDocument(ctx context.Context) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:users:IsDocument")
+    }
 	return true
 }
 
 func (c Users) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:users:ToMSI")
+    }
 	return toMSI(ctx, c)
 }
 
 func NewUser(ctx context.Context) *User {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:NewUser")
+    }
 	u := User{}
 	u.Attributes = *NewAttributes(ctx, nil)
 	return &u
 }
 
 func (c User) Hydrate(ctx context.Context, msi map[string]interface{}) (*User, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:Hydrate")
+    }
 	u := User{}
 	if m, ok := msi["attributes"].(map[string]interface{}); ok {
 		u.Attributes.MSIHydrate(ctx, m)
@@ -150,6 +174,9 @@ func (c User) Hydrate(ctx context.Context, msi map[string]interface{}) (*User, e
 }
 
 func GetUser(ctx context.Context, id string) (*User, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:GetUser")
+    }
 	usersPtr, err := GetUsers(ctx)
 	if err != nil {
 		return nil, err
@@ -166,6 +193,9 @@ func GetUser(ctx context.Context, id string) (*User, error) {
 }
 
 func (c User) FindBy(ctx context.Context, jstring string) (*User, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:FindBy")
+    }
 	contentPtr, err := Content{}.FindBy(ctx, jstring)
 	if err != nil {
 		return nil, err
@@ -183,6 +213,9 @@ func (c User) FindBy(ctx context.Context, jstring string) (*User, error) {
 }
 
 func (c Users) In(ctx context.Context, id string) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:users.go:user:In")
+    }
 	for _, o := range c {
 		if o.Attributes.Id == id {
 			return true
@@ -192,6 +225,9 @@ func (c Users) In(ctx context.Context, id string) bool {
 }
 
 func (c Users) FindAll(ctx context.Context) (*Users, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:users:FindAll")
+    }
 	jstring := "{\"contentType\": \"location\"}"
 	contents, err := Content{}.FindAll(ctx, jstring)
 	if err != nil {
@@ -210,18 +246,30 @@ func (c Users) FindAll(ctx context.Context) (*Users, error) {
 }
 
 func GetUsers(ctx context.Context) (*Users, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:GetUsers")
+    }
 	return Users{}.FindAll(ctx)
 }
 
 func (i User) MarshalBinary(ctx context.Context) ([]byte, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:MarshalBinary")
+    }
 	return json.Marshal(i)
 }
 
 func (c User) IsDocument(ctx context.Context) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:IsDocument")
+    }
 	return true
 }
 
 func (c User) HasRole(ctx context.Context, role string) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:HasRole")
+    }
 	for _, v := range c.Roles {
 		if v == role {
 			return true
@@ -231,6 +279,9 @@ func (c User) HasRole(ctx context.Context, role string) bool {
 }
 
 func (c User) PGHydrate(ctx context.Context, content Content) (*User, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:PGHydrate")
+    }
 	user := c
 	attributesPtr := c.Attributes.PGHydrate(ctx, content)
 	if attributesPtr == nil {
@@ -245,6 +296,9 @@ func (c User) PGHydrate(ctx context.Context, content Content) (*User, error) {
 }
 
 func (c User) PGRead(ctx context.Context, id string) (*User, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:PGRead")
+    }
 	contentPtr, err := Content{}.Read(ctx, id)
 	if err != nil {
 		return nil, err
@@ -257,6 +311,9 @@ func (c User) PGRead(ctx context.Context, id string) (*User, error) {
 }
 
 func (c User) PGCreate(ctx context.Context) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:PGCreate")
+    }
 	err := Content{}.Create(ctx, c)
 	if err != nil {
 		return err
@@ -265,6 +322,9 @@ func (c User) PGCreate(ctx context.Context) error {
 }
 
 func (c User) PGUpdate(ctx context.Context) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:PGUpdate")
+    }
 	columns := c.Columns(ctx)
 	values := c.Values(ctx)
 	sets := []string{}
@@ -281,6 +341,9 @@ func (c User) PGUpdate(ctx context.Context) error {
 }
 
 func (c User) PGDelete(ctx context.Context) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:PGDelete")
+    }
 	return Content{}.Delete(ctx, c.Attributes.Id)
 }
 
@@ -319,16 +382,25 @@ func (c User) ScanRow(rows pgx.Rows) error {
 }
 
 func (c User) Columns(ctx context.Context) []string {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:Columns")
+    }
 	columns := c.Attributes.Columns(ctx)
 	return columns
 }
 
 func (c User) Values(ctx context.Context) []interface{} {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:Values")
+    }
 	values := c.Attributes.Values(ctx)
 	return values
 }
 
 func UserPGRead(ctx context.Context, id string) (*User, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:user.go:user:UserPGRead")
+    }
 	u := &User{}
 	u, err := u.PGRead(ctx, id)
 	if err != nil {

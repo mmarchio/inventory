@@ -19,6 +19,9 @@ type Content struct {
 }
 
 func (c Content) Create(ctx context.Context, object IContent) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:content.go:Content:Create")
+    }
 	pg := db.PostgresClient{
 		Ctx: ctx,
 	}
@@ -67,11 +70,17 @@ func (c Content) Create(ctx context.Context, object IContent) error {
 }
 
 func (c Content) Columns(ctx context.Context) string {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:content.go:Content:Columns")
+    }
 	cols := []string{"id", "parent_id", "root_id", "created_at", "updated_at", "created_by", "owned", "name", "content_type", "content"}
 	return fmt.Sprintf("%s", strings.Join(cols, ", "))
 }
 
 func (c Content) Values(ctx context.Context) []interface{} {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:content.go:Content:Values")
+    }
 	vals := []interface{}{
 		c.Attributes.Id, 
 		c.Attributes.ParentId, 
@@ -88,6 +97,9 @@ func (c Content) Values(ctx context.Context) []interface{} {
 }
 
 func (c Content) CreateMany(ctx context.Context, objects []Content) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:content.go:Content:CreateMany")
+    }
 	pg := db.PostgresClient{
 		Ctx: ctx,
 	}
@@ -151,6 +163,9 @@ func (c Content) ScanRow(rows pgx.Rows) error {
 }
 
 func (c Content) Read(ctx context.Context, id string) (*Content, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:content.go:Content:Read")
+    }
 	pg := db.PostgresClient{
 		Ctx: ctx,
 	}
@@ -175,6 +190,9 @@ func (c Content) Read(ctx context.Context, id string) (*Content, error) {
 }
 
 func (c Content) FindAll(ctx context.Context, t string) ([]Content, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:content.go:Content:FindAll")
+    }
 	pg, err := db.NewPostgresClient(ctx)
 	if err != nil {
 		return nil, err
@@ -201,6 +219,9 @@ func (c Content) FindAll(ctx context.Context, t string) ([]Content, error) {
 }
 
 func (c Content) FindBy(ctx context.Context, jstring string) (*Content, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:content.go:Content:FindBy")
+    }
 	pg, err := db.NewPostgresClient(ctx)
 	if err != nil {
 		return nil, err
@@ -218,6 +239,9 @@ func (c Content) FindBy(ctx context.Context, jstring string) (*Content, error) {
 }
 
 func (c Content) SelectIn(ctx context.Context, ids []string) ([]*Content, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:content.go:Content:SelectIn")
+    }
 	pg, err := db.NewPostgresClient(ctx)
 	if err != nil {
 		return nil, err
@@ -246,6 +270,9 @@ func (c Content) SelectIn(ctx context.Context, ids []string) ([]*Content, error)
 }
 
 func (c Content) Update(ctx context.Context, object IContent) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:content.go:Content:Update")
+    }
 	pg := db.PostgresClient{
 		Ctx: context.Background(),
 	}
@@ -272,6 +299,9 @@ func (c Content) Update(ctx context.Context, object IContent) error {
 }
 
 func (c Content) Delete(ctx context.Context, id string) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:content.go:Content:Delete")
+    }
 	pg := db.PostgresClient{
 		Ctx: context.Background(),
 	}

@@ -8,6 +8,9 @@ type Zone struct {
 }
 
 func NewZone(ctx context.Context, createdBy *User) (*Zone, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:zone.go:NewZone")
+    }
 	zone := Zone{}
 	attributesPtr := NewAttributes(ctx, createdBy)
 	if attributesPtr != nil {
@@ -17,14 +20,23 @@ func NewZone(ctx context.Context, createdBy *User) (*Zone, error) {
 }
 
 func (c Zone) IsDocument(ctx context.Context) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:zone.go:Zone:IsDocument")
+    }
 	return true
 }
 
 func (c Zone) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:zone.go:Zone:ToMSI")
+    }
 	return toMSI(ctx, c)
 }
 
 func (c Zone) Hydrate(ctx context.Context, msi map[string]interface{}) (*Zone, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:zone.go:Zone:Hydrate")
+    }
 	zone := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
 		err := zone.Attributes.MSIHydrate(ctx, v)
@@ -47,6 +59,9 @@ func (c Zone) Hydrate(ctx context.Context, msi map[string]interface{}) (*Zone, e
 type Zones []Zone
 
 func (c Zones) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Zones, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:zone.go:Zones:Hydrate")
+    }
 	zones := Zones{}
 	for _, r := range msi {
 		zonePtr := &Zone{}
@@ -63,6 +78,9 @@ func (c Zones) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Zone
 }
 
 func (c Zones) In(ctx context.Context, id string) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:zone.go:Zones:In")
+    }
 	for _, o := range c {
 		if o.Attributes.Id == id {
 			return true

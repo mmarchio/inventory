@@ -15,6 +15,9 @@ type Location struct {
 }
 
 func (c Location) New(ctx context.Context) (*Location, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:New")
+    }
 	attributesPtr, err := c.Attributes.New(ctx)
 	if err != nil {
 		return nil, err
@@ -29,6 +32,9 @@ func (c Location) New(ctx context.Context) (*Location, error) {
 }
 
 func (c Location) ToContent(ctx context.Context) (*Content, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:ToContent")
+    }
 	content := Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
@@ -40,6 +46,9 @@ func (c Location) ToContent(ctx context.Context) (*Content, error) {
 }
 
 func (c Location) PGRead(ctx context.Context) (*Location, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:PGRead")
+    }
 	content, err := Content{}.Read(ctx, c.Attributes.Id)
 	if err != nil {
 		return nil, err
@@ -53,6 +62,9 @@ func (c Location) PGRead(ctx context.Context) (*Location, error) {
 }
 
 func (c Location) PGCreate(ctx context.Context) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:PGCreate")
+    }
 	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
 		return err
@@ -66,6 +78,9 @@ func (c Location) PGCreate(ctx context.Context) error {
 }
 
 func (c Location) PGUpdate(ctx context.Context) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:PGUpdate")
+    }
 	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
 		return err
@@ -79,10 +94,16 @@ func (c Location) PGUpdate(ctx context.Context) error {
 }
 
 func (c Location) PGDelete(ctx context.Context) error {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:PGDelete")
+    }
 	return Content{}.Delete(ctx, c.Attributes.Id)
 }
 
 func NewLocation(ctx context.Context, createdBy User) *Location {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:NewLocation")
+    }
 	r := Location{}
 	a := NewAttributes(ctx, &createdBy)
 	if a != nil {
@@ -92,14 +113,23 @@ func NewLocation(ctx context.Context, createdBy User) *Location {
 }
 
 func (c Location) IsDocument(ctx context.Context) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:IsDocument")
+    }
 	return true
 }
 
 func (c Location) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:ToMSI")
+    }
 	return toMSI(ctx, c)
 }
 
 func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user User) (*Location, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:Hydrate")
+    }
 	r := Location{}
 	if a, ok := msi["attributes"].(map[string]interface{}); ok {
 		r.Attributes.MSIHydrate(ctx, a)
@@ -141,6 +171,9 @@ func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user 
 }
 
 func (c Location) HydrateFromRequest(ctx context.Context, e echo.Context, user User) (*Location, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:HydrateFromRequest")
+    }
 	bodyPtr, err := GetRequestData(ctx, e)
 	if err != nil {
 		return nil, err
@@ -162,6 +195,9 @@ func (c Location) HydrateFromRequest(ctx context.Context, e echo.Context, user U
 }
 
 func (c Location) Load(ctx context.Context, e echo.Context, user User) (*Location, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:Load")
+    }
 	contentId, err := GetContentIdFromUrl(ctx, e)
 	if err != nil {
 		return nil, err
@@ -184,6 +220,9 @@ func (c Location) Load(ctx context.Context, e echo.Context, user User) (*Locatio
 }
 
 func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, user User) (*Location, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Location:Merge")
+    }
 	var old, new Location
 	if o, ok := oldInput.(map[string]interface{}); ok {
 		ptr, err := c.Hydrate(ctx, o, user)
@@ -230,6 +269,9 @@ func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, use
 }
 
 func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:GetRequestData")
+    }
 	body := make(map[string]interface{})
 	err := json.NewDecoder(c.Request().Body).Decode(&body)
 	if err != nil {
@@ -241,10 +283,16 @@ func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{
 type Locations []Location
 
 func (c Locations) IsDocument(ctx context.Context) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Locations:IsDocument")
+    }
 	return true
 }
 
 func (c Locations) FindAll(ctx context.Context) (*Locations, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Locations:FindAll")
+    }
 	content, err := Content{}.FindAll(ctx, "location")
 	if err != nil {
 		return nil, err
@@ -265,10 +313,16 @@ func (c Locations) FindAll(ctx context.Context) (*Locations, error) {
 }
 
 func (c Locations) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Locations:ToMSI")
+    }
 	return toMSI(ctx, c)
 }
 
 func (c Locations) Hydrate(ctx context.Context, msi []map[string]interface{}, user User) (*Locations, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Locations:Hydrate")
+    }
 	locations := Locations{}
 	for _, r := range msi {
 		location := Location{}
@@ -285,6 +339,9 @@ func (c Locations) Hydrate(ctx context.Context, msi []map[string]interface{}, us
 }
 
 func (c Locations) In(ctx context.Context, id string) bool {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Locations:In")
+    }
 	for _, l := range c {
 		if l.Attributes.Id == id {
 			return true
@@ -294,5 +351,8 @@ func (c Locations) In(ctx context.Context, id string) bool {
 }
 
 func GetLocations(ctx context.Context) (*Locations, error) {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+        ctx = v(ctx, "stack", "types:location.go:Locations:GetLocations")
+    }
 	return Locations{}.FindAll(ctx)
 }
