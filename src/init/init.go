@@ -7,15 +7,18 @@ import (
 	"inventory/src/errors"
 	"inventory/src/login"
 	"inventory/src/types"
+	"inventory/src/util"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+var ckey util.CtxKey = "stack"
+var ukey util.CtxKey = "updateCtx"
 
 func CreateSystemUser(ctx context.Context) error {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "init:init.go:CreateSystemUser")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "init:init.go:CreateSystemUser")
     }
 	e := errors.Error{}
 	now := time.Now()
@@ -77,8 +80,8 @@ func CreateSystemUser(ctx context.Context) error {
 }
 
 func CreateAdminRole(ctx context.Context) error {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "init:init.go:CreateAdminRole")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "init:init.go:CreateAdminRole")
     }
 	e := errors.Error{}
 	role := acl.Role{}
