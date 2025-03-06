@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"inventory/src/errors"
 	"inventory/src/types"
+	"inventory/src/util"
 	"net/http"
 	"os"
 	"time"
@@ -15,6 +16,9 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
+
+var ckey util.CtxKey = "stack"
+var ukey util.CtxKey = "updateCtx"
 
 type IDocument interface {
     IsDocument() bool
@@ -36,8 +40,8 @@ type Credentials struct {
 }
 
 func (c Credentials) New(ctx context.Context) (*Credentials, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Credentials:New")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Credentials:New")
     }
     e := errors.Error{}
     credentials := c
@@ -57,8 +61,8 @@ func (c Credentials) New(ctx context.Context) (*Credentials, error) {
 }
 
 func (c Credentials) ToContent(ctx context.Context) (*types.Content, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Credentials:ToContent")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Credentials:ToContent")
     }
     e := errors.Error{}
     content := types.Content{}
@@ -73,8 +77,8 @@ func (c Credentials) ToContent(ctx context.Context) (*types.Content, error) {
 }
 
 func (c Credentials) PGRead(ctx context.Context) (*Credentials, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Credentials:PGRead")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Credentials:PGRead")
     }
     e := errors.Error{}
     contentPtr, err := types.Content{}.Read(ctx, c.Id)
@@ -98,8 +102,8 @@ func (c Credentials) PGRead(ctx context.Context) (*Credentials, error) {
 }
 
 func (c Credentials) PGCreate(ctx context.Context) error {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Credentials:PGCreate")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Credentials:PGCreate")
     }
     e := errors.Error{}
     contentPtr, err := c.ToContent(ctx)
@@ -117,8 +121,8 @@ func (c Credentials) PGCreate(ctx context.Context) error {
 }
 
 func (c Credentials) PGUpdate(ctx context.Context) error {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Credentials:PGUpdate")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Credentials:PGUpdate")
     }
     e := errors.Error{}
     contentPtr, err := c.ToContent(ctx)
@@ -136,8 +140,8 @@ func (c Credentials) PGUpdate(ctx context.Context) error {
 }
 
 func (c Credentials) PGDelete(ctx context.Context) error {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Credentials:PGDelete")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Credentials:PGDelete")
     }
     err := types.Content{}.Delete(ctx, c.Id)
     if err != nil {
@@ -149,8 +153,8 @@ func (c Credentials) PGDelete(ctx context.Context) error {
 }
 
 func (c Credentials) FindBy(ctx context.Context, jstring string) (*Credentials, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Credentials:FindBy")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Credentials:FindBy")
     }
     e := errors.Error{}
     contentPtr, err := types.Content{}.FindBy(ctx, jstring)
@@ -174,8 +178,8 @@ func (c Credentials) FindBy(ctx context.Context, jstring string) (*Credentials, 
 }
 
 func (c Credentials) MSIHydrate(ctx context.Context, msi map[string]interface{}) (Credentials, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Credentials:MSIHydrate")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Credentials:MSIHydrate")
     }
     r := Credentials{}
     if v, ok := msi["username"].(string); ok {
@@ -188,8 +192,8 @@ func (c Credentials) MSIHydrate(ctx context.Context, msi map[string]interface{})
 }
 
 func (c Credentials) ToMSI(ctx context.Context) (map[string]interface{}, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Credentials:ToMSI")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Credentials:ToMSI")
     }
     e := errors.Error{}
 	r := make(map[string]interface{})
@@ -207,8 +211,8 @@ func (c Credentials) ToMSI(ctx context.Context) (map[string]interface{}, error) 
 }
 
 func (c Credentials) IsDocument(ctx context.Context) bool {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Credentials:IsDocument")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Credentials:IsDocument")
     }
     return true
 }
@@ -219,8 +223,8 @@ type Claims struct {
 }
 
 func Login(ctx context.Context, username, userValue, dbValue string) (*http.Cookie, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:Login")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:Login")
     }
     e := errors.Error{}
     creds := Credentials{
@@ -273,8 +277,8 @@ func Login(ctx context.Context, username, userValue, dbValue string) (*http.Cook
 }
 
 func ExtendToken(ctx context.Context, tokenString string, secret []byte) (*string, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "login:login.go:ExtendToken")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "login:login.go:ExtendToken")
     }
     e := errors.Error{}
     claims, err := decodeJWT(ctx, tokenString, secret)
