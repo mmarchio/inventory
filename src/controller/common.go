@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"inventory/src/acl"
+	"inventory/src/errors"
 	"inventory/src/login"
 	"regexp"
 	"strings"
@@ -24,9 +25,11 @@ func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "controllers:common.go:GetRequestData")
 	}
+	e := errors.Error{}
 	body := make(map[string]interface{})
 	err := json.NewDecoder(c.Request().Body).Decode(&body)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	return &body, nil
@@ -36,6 +39,7 @@ func authenticateToken(ctx context.Context, c echo.Context) (map[string]interfac
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "controllers:common.go:authenticateToken")
 	}
+	e := errors.Error{}
 	data := make(map[string]interface{})
 	bearer := c.Request().Header.Get("AUTHORIZATION")
 	if bearer == "" {
@@ -50,12 +54,13 @@ func authenticateToken(ctx context.Context, c echo.Context) (map[string]interfac
 	data["Token"] = token
 	_, err := acl.DecodeJWT(ctx, token, []byte("secret"))
 	if err != nil {
-		fmt.Printf("test err: %s\n", err.Error())
+		e.Err(ctx, err)
 		data["error"] = err.Error()
 		return data, err
 	}
 	tokenPtr, err := login.ExtendToken(ctx, token, []byte("secret"))
 	if err != nil {
+		e.Err(ctx, err)
 		return data, err
 	}
 	if tokenPtr != nil {
@@ -69,6 +74,7 @@ func CreatePolicy(ctx context.Context, resource, role, permission string) (*acl.
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "controllers:common.go:CreatePolicy")
 	}
+	e := errors.Error{}
 	segments := strings.Split(resource, "/")
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
@@ -84,15 +90,19 @@ func CreatePolicy(ctx context.Context, resource, role, permission string) (*acl.
 	if polPtr != nil {
 		return polPtr, nil
 	}
-	return nil, fmt.Errorf("unable to create policy")
+	err := fmt.Errorf("unable to create policy")
+	e.Err(ctx, err)
+	return nil, err
 }
 
 func UpdateRole(ctx context.Context, id string, resources acl.Resources) error {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "controllers:common.go:UpdateRole")
 	}
+	e := errors.Error{}
 	rolePtr, err := acl.GetRole(ctx, id)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	var role acl.Role
@@ -102,12 +112,14 @@ func UpdateRole(ctx context.Context, id string, resources acl.Resources) error {
 	for _, resource := range resources {
 		polPtr, err := CreatePolicy(ctx, resource.URL, role.Name, role.DefaultPermisison)
 		if err != nil || polPtr == nil {
+			e.Err(ctx, err)
 			return err
 		}
 		role.Policies = append(role.Policies, *polPtr)
 	}
 	err = role.PGCreate(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	return nil
@@ -117,8 +129,10 @@ func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) err
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "controllers:common.go:UpdatePolicy")
 	}
+	e := errors.Error{}
 	dbPoliciesPtr, err := acl.GetPolicyByRole(ctx, role)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	if dbPoliciesPtr != nil {
@@ -134,6 +148,7 @@ func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) err
 			segments = append([]string{role}, segments...)
 			rolePtr, err := acl.GetRole(ctx, role)
 			if err != nil {
+				e.Err(ctx, err)
 				return err
 			}
 			if rolePtr != nil {
@@ -147,6 +162,7 @@ func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) err
 		for _, policy := range dbPolicies {
 			err = policy.PGCreate(ctx)
 			if err != nil {
+				e.Err(ctx, err)
 				return err
 			}
 		}
@@ -158,12 +174,16 @@ func UpdateResources(ctx context.Context, resources acl.Resources) error {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "controllers:common.go:UpdateResource")
 	}
+	e := errors.Error{}
 	dbResourcesPtr, err := acl.FindResources(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	if dbResourcesPtr == nil {
-		return fmt.Errorf("resources is nil")
+		err = fmt.Errorf("resources is nil")
+		e.Err(ctx, err)
+		return err
 	}
 	dbResources := *dbResourcesPtr
 	oldLen := len(dbResources)
@@ -180,6 +200,7 @@ func UpdateResources(ctx context.Context, resources acl.Resources) error {
 		for _, r := range dbResources {
 			err = r.PGCreate(ctx)
 			if err != nil {
+				e.Err(ctx, err)
 				return err
 			}
 		}
@@ -191,6 +212,7 @@ func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "controllers:common.go:GetContentIdFromUrl")
 	}
+	e := errors.Error{}
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
 	url := c.Request().RequestURI
@@ -198,29 +220,36 @@ func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
 	if r.Match([]byte(segments[len(segments)-1])) {
 		return segments[len(segments)-1], nil
 	}
-	return "", fmt.Errorf("content id not found in url")
+	err := fmt.Errorf("content id not found in url")
+	e.Err(ctx, err)
+	return "", err
 }
 
 func AuthenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "controllers:common.go:AuthenticateToken")
 	}
+	e := errors.Error{}
 	data, err := authenticateToken(ctx, c)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if token, ok := data["Token"].(string); ok {
 		claims, err := acl.DecodeJWT(ctx, token, []byte("secret"))
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		data["claims"] = claims
 		userPtr, err := acl.GetUser(ctx, claims)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if userPtr == nil {
 			err = fmt.Errorf("user is nil")
+			e.Err(ctx, err)
 			return nil, err
 		}
 		user := *userPtr

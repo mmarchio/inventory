@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"inventory/src/acl"
+	"inventory/src/errors"
 	"inventory/src/login"
 	"inventory/src/types"
 	"time"
@@ -16,6 +17,7 @@ func CreateSystemUser(ctx context.Context) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "init:init.go:CreateSystemUser")
     }
+	e := errors.Error{}
 	now := time.Now()
 	u := types.User{
 		Roles: []string{"system"},
@@ -26,12 +28,16 @@ func CreateSystemUser(ctx context.Context) error {
 		Username: "system",
 	}
 	a := types.NewAttributes(ctx, nil)
-	if a != nil {
-		u.Attributes = *a
+	if a == nil {
+		err := fmt.Errorf("attributes is nil")
+		e.Err(ctx, err)
+		return err
 	}
+	u.Attributes = *a
 	password := uuid.NewString()
 	hash, err := login.HashPassword(password)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	creds := login.Credentials{
@@ -40,6 +46,7 @@ func CreateSystemUser(ctx context.Context) error {
 	}
 	attributesPtr, err := creds.Attributes.New(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	if attributesPtr == nil {
@@ -53,6 +60,7 @@ func CreateSystemUser(ctx context.Context) error {
 	creds.Attributes.ContentType = "credentials"
 	err = creds.PGCreate(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	u.Attributes.ParentId = u.Attributes.Id
@@ -61,6 +69,7 @@ func CreateSystemUser(ctx context.Context) error {
 	u.Attributes.ContentType = "user"
 	err = u.PGCreate(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil
 	}
 	fmt.Printf("System user created:\nUsername: system\nPassword: %s", password)
@@ -71,13 +80,17 @@ func CreateAdminRole(ctx context.Context) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "init:init.go:CreateAdminRole")
     }
+	e := errors.Error{}
 	role := acl.Role{}
 	attributesPtr, err := role.Attributes.New(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	if attributesPtr == nil {
-		return fmt.Errorf("attributes is nil")
+		err = fmt.Errorf("attributes is nil")
+		e.Err(ctx, err)
+		return err
 	}
 	role = acl.Role{
 		Attributes: *attributesPtr,
@@ -87,6 +100,7 @@ func CreateAdminRole(ctx context.Context) error {
 	}
 	err = role.PGCreate(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	logoutPolicy := acl.NewPolicy(ctx, "admin-logout", "admin", "/logout", "all")
@@ -96,6 +110,7 @@ func CreateAdminRole(ctx context.Context) error {
 	policies = append(policies, *createPolicyPolicy)
 	existingPolicies, err := policies.SelectIn(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	newPolicies := acl.Policies{}
@@ -107,6 +122,7 @@ func CreateAdminRole(ctx context.Context) error {
 	}
 	err = newPolicies.CreateMany(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	return nil
