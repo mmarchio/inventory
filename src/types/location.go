@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"inventory/src/errors"
 
 	"github.com/labstack/echo/v4"
 )
@@ -18,12 +19,16 @@ func (c Location) New(ctx context.Context) (*Location, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:New")
     }
+	e := errors.Error{}
 	attributesPtr, err := c.Attributes.New(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if attributesPtr == nil {
-		return nil, fmt.Errorf("attributes is nil")
+		err = fmt.Errorf("attributes is nil")
+		e.Err(ctx, err)
+		return nil, err
 	}
 	location := c
 	location.Attributes = *attributesPtr
@@ -35,10 +40,12 @@ func (c Location) ToContent(ctx context.Context) (*Content, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:ToContent")
     }
+	e := errors.Error{}
 	content := Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	content.Content = jbytes
@@ -49,13 +56,16 @@ func (c Location) PGRead(ctx context.Context) (*Location, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:PGRead")
     }
+	e := errors.Error{}
 	content, err := Content{}.Read(ctx, c.Attributes.Id)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	location := c
 	err = json.Unmarshal(content.Content, &location)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	return &location, nil
@@ -65,39 +75,63 @@ func (c Location) PGCreate(ctx context.Context) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:PGCreate")
     }
+	e := errors.Error{}
 	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	if contentPtr == nil {
-		return fmt.Errorf("content is nil")
+		err = fmt.Errorf("content is nil")
+		e.Err(ctx, err)
+		return err
 	}
 	content := *contentPtr
 
-	return content.Create(ctx, c)
+	err = content.Create(ctx, c)
+	if err != nil {
+		e.Err(ctx, err)
+		return err
+	}
+	return nil
 }
 
 func (c Location) PGUpdate(ctx context.Context) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:PGUpdate")
     }
+	e := errors.Error{}
 	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	if contentPtr == nil {
-		return fmt.Errorf("content is nil")
+		err = fmt.Errorf("content is nil")
+		e.Err(ctx, err)
+		return err
 	}
 	content := *contentPtr
-	
-	return content.Update(ctx, c)
+
+	err = content.Update(ctx, c)
+	if err != nil {
+		e.Err(ctx, err)
+		return err
+	}
+	return nil
 }
 
 func (c Location) PGDelete(ctx context.Context) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:PGDelete")
     }
-	return Content{}.Delete(ctx, c.Attributes.Id)
+	err := Content{}.Delete(ctx, c.Attributes.Id)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return err
+	}
+	return nil
 }
 
 func NewLocation(ctx context.Context, createdBy User) *Location {
@@ -123,13 +157,20 @@ func (c Location) ToMSI(ctx context.Context) (map[string]interface{}, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:ToMSI")
     }
-	return toMSI(ctx, c)
+	data, err := toMSI(ctx, c)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return nil, err
+	}
+	return data, nil
 }
 
 func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user User) (*Location, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:Hydrate")
     }
+	e := errors.Error{}
 	r := Location{}
 	if a, ok := msi["attributes"].(map[string]interface{}); ok {
 		r.Attributes.MSIHydrate(ctx, a)
@@ -137,6 +178,7 @@ func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user 
 	if v, ok := msi["rooms"].([]map[string]interface{}); ok {
 		roomsPtr, err := r.Rooms.Hydrate(ctx, v)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if roomsPtr != nil {
@@ -146,6 +188,7 @@ func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user 
 	}
 	a, err := r.Address.Hydrate(ctx, msi)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if a != nil {
@@ -174,21 +217,26 @@ func (c Location) HydrateFromRequest(ctx context.Context, e echo.Context, user U
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:HydrateFromRequest")
     }
+	er := errors.Error{}
 	bodyPtr, err := GetRequestData(ctx, e)
 	if err != nil {
+		er.Err(ctx, err)
 		return nil, err
 	}
 	if bodyPtr == nil {
 		err = fmt.Errorf("request body nil")
+		er.Err(ctx, err)
 		return nil, err
 	}
 	body := *bodyPtr
 	locationPtr, err := c.Hydrate(ctx, body, user)
 	if err != nil {
+		er.Err(ctx, err)
 		return nil, err
 	}
 	if locationPtr == nil {
 		err = fmt.Errorf("location is nil")
+		er.Err(ctx, err)
 		return nil, err
 	}
 	return locationPtr, nil
@@ -198,22 +246,27 @@ func (c Location) Load(ctx context.Context, e echo.Context, user User) (*Locatio
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:Load")
     }
+	er := errors.Error{}
 	contentId, err := GetContentIdFromUrl(ctx, e)
 	if err != nil {
+		er.Err(ctx, err)
 		return nil, err
 	}
 	contentPtr, err := GetContent(ctx, contentId)
 	if err != nil {
+		er.Err(ctx, err)
 		return nil, err
 	}
 	if contentPtr == nil {
 		err = fmt.Errorf("content is nil")
+		er.Err(ctx, err)
 		return nil, err
 	}
 	content := *contentPtr
 	location := c
 	err = json.Unmarshal(content.Content, &location)
 	if err != nil {
+		er.Err(ctx, err)
 		return nil, err
 	}
 	return &location, nil
@@ -223,10 +276,12 @@ func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, use
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Location:Merge")
     }
+	e := errors.Error{}
 	var old, new Location
 	if o, ok := oldInput.(map[string]interface{}); ok {
 		ptr, err := c.Hydrate(ctx, o, user)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		old = *ptr
@@ -234,6 +289,7 @@ func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, use
 	if o, ok := newInput.(map[string]interface{}); ok {
 		ptr, err := c.Hydrate(ctx, o, user)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		new = *ptr
@@ -247,20 +303,24 @@ func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, use
 
 	attributesPtr, err := c.Attributes.Merge(ctx, old.Attributes, new.Attributes)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if attributesPtr == nil {
 		err = fmt.Errorf("attributes pointer is nil")
+		e.Err(ctx, err)
 		return nil, err
 	}
 	c.Attributes = *attributesPtr
 
 	addressPtr, err := c.Address.Merge(ctx, old.Address, new.Address)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if addressPtr == nil {
 		err = fmt.Errorf("merged address is nil")
+		e.Err(ctx, err)
 		return nil, err
 	}
 	c.Address = *addressPtr
@@ -275,6 +335,8 @@ func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{
 	body := make(map[string]interface{})
 	err := json.NewDecoder(c.Request().Body).Decode(&body)
 	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
 		return nil, err
 	}
 	return &body, nil
@@ -293,11 +355,14 @@ func (c Locations) FindAll(ctx context.Context) (*Locations, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Locations:FindAll")
     }
+	e := errors.Error{}
 	content, err := Content{}.FindAll(ctx, "location")
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if content == nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	locations := c 
@@ -305,6 +370,7 @@ func (c Locations) FindAll(ctx context.Context) (*Locations, error) {
 		location := Location{}
 		err = json.Unmarshal(cont.Content, &location)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		locations = append(locations, location)
@@ -316,19 +382,26 @@ func (c Locations) ToMSI(ctx context.Context) (map[string]interface{}, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Locations:ToMSI")
     }
-	return toMSI(ctx, c)
+	data, err := toMSI(ctx, c)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return nil, err
+	}
+	return data, nil
 }
 
 func (c Locations) Hydrate(ctx context.Context, msi []map[string]interface{}, user User) (*Locations, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Locations:Hydrate")
     }
+	e := errors.Error{}
 	locations := Locations{}
 	for _, r := range msi {
 		location := Location{}
 		locationPtr, err := location.Hydrate(ctx, r, user)
 		if err != nil {
-			logger.Printf("%#v", err)
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if locationPtr != nil {
@@ -354,5 +427,11 @@ func GetLocations(ctx context.Context) (*Locations, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:location.go:Locations:GetLocations")
     }
-	return Locations{}.FindAll(ctx)
+	locations, err := Locations{}.FindAll(ctx)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return nil, err
+	}
+	return locations, nil
 }

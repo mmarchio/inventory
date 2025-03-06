@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"inventory/src/errors"
 	"log"
 	"os"
 	"regexp"
@@ -23,13 +24,16 @@ func toMSI(ctx context.Context, c interface{}) (map[string]interface{}, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:common.go:toMSI")
     }
+	e := errors.Error{}
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
+        e.Err(ctx, err)
 		return r, err
 	}
 	err = json.Unmarshal(m, &r)
 	if err != nil {
+        e.Err(ctx, err)
 		return r, err
 	}
 	return r, nil
@@ -40,6 +44,10 @@ func JSONValidate(ctx context.Context, data []byte, dest interface{}) bool {
         ctx = v(ctx, "stack", "types:common.go:JSONValidate")
     }
 	err := json.Unmarshal(data, &dest)
+	if err != nil {
+		e := errors.Error{}
+        e.Err(ctx, err)
+	}
 	return err == nil
 }
 
@@ -47,7 +55,12 @@ func GetContent(ctx context.Context, id string) (*Content, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:common.go:GetContent")
     }
-	return Content{}.Read(ctx, id)
+	content, err := Content{}.Read(ctx, id)
+	if err != nil {
+		e := errors.Error{}
+        e.Err(ctx, err)
+	}
+	return content, nil
 }
 
 func GetMSIAttribute(ctx context.Context, name string, msi map[string]interface{}) (string, error) {
@@ -59,7 +72,10 @@ func GetMSIAttribute(ctx context.Context, name string, msi map[string]interface{
 			return v, nil
 		}
 	}
-	return "", fmt.Errorf("attribute %s not found", name)
+	err := fmt.Errorf("attribute %s not found", name)
+	e := errors.Error{}
+	e.Err(ctx, err)
+	return "", err
 }
 
 func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
@@ -73,5 +89,8 @@ func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
 	if r.Match([]byte(segments[len(segments)-1])) {
 		return segments[len(segments)-1], nil
 	}
-	return "", fmt.Errorf("content id not found in url")
+	err := fmt.Errorf("content id not found in url")
+	e := errors.Error{}
+	e.Err(ctx, err)
+	return "", err
 }

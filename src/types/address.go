@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"fmt"
+	"inventory/src/errors"
 )
 
 type Address struct {
@@ -31,14 +32,17 @@ func (c Address) Merge(ctx context.Context, oldInput, newInput interface{}) (*Ad
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:address.go:Address:Merge")
     }
+	e := errors.Error{}
 	var old, new Address
 	if o, ok := oldInput.(map[string]interface{}); ok {
 		oldPtr, err := c.Hydrate(ctx, o)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if oldPtr == nil {
 			err = fmt.Errorf("old pointer is nil")
+			e.Err(ctx, err)
 			return nil, err
 		}
 		old = *oldPtr
@@ -46,10 +50,12 @@ func (c Address) Merge(ctx context.Context, oldInput, newInput interface{}) (*Ad
 	if o, ok := newInput.(map[string]interface{}); ok {
 		newPtr, err := c.Hydrate(ctx, o)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if newPtr == nil {
 			err = fmt.Errorf("new pointer is nil")
+			e.Err(ctx, err)
 			return nil, err
 		}
 		new = *newPtr
@@ -63,6 +69,7 @@ func (c Address) Merge(ctx context.Context, oldInput, newInput interface{}) (*Ad
 	
 	attributesPtr, err := old.Attributes.Merge(ctx, old.Attributes, new.Attributes)
 	if err != nil {
+        e.Err(ctx, err)
 		return nil, err
 	}
 	if attributesPtr != nil {
@@ -97,17 +104,25 @@ func (c Address) ToMSI(ctx context.Context) (map[string]interface{}, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:address.go:Address:ToMSI")
     }
-	return toMSI(ctx, c)
+	data, err := toMSI(ctx, c)
+	if err != nil {
+		e := errors.Error{}
+        e.Err(ctx, err)
+		return nil, err
+	}
+	return data, nil
 }
 
 func (c Address) Hydrate(ctx context.Context, msi map[string]interface{}) (*Address, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:address.go:Address:Hydrate")
     }
+	e := errors.Error{}
 	address := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
 		err := c.Attributes.MSIHydrate(ctx, v)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 	}

@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"inventory/src/errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -84,12 +85,14 @@ func (c *Attributes) MSIHydrate(ctx context.Context, msi map[string]interface{})
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:attributes.go:Attributes:MSIHydrate")
     }
+	e := errors.Error{}
 	if v, ok := msi["id"].(string); ok {
 		c.Id = v
 	}
 	if v, ok := msi["createdAt"].(string); ok {
 		t, err := time.Parse("2006-01-02T15:04:05.000000000Z", v)
 		if err != nil {
+			e.Err(ctx, err)
 			return err
 		}
 		c.CreatedAt = t
@@ -97,6 +100,7 @@ func (c *Attributes) MSIHydrate(ctx context.Context, msi map[string]interface{})
 	if v, ok := msi["updatedAt"].(string); ok {
 		t, err := time.Parse("2006-01-02T15:04:05.000000000Z", v)
 		if err != nil {
+			e.Err(ctx, err)
 			return err
 		}
 		c.UpdatedAt = t
@@ -120,10 +124,12 @@ func (c Attributes) Merge(ctx context.Context, oldInput, newInput interface{}) (
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:attributes.go:Attributes:Merge")
     }
+	e := errors.Error{}
 	var old, new Attributes
 	if o, ok := oldInput.(map[string]interface{}); ok {
 		err := c.MSIHydrate(ctx, o)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		old = c
@@ -131,6 +137,7 @@ func (c Attributes) Merge(ctx context.Context, oldInput, newInput interface{}) (
 	if o, ok := newInput.(map[string]interface{}); ok {
 		err := c.MSIHydrate(ctx, o)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		new = c

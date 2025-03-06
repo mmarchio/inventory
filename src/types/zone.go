@@ -1,6 +1,9 @@
 package types
 
-import "context"
+import (
+	"context"
+	"inventory/src/errors"
+)
 
 type Zone struct {
 	Attributes Attributes `json:"attributes"`
@@ -30,23 +33,32 @@ func (c Zone) ToMSI(ctx context.Context) (map[string]interface{}, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:zone.go:Zone:ToMSI")
     }
-	return toMSI(ctx, c)
+	data, err := toMSI(ctx, c)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return nil, err
+	}
+	return data, nil
 }
 
 func (c Zone) Hydrate(ctx context.Context, msi map[string]interface{}) (*Zone, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:zone.go:Zone:Hydrate")
     }
+	e := errors.Error{}
 	zone := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
 		err := zone.Attributes.MSIHydrate(ctx, v)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 	}
 	if v, ok := msi["containers"].([]map[string]interface{}); ok {
 		containersPtr, err := c.Containers.Hydrate(ctx, v)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if containersPtr != nil {
@@ -67,6 +79,8 @@ func (c Zones) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Zone
 		zonePtr := &Zone{}
 		zonePtr, err := zonePtr.Hydrate(ctx, r)
 		if err != nil {
+			e := errors.Error{}
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if zonePtr != nil {

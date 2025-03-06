@@ -1,13 +1,15 @@
 package login
 
 import (
-    "context"
+	"context"
 	"encoding/json"
 	"fmt"
+	"inventory/src/errors"
+	"inventory/src/types"
 	"net/http"
 	"os"
 	"time"
-    "inventory/src/types"
+
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
@@ -37,13 +39,17 @@ func (c Credentials) New(ctx context.Context) (*Credentials, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "login:login.go:Credentials:New")
     }
+    e := errors.Error{}
     credentials := c
     attributesPtr, err := c.Attributes.New(ctx)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     if attributesPtr == nil {
-        return nil, fmt.Errorf("attributes is nil")
+        err = fmt.Errorf("attributes is nil")
+        e.Err(ctx, err)
+        return nil, err
     }
 
     credentials.Attributes = *attributesPtr
@@ -54,10 +60,12 @@ func (c Credentials) ToContent(ctx context.Context) (*types.Content, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "login:login.go:Credentials:ToContent")
     }
+    e := errors.Error{}
     content := types.Content{}
     content.Id = c.Id
     jbytes, err := json.Marshal(c)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     content.Content = jbytes
@@ -68,17 +76,22 @@ func (c Credentials) PGRead(ctx context.Context) (*Credentials, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "login:login.go:Credentials:PGRead")
     }
+    e := errors.Error{}
     contentPtr, err := types.Content{}.Read(ctx, c.Id)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     if contentPtr == nil {
-        return nil, fmt.Errorf("content is nil")
+        err = fmt.Errorf("content is nil")
+        e.Err(ctx, err)
+        return nil, err
     }
     content := *contentPtr
     credentials := c
     err = json.Unmarshal(content.Content, &credentials)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     return &credentials, nil
@@ -88,12 +101,16 @@ func (c Credentials) PGCreate(ctx context.Context) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "login:login.go:Credentials:PGCreate")
     }
+    e := errors.Error{}
     contentPtr, err := c.ToContent(ctx)
     if err != nil {
+        e.Err(ctx, err)
         return err
     }
     if contentPtr == nil {
-        return fmt.Errorf("content is nil")
+        err = fmt.Errorf("content is nil")
+        e.Err(ctx, err)
+        return err
     }
     content := *contentPtr
     return content.Create(ctx, c)
@@ -103,12 +120,16 @@ func (c Credentials) PGUpdate(ctx context.Context) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "login:login.go:Credentials:PGUpdate")
     }
+    e := errors.Error{}
     contentPtr, err := c.ToContent(ctx)
     if err != nil {
+        e.Err(ctx, err)
         return err
     }
     if contentPtr == nil {
-        return fmt.Errorf("content is nil")
+        err = fmt.Errorf("content is nil")
+        e.Err(ctx, err)
+        return err
     }
     content := *contentPtr
     return content.Update(ctx, c)
@@ -118,24 +139,35 @@ func (c Credentials) PGDelete(ctx context.Context) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "login:login.go:Credentials:PGDelete")
     }
-    return types.Content{}.Delete(ctx, c.Id)
+    err := types.Content{}.Delete(ctx, c.Id)
+    if err != nil {
+        e := errors.Error{}
+        e.Err(ctx, err)
+        return err
+    }
+    return nil
 }
 
 func (c Credentials) FindBy(ctx context.Context, jstring string) (*Credentials, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "login:login.go:Credentials:FindBy")
     }
+    e := errors.Error{}
     contentPtr, err := types.Content{}.FindBy(ctx, jstring)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     if contentPtr == nil {
-        return nil, fmt.Errorf("content pointer is nil")
+        err = fmt.Errorf("content pointer is nil")
+        e.Err(ctx, err)
+        return nil, err
     }
     content := *contentPtr
     credentials := c
     err = json.Unmarshal(content.Content, &credentials)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     return &credentials, nil
@@ -159,13 +191,16 @@ func (c Credentials) ToMSI(ctx context.Context) (map[string]interface{}, error) 
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "login:login.go:Credentials:ToMSI")
     }
+    e := errors.Error{}
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
+        e.Err(ctx, err)
 		return r, err
 	}
 	err = json.Unmarshal(m, &r)
 	if err != nil {
+        e.Err(ctx, err)
 		return r, err
 	}
 	return r, nil
@@ -187,12 +222,14 @@ func Login(ctx context.Context, username, userValue, dbValue string) (*http.Cook
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "login:login.go:Login")
     }
+    e := errors.Error{}
     creds := Credentials{
         Username: username,
     }
     auth := VerifyPassword(userValue, dbValue)
     if !auth {
         err := fmt.Errorf("password does not match %s:%s", userValue, dbValue)
+        e.Err(ctx, err)
         return nil, err
     }
     expirationTime := time.Now().Add(2 * time.Hour)
@@ -206,20 +243,24 @@ func Login(ctx context.Context, username, userValue, dbValue string) (*http.Cook
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
     tokenString, err := token.SignedString([]byte("secret"))
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
 
     test, err := decodeJWT(ctx, tokenString, []byte("secret"))
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     msi := make(map[string]interface{})
     b, err := json.Marshal(test)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     err = json.Unmarshal(b, &msi)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
 
@@ -235,17 +276,21 @@ func ExtendToken(ctx context.Context, tokenString string, secret []byte) (*strin
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "login:login.go:ExtendToken")
     }
+    e := errors.Error{}
     claims, err := decodeJWT(ctx, tokenString, secret)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     b, err := json.Marshal(claims)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     msi := make(map[string]interface{})
     err = json.Unmarshal(b, &msi)
     if err != nil {
+        e.Err(ctx, err)
         return nil, err
     }
     expirationTime := time.Now().Add(15 * time.Minute)
@@ -260,6 +305,7 @@ func ExtendToken(ctx context.Context, tokenString string, secret []byte) (*strin
         token := jwt.NewWithClaims(jwt.SigningMethodHS256, newClaims)
         newTokenString, err := token.SignedString(jwtKey)
         if err != nil {
+            e.Err(ctx, err)
             return nil, err
         }
         return &newTokenString, nil
@@ -356,7 +402,9 @@ func decodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.M
 		}
 		return secretKey, nil
 	})
+    e := errors.Error{}
 	if err != nil {
+        e.Err(ctx, err)
 		return nil, err
 	}
 

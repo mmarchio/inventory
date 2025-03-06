@@ -1,6 +1,9 @@
 package types
 
-import "context"
+import (
+	"context"
+	"inventory/src/errors"
+)
 
 type Item struct {
 	Attributes Attributes `json:"attributes"`
@@ -31,17 +34,24 @@ func (c Item) ToMSI(ctx context.Context) (map[string]interface{}, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:item.go:Item:ToMSI")
     }
-	return toMSI(ctx, c)
+	data, err := toMSI(ctx, c)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+	}
+	return data, nil
 }
 
 func (c Item) Hydrate(ctx context.Context, msi map[string]interface{}) (*Item, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:item.go:Item:Hydrate")
     }
+	e := errors.Error{}
 	r := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
 		err := r.Attributes.MSIHydrate(ctx, v)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 	}
@@ -74,11 +84,13 @@ func (c Items) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Item
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:item.go:Items:Hydrate")
     }
+	e := errors.Error{}
 	items := c
 	for _, r := range msi {
 		item := Item{}
 		itemPtr, err := item.Hydrate(ctx, r)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if itemPtr != nil {

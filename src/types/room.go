@@ -1,6 +1,9 @@
 package types
 
-import "context"
+import (
+	"context"
+	"inventory/src/errors"
+)
 
 type Room struct {
 	Attributes Attributes `json:"attributes"`
@@ -30,17 +33,25 @@ func (c Room) ToMSI(ctx context.Context) (map[string]interface{}, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:room.go:room:ToMSI")
     }
-	return toMSI(ctx, c)
+	data, err := toMSI(ctx, c)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return nil, err
+	}
+	return data, nil
 }
 
 func (c Room) Hydrate(ctx context.Context, msi map[string]interface{}) (*Room, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:room.go:room:Hydrate")
     }
+	e := errors.Error{}
 	room := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
 		err := room.Attributes.MSIHydrate(ctx, v)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 	}
@@ -49,6 +60,7 @@ func (c Room) Hydrate(ctx context.Context, msi map[string]interface{}) (*Room, e
 		zones := &Zones{}
 		zones, err := zones.Hydrate(ctx, v)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if zones != nil {
@@ -81,6 +93,8 @@ func (c Rooms) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Room
 		roomPtr := &Room{}
 		roomPtr, err := roomPtr.Hydrate(ctx, r)
 		if err != nil {
+			e := errors.Error{}
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if roomPtr != nil {

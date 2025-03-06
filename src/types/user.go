@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"inventory/src/errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -28,13 +29,17 @@ func (c User) New(ctx context.Context) (*User, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:user:New")
     }
+	e := errors.Error{}
 	user := c
 	attributesPtr, err := c.Attributes.New(ctx, )
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if attributesPtr == nil {
-		return nil, fmt.Errorf("attributes is nil")
+		err = fmt.Errorf("attributes is nil")
+		e.Err(ctx, err)
+		return nil, err
 	}
 	user.Attributes = *attributesPtr
 	user.Attributes.ContentType = "user"
@@ -45,10 +50,12 @@ func (c User) ToContent(ctx context.Context) (*Content, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:user:ToContent")
     }
+	e := errors.Error{}
 	content := Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	content.Content = jbytes
@@ -59,8 +66,10 @@ func (c User) Merge(ctx context.Context, old, new User) (*User, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:user:Merge")
     }
+	e := errors.Error{}
 	attributesPtr, err := c.Attributes.Merge(ctx, old.Attributes, new.Attributes)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if attributesPtr != nil {
@@ -97,7 +106,13 @@ func (c User) ToMSI(ctx context.Context) (map[string]interface{}, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:user:ToMSI")
     }
-	return toMSI(ctx, c)
+	data, err := toMSI(ctx, c)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return nil, err
+	}
+	return data, nil
 }
 
 type Users []User
@@ -113,7 +128,13 @@ func (c Users) ToMSI(ctx context.Context) (map[string]interface{}, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:users:ToMSI")
     }
-	return toMSI(ctx, c)
+	data, err := toMSI(ctx, c)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return nil, err
+	}
+	return data, err
 }
 
 func NewUser(ctx context.Context) *User {
@@ -159,6 +180,8 @@ func (c User) Hydrate(ctx context.Context, msi map[string]interface{}) (*User, e
 		if v != "" {
 			dob, err := time.Parse(f, v)
 			if err != nil {
+				e := errors.Error{}
+				e.Err(ctx, err)
 				return nil, err
 			}
 			u.DOB = &dob
@@ -177,8 +200,10 @@ func GetUser(ctx context.Context, id string) (*User, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:GetUser")
     }
+	e := errors.Error{}
 	usersPtr, err := GetUsers(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if usersPtr != nil {
@@ -189,24 +214,31 @@ func GetUser(ctx context.Context, id string) (*User, error) {
 			}
 		}
 	}
-	return nil, fmt.Errorf("user id: %s not found", id)
+	err = fmt.Errorf("user id: %s not found", id)
+	e.Err(ctx, err)
+	return nil, err
 }
 
 func (c User) FindBy(ctx context.Context, jstring string) (*User, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:user:FindBy")
     }
+	e := errors.Error{}
 	contentPtr, err := Content{}.FindBy(ctx, jstring)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if contentPtr == nil {
-		return nil, fmt.Errorf("content is nil")
+		err = fmt.Errorf("content is nil")
+		e.Err(ctx, err)
+		return nil, err
 	}
 	content := *contentPtr
 	user := User{}
 	err = json.Unmarshal(content.Content, &user)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	return &user, nil
@@ -228,9 +260,11 @@ func (c Users) FindAll(ctx context.Context) (*Users, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:users:FindAll")
     }
+	e := errors.Error{}
 	jstring := "{\"contentType\": \"location\"}"
 	contents, err := Content{}.FindAll(ctx, jstring)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	users := c
@@ -238,6 +272,7 @@ func (c Users) FindAll(ctx context.Context) (*Users, error) {
 		user := User{}
 		err = json.Unmarshal(content.Content, &user)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		users = append(users, user)
@@ -249,14 +284,26 @@ func GetUsers(ctx context.Context) (*Users, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:GetUsers")
     }
-	return Users{}.FindAll(ctx)
+	u, err :=  Users{}.FindAll(ctx)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return nil, err
+	}
+	return u, nil
 }
 
 func (i User) MarshalBinary(ctx context.Context) ([]byte, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:user:MarshalBinary")
     }
-	return json.Marshal(i)
+	data, err := json.Marshal(i)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return nil, err
+	}
+	return data, nil
 }
 
 func (c User) IsDocument(ctx context.Context) bool {
@@ -282,14 +329,19 @@ func (c User) PGHydrate(ctx context.Context, content Content) (*User, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:user:PGHydrate")
     }
+	e := errors.Error{}
 	user := c
 	attributesPtr := c.Attributes.PGHydrate(ctx, content)
+	var err error
 	if attributesPtr == nil {
-		return nil, fmt.Errorf("attributes are nil")
+		err = fmt.Errorf("attributes is nil")
+		e.Err(ctx, err)
+		return nil, err
 	}
 	user.Attributes = *attributesPtr
-	err := json.Unmarshal(content.Content, &user)
+	err = json.Unmarshal(content.Content, &user)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	return &user, nil
@@ -299,12 +351,16 @@ func (c User) PGRead(ctx context.Context, id string) (*User, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:user:PGRead")
     }
+	e := errors.Error{}
 	contentPtr, err := Content{}.Read(ctx, id)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if contentPtr == nil {
-		return nil, fmt.Errorf("content is nil")
+		err = fmt.Errorf("content is nil")
+		e.Err(ctx, err)
+		return nil, err
 	}
 	content := *contentPtr
 	return c.PGHydrate(ctx, content)
@@ -316,6 +372,8 @@ func (c User) PGCreate(ctx context.Context) error {
     }
 	err := Content{}.Create(ctx, c)
 	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
 		return err
 	}
 	return nil
@@ -325,6 +383,7 @@ func (c User) PGUpdate(ctx context.Context) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:user:PGUpdate")
     }
+	e := errors.Error{}
 	columns := c.Columns(ctx)
 	values := c.Values(ctx)
 	sets := []string{}
@@ -335,44 +394,64 @@ func (c User) PGUpdate(ctx context.Context) error {
 	}
 	content, err := c.ToContent(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
-	return content.Update(ctx, c)
+	err = content.Update(ctx, c)
+	if err != nil {
+		e.Err(ctx, err)
+		return err
+	}
+	return nil
 }
 
 func (c User) PGDelete(ctx context.Context) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:user.go:user:PGDelete")
     }
-	return Content{}.Delete(ctx, c.Attributes.Id)
+	err := Content{}.Delete(ctx, c.Attributes.Id)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return err
+	}
+	return nil
 }
 
 func (c User) ScanRow(rows pgx.Rows) error {
 	ctx := context.Background()
 	defer rows.Close()
 	content := Content{}
+	e := errors.Error{}
 	err := rows.Scan(&content)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 
 	if content.ContentType == "user" {
 		attributesPtr := c.Attributes.PGHydrate(ctx, content)
 		if attributesPtr == nil {
-			return fmt.Errorf("attributes is nil")
+			err = fmt.Errorf("attributes is nil")
+			e.Err(ctx, err)
+			return err
 		}
 
 		msi := make(map[string]interface{})
 		err = json.Unmarshal(content.Content, &msi)
 		if err != nil {
+			e.Err(ctx, err)
 			return err
 		}
 		userPtr, err := c.Hydrate(ctx, msi)
 		if err != nil {
+			e.Err(ctx, err)
 			return err
 		}
 		if userPtr == nil {
-			return fmt.Errorf("content body (user) is nil")
+			err = fmt.Errorf("content body (user) is nil")
+			e.Err(ctx, err)
+			return err
 		}
 		c = *userPtr
 		c.Attributes = *attributesPtr
@@ -404,6 +483,8 @@ func UserPGRead(ctx context.Context, id string) (*User, error) {
 	u := &User{}
 	u, err := u.PGRead(ctx, id)
 	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
 		return nil, err
 	}
 	return u, nil

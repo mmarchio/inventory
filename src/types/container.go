@@ -1,6 +1,9 @@
 package types
 
-import "context"
+import (
+	"context"
+	"inventory/src/errors"
+)
 
 type Container struct {
 	Attributes Attributes `json:"attributes"`
@@ -30,17 +33,25 @@ func (c Container) ToMSI(ctx context.Context) (map[string]interface{}, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Container:ToMSI")
     }
-	return toMSI(ctx, c)
+	data, err := toMSI(ctx, c)
+	if err != nil {
+		e := errors.Error{}
+        e.Err(ctx, err)
+		return nil, err
+	}
+	return data, nil
 }
 
 func (c Container) Hydrate(ctx context.Context, msi map[string]interface{}) (*Container, error) {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Container:Hydrate")
     }
+	e := errors.Error{}
 	container := c
 	if v, ok := msi["attributes"].(map[string]interface{}); ok {
 		err := container.Attributes.MSIHydrate(ctx, v)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 	}
@@ -48,6 +59,7 @@ func (c Container) Hydrate(ctx context.Context, msi map[string]interface{}) (*Co
 	if v, ok := msi["items"].([]map[string]interface{}); ok {
 		itemsPtr, err := container.Items.Hydrate(ctx, v)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if itemsPtr != nil {
@@ -75,11 +87,13 @@ func (c Containers) Hydrate(ctx context.Context, msi []map[string]interface{}) (
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Container:Hydrate")
     }
+	e := errors.Error{}
 	containers := c
 	for _, r := range msi {
 		container := Container{}
 		containerPtr, err := container.Hydrate(ctx, r)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		if containerPtr != nil {

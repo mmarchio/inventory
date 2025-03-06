@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"inventory/src/db"
+	"inventory/src/errors"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -22,12 +23,14 @@ func (c Content) Create(ctx context.Context, object IContent) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:content.go:Content:Create")
     }
+	e := errors.Error{}
 	pg := db.PostgresClient{
 		Ctx: ctx,
 	}
 
 	err := pg.Open()
 	if err != nil {
+        e.Err(ctx, err)
 		return err
 	}
 
@@ -35,19 +38,25 @@ func (c Content) Create(ctx context.Context, object IContent) error {
 
 	contentPtr, err := object.ToContent(ctx)
 	if err != nil {
+        e.Err(ctx, err)
 		return err
 	}
 
 	if contentPtr == nil {
-		return fmt.Errorf("content pointer is nil")
+		err = fmt.Errorf("content pointer is nil")
+        e.Err(ctx, err)
+		return err
 	}
 
 	content := *contentPtr
 	if pg.Pgx == nil {
-		panic("pgx is nil")
+		err = fmt.Errorf("pgx is nil")
+        e.Err(ctx, err)
+		panic(err.Error())
 	}
 	pg.Tx, err = pg.Pgx.Begin(pg.Ctx)
 	if err != nil {
+        e.Err(ctx, err)
 		return err
 	}
 	defer pg.Tx.Commit(pg.Ctx)
@@ -60,8 +69,10 @@ func (c Content) Create(ctx context.Context, object IContent) error {
 		values...
 	)
 	if err != nil {
+        e.Err(ctx, err)
 		rollbackErr := pg.Tx.Rollback(pg.Ctx)
 		if rollbackErr != nil {
+			e.Err(ctx, rollbackErr)
 			return rollbackErr
 		}
 	}
@@ -100,12 +111,14 @@ func (c Content) CreateMany(ctx context.Context, objects []Content) error {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:content.go:Content:CreateMany")
     }
+	e := errors.Error{}
 	pg := db.PostgresClient{
 		Ctx: ctx,
 	}
 
 	err := pg.Open()
 	if err != nil {
+        e.Err(ctx, err)
 		return err
 	}
 
@@ -132,10 +145,13 @@ func (c Content) CreateMany(ctx context.Context, objects []Content) error {
 	fmt.Printf("\n%s\n", q)
 
 	if pg.Pgx == nil {
-		panic("pgx is nil")
+		err = fmt.Errorf("pgx is nil")
+        e.Err(ctx, err)
+		panic(err.Error())
 	}
 	pg.Tx, err = pg.Pgx.Begin(pg.Ctx)
 	if err != nil {
+        e.Err(ctx, err)
 		return err
 	}
 	defer pg.Tx.Commit(pg.Ctx)
@@ -145,8 +161,10 @@ func (c Content) CreateMany(ctx context.Context, objects []Content) error {
 		cvs...
 	)
 	if err != nil {
+        e.Err(ctx, err)
 		rollbackErr := pg.Tx.Rollback(pg.Ctx)
 		if rollbackErr != nil {
+			e.Err(ctx, rollbackErr)
 			return rollbackErr
 		}
 	}
@@ -171,17 +189,20 @@ func (c Content) Read(ctx context.Context, id string) (*Content, error) {
 	}
 	err := pg.Open()
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	defer pg.Close()
 
 	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE id = $1", id)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	if rows.Next() {
 		err = rows.Scan(&c)
 		if err != nil {
+			pg.Error.Err(ctx, err)
 			return nil, err
 		}
 	}
@@ -195,15 +216,18 @@ func (c Content) FindAll(ctx context.Context, t string) ([]Content, error) {
     }
 	pg, err := db.NewPostgresClient(ctx)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	err = pg.Open()
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	defer pg.Close()
 	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE content_type = $1", t)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	r := make([]Content, 0)
@@ -211,6 +235,7 @@ func (c Content) FindAll(ctx context.Context, t string) ([]Content, error) {
 		content := Content{}
 		err = rows.Scan(&content)
 		if err != nil {
+			pg.Error.Err(ctx, err)
 			return nil, err
 		}
 		r = append(r, content)
@@ -224,15 +249,18 @@ func (c Content) FindBy(ctx context.Context, jstring string) (*Content, error) {
     }
 	pg, err := db.NewPostgresClient(ctx)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	r := c
 	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE content @> $1", jstring)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	err = rows.Scan(&r)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	return &r, nil
@@ -244,10 +272,12 @@ func (c Content) SelectIn(ctx context.Context, ids []string) ([]*Content, error)
     }
 	pg, err := db.NewPostgresClient(ctx)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	err = pg.Open()
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	defer pg.Close()
@@ -255,6 +285,7 @@ func (c Content) SelectIn(ctx context.Context, ids []string) ([]*Content, error)
 	q := fmt.Sprintf("SELECT * FROM content WHERE id IN ('%s')", strings.Join(ids, "', '"))
 	rows, err := pg.Pgx.Query(pg.Ctx, q)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return nil, err
 	}
 	contents := make([]*Content, 0)
@@ -262,6 +293,7 @@ func (c Content) SelectIn(ctx context.Context, ids []string) ([]*Content, error)
 		content := Content{}
 		err = rows.Scan(&content)
 		if err != nil {
+			pg.Error.Err(ctx, err)
 			return nil, err
 		}
 		contents = append(contents, &content)
@@ -278,15 +310,18 @@ func (c Content) Update(ctx context.Context, object IContent) error {
 	}
 	err := pg.Open()
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return err
 	}
 	defer pg.Close()
 	err = c.Delete(ctx, c.Attributes.Id)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return err
 	}
 	err = c.Create(ctx, object)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return err
 	}
 	// q := fmt.Sprintf("UPDATE content SET %s WHERE id = ?", c.UpdateString())
@@ -307,11 +342,13 @@ func (c Content) Delete(ctx context.Context, id string) error {
 	}
 	err := pg.Open()
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return err
 	}
 	defer pg.Close()
 	_, err = pg.Sqlx.Query("DELETE FROM content WHERE id = $1", id)
 	if err != nil {
+		pg.Error.Err(ctx, err)
 		return err
 	}
 	return err
