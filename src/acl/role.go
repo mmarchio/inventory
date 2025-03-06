@@ -129,7 +129,7 @@ func (c Role) PGDelete(ctx context.Context) error {
 
 func (c Role) IsDocument(ctx context.Context) bool {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:role.go:role:IsDocument")
+		_ = v(ctx, ckey, "acl:role.go:role:IsDocument")
 	}
 	return true
 }
@@ -202,7 +202,7 @@ type Roles []Role
 
 func (c Roles) In(ctx context.Context, id string) bool {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:role.go:Roles:GetRole")
+		_ = v(ctx, ckey, "acl:role.go:Roles:GetRole")
 	}
 	for _, o := range c {
 		if o.Attributes.Id == id {
@@ -236,7 +236,7 @@ func FindRoles(ctx context.Context) (*Roles, error) {
 
 func (c Roles) IsDocument(ctx context.Context) bool {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:role.go:Roles:IsDocument")
+		_ = v(ctx, ckey, "acl:role.go:Roles:IsDocument")
 	}
 	return true
 }

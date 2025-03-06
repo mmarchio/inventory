@@ -229,7 +229,7 @@ func GetUsableClaims(ctx context.Context, c echo.Context) (*map[string]interface
 
 func pathToResource(ctx context.Context, url string) string {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:middleware.go:pathToResource")
+		_ = v(ctx, ckey, "acl:middleware.go:pathToResource")
 	}
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)

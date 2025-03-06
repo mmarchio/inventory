@@ -19,7 +19,7 @@ type Resource struct {
 
 func (c Resource) New(ctx context.Context) (*Resource, error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:resource.go:Resource:New")
+		_ = v(ctx, ckey, "acl:resource.go:Resource:New")
 	}
 	resource := c
 	resource.Id = uuid.NewString()
@@ -109,7 +109,7 @@ func (c Resource) PGDelete(ctx context.Context) error {
 
 func (c Resource) IsDocument(ctx context.Context) bool {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:resource.go:Resource:IsDocument")
+		_ = v(ctx, ckey, "acl:resource.go:Resource:IsDocument")
 	}
 	return true
 }
@@ -137,7 +137,7 @@ type Resources []Resource
 
 func (c Resources) In(ctx context.Context, id string) bool {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:resource.go:Resources:In")
+		_ = v(ctx, ckey, "acl:resource.go:Resources:In")
 	}
 	for _, o := range c {
 		if o.Attributes.Id == id {
@@ -149,7 +149,7 @@ func (c Resources) In(ctx context.Context, id string) bool {
 
 func (c Resources) IsDocument(ctx context.Context) bool {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:resource.go:Resources:IsDocument")
+		_ = v(ctx, ckey, "acl:resource.go:Resources:IsDocument")
 	}
 	return true
 }
