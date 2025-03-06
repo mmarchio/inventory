@@ -32,6 +32,7 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 			Function: "ACL",
 		}
 		if err := next(c); err != nil {
+			e.Err(ctx, err)
 			c.Error(err)
 		}
 		if skipper(c) {
@@ -91,24 +92,32 @@ func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.M
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:middleware.go:DecodeJWT")
 	}
+	e := errors.Error{
+		Package: "acl",
+		Function: "DecodeJWT",
+	}
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 	// Verify the signing method
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		err2 := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		e.Err(ctx, err2)
 		return nil, err2
 	}
 	return secretKey, nil
 	})
 
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		e.Err(ctx, err)
 		return claims, nil
 	}
 
 	err = fmt.Errorf("invalid token")
+	e.Err(ctx, err)
 	return nil, err
 }
 
@@ -116,13 +125,19 @@ func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:middleware.go:GetUser")
 	}
+	e := errors.Error{
+		Package: "acl",
+		Function: "GetUser",
+	}
 	b, err := json.Marshal(claims)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	msi := make(map[string]interface{})
 	err = json.Unmarshal(b, &msi)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	var jstring string
@@ -131,9 +146,11 @@ func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User, error) {
 	}
 	userPtr, err := types.User{}.FindBy(ctx, jstring)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if userPtr == nil {
+		e.Err(ctx, err)
 		return nil, fmt.Errorf("user is nil")
 	}
 	return userPtr, nil
@@ -143,11 +160,17 @@ func getResourcePolicy(ctx context.Context, u types.User, resource string) (*Pol
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:middleware.go:getResourcePolicy")
 	}
+	e := errors.Error{
+		Package: "acl",
+		Function: "GetBearerToken",
+	}
 	policiesPtr, err := Policies{}.FindPolicies(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if policiesPtr == nil {
+		e.Err(ctx, err)
 		return nil, fmt.Errorf("policies is nil")
 	}
 	policies := *policiesPtr
@@ -157,7 +180,9 @@ func getResourcePolicy(ctx context.Context, u types.User, resource string) (*Pol
 			return &p, nil
 		}
 	}
-	return nil, fmt.Errorf("%s", resource)
+	err = fmt.Errorf(resource)
+	e.Err(ctx, err)
+	return nil, err
 }
 
 func skipper(c echo.Context) bool {
@@ -173,21 +198,29 @@ func GetUsableClaims(ctx context.Context, c echo.Context) (*map[string]interface
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:middleware.go:GetUsableClaims")
 	}
+	e := errors.Error{
+		Package: "acl",
+		Function: "GetUsableClaims",
+	}
 	token, err := GetBearerToken(ctx, c)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	jwt, err := DecodeJWT(ctx, token, []byte("secret"))
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	msi := make(map[string]interface{})
 	b, err := json.Marshal(jwt)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	err = json.Unmarshal(b, &msi)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	return &msi, nil
@@ -211,12 +244,18 @@ func PermissionsHandler(ctx context.Context, c echo.Context, p Policy) (bool, er
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:middleware.go:PermissionsHandler")
 	}
+	e := errors.Error{
+		Package: "acl",
+		Function: "GetBearerToken",
+	}
 	userPtr, err := GetUserFromContext(ctx, c)
 	if err != nil {
+		e.Err(ctx, err)
 		return false, err
 	}
 	if userPtr == nil {
 		err := fmt.Errorf("user is nil")
+		e.Err(ctx, err)
 		return false, err
 	}
 	user := *userPtr
@@ -224,10 +263,12 @@ func PermissionsHandler(ctx context.Context, c echo.Context, p Policy) (bool, er
 	contentId := segments[len(segments)-1]
 	contentPtr, err := types.GetContent(ctx, contentId)
 	if err != nil {
+		e.Err(ctx, err)
 		return false, err
 	}
 	if contentPtr == nil {
 		err := fmt.Errorf("content pointer is nil")
+		e.Err(ctx, err)
 		return false, err
 	}
 	content := *contentPtr

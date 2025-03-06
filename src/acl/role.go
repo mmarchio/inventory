@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"inventory/src/errors"
 	"inventory/src/types"
 )
 
@@ -18,9 +19,11 @@ func (c Role) New(ctx context.Context) (*Role, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:role:new")
 	}
+	e := errors.Error{}
 	role := c
 	attributesPtr, err := c.Attributes.New(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if attributesPtr == nil {
@@ -36,10 +39,12 @@ func (c Role) ToContent(ctx context.Context) (*types.Content, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:role:ToContent")
 	}
+	e := errors.Error{}
 	content := types.Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	content.Content = jbytes
@@ -50,17 +55,22 @@ func (c Role) PGRead(ctx context.Context) (*Role, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:role:PGRead")
 	}
+	e := errors.Error{}
 	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if contentPtr == nil {
+		err = fmt.Errorf("content is nil")
+		e.Err(ctx, err)
 		return nil, fmt.Errorf("content is nil")
 	}
 	content := *contentPtr
 	role := c
 	err = json.Unmarshal(content.Content, &role)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	return &role, nil
@@ -70,29 +80,50 @@ func (c Role) PGCreate(ctx context.Context) error {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:role:PGCreate")
 	}
-	return types.Content{}.Create(ctx, c)
+	err := types.Content{}.Create(ctx, c)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return err
+	}
+	return nil
 }
 
 func (c Role) PGUpdate(ctx context.Context) error {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:role:PGUpdate")
 	}
+	e := errors.Error{}
 	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	if contentPtr == nil {
-		return fmt.Errorf("content is nil")
+		err = fmt.Errorf("content is nil")
+		e.Err(ctx, err)
+		return err
 	}
 	content := *contentPtr
-	return content.Update(ctx, c)
+	err = content.Update(ctx, c)
+	if err != nil {
+		e.Err(ctx, err)
+		return err
+	}
+	return nil
 }
 
 func (c Role) PGDelete(ctx context.Context) error {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:role:PGDelete")
 	}
-	return types.Content{}.Delete(ctx, c.Attributes.Id)
+	err := types.Content{}.Delete(ctx, c.Attributes.Id)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return err
+	}
+	return err
 }
 
 func (c Role) IsDocument(ctx context.Context) bool {
@@ -106,13 +137,16 @@ func (c Role) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:role:ToMSI")
 	}
+	e := errors.Error{}
 	r := make(map[string]interface{})
 	b, err := json.Marshal(c)
 	if err != nil {
+		e.Err(ctx, err)
 		return r, err
 	}
 	err = json.Unmarshal(b, &r)
 	if err != nil {
+		e.Err(ctx, err)
 		return r, err
 	}
 	return r, nil
@@ -122,8 +156,10 @@ func GetRole(ctx context.Context, id string) (*Role, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:GetRole")
 	}
+	e := errors.Error{}
 	rolesPtr, err := FindRoles(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if rolesPtr != nil {
@@ -134,15 +170,19 @@ func GetRole(ctx context.Context, id string) (*Role, error) {
 			}
 		}
 	}
-	return nil, fmt.Errorf("role id: %s not found", id)
+	err = fmt.Errorf("role id: %s not found", id)
+	e.Err(ctx, err)
+	return nil, err
 }
 
 func GetRoles(ctx context.Context) (*Roles, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:GetRoles")
 	}
+	e := errors.Error{}
 	contents, err := types.Content{}.FindAll(ctx, "role")
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	roles := Roles{}
@@ -175,8 +215,10 @@ func FindRoles(ctx context.Context) (*Roles, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:Roles:FindRoles")
 	}
+	e := errors.Error{}
 	content, err := types.Content{}.FindAll(ctx, "role")
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	r := Roles{}
@@ -202,13 +244,16 @@ func (c Roles) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:role.go:Roles:ToMSI")
 	}
+	e := errors.Error{}
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
+		e.Err(ctx, err)
 		return r, err
 	}
 	err = json.Unmarshal(m, &r)
 	if err != nil {
+		e.Err(ctx, err)
 		return r, err
 	}
 	return r, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"inventory/src/errors"
 	"inventory/src/types"
 
 	"github.com/google/uuid"
@@ -28,11 +29,13 @@ func (c Resource) ToContent(ctx context.Context) (*types.Content, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:resource.go:Resource:ToContent")
 	}
+	e := errors.Error{}
 	content := types.Content{}
 	content.Attributes.Id = c.Id
 	content.Attributes.ContentType = "resource"
 	jbytes, err := json.Marshal(c)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	content.Content = jbytes
@@ -43,17 +46,22 @@ func (c Resource) PGRead(ctx context.Context) (*Resource, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:resource.go:Resource:PGRead")
 	}
+	e := errors.Error{}
 	contentPtr, err := types.Content{}.Read(ctx, c.Id)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	if contentPtr == nil {
-		return nil, fmt.Errorf("content is nil")
+		err = fmt.Errorf("content is nil")
+		e.Err(ctx, err)
+		return nil, err
 	}
 	content := *contentPtr
 	resource := c
 	err = json.Unmarshal(content.Content, &resource)
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	return &resource, nil
@@ -70,12 +78,16 @@ func (c Resource) PGUpdate(ctx context.Context) error {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:resource.go:Resource:PGUpdate")
 	}
+	e := errors.Error{}
 	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
+		e.Err(ctx, err)
 		return err
 	}
 	if contentPtr == nil {
-		return fmt.Errorf("content is nil")
+		err = fmt.Errorf("content is nil")
+		e.Err(ctx, err)
+		return err
 	}
 	content := *contentPtr
 	return content.Update(ctx, c)
@@ -85,7 +97,13 @@ func (c Resource) PGDelete(ctx context.Context) error {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:resource.go:Resource:PGDelete")
 	}
-	return types.Content{}.Delete(ctx, c.Attributes.Id)
+	err := types.Content{}.Delete(ctx, c.Attributes.Id)
+	if err != nil {
+		e := errors.Error{}
+		e.Err(ctx, err)
+		return err
+	}
+	return nil
 }
 
 func (c Resource) IsDocument(ctx context.Context) bool {
@@ -99,13 +117,16 @@ func (c Resource) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:resource.go:Resource:ToMSI")
 	}
+	e := errors.Error{}
 	r := make(map[string]interface{})
 	b, err := json.Marshal(c)
 	if err != nil {
+		e.Err(ctx, err)
 		return r, err
 	}
 	err = json.Unmarshal(b, &r)
 	if err != nil {
+		e.Err(ctx, err)
 		return r, err
 	}
 	return r, nil
@@ -136,13 +157,16 @@ func (c Resources) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:resource.go:Resources:ToMSI")
 	}
+	e := errors.Error{}
 	r := make(map[string]interface{})
 	b, err := json.Marshal(c)
 	if err != nil {
+		e.Err(ctx, err)
 		return r, err
 	}
 	err = json.Unmarshal(b, &r)
 	if err != nil {
+		e.Err(ctx, err)
 		return r, err
 	}
 	return r, nil
@@ -152,8 +176,10 @@ func FindResources(ctx context.Context) (*Resources, error) {
 	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
 		ctx = v(ctx, "stack", "acl:resource.go:FindResources")
 	}
+	e := errors.Error{}
 	content, err := types.Content{}.FindAll(ctx, "resource")
 	if err != nil {
+		e.Err(ctx, err)
 		return nil, err
 	}
 	r := Resources{}
@@ -161,6 +187,7 @@ func FindResources(ctx context.Context) (*Resources, error) {
 		resource := Resource{}
 		err = json.Unmarshal(c.Content, &resource)
 		if err != nil {
+			e.Err(ctx, err)
 			return nil, err
 		}
 		r = append(r, resource)
