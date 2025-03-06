@@ -108,6 +108,25 @@ func (c Content) Values(ctx context.Context) []interface{} {
 	return vals
 }
 
+func (c Content) StringValues(ctx context.Context) []string {
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:content.go:Content:Values")
+    }
+	vals := []string{
+		c.Attributes.Id, 
+		c.Attributes.ParentId, 
+		c.Attributes.RootId,
+		c.Attributes.CreatedAt.Format(FORMAT),
+		c.Attributes.UpdatedAt.Format(FORMAT),
+		c.Attributes.CreatedBy,
+		c.Attributes.Owner,
+		c.Attributes.Name,
+		c.Attributes.ContentType,
+		string(c.Content),
+	}
+	return vals
+}
+
 func (c Content) CreateMany(ctx context.Context, objects []Content) error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:content.go:Content:CreateMany")
@@ -124,22 +143,12 @@ func (c Content) CreateMany(ctx context.Context, objects []Content) error {
 	}
 
 	defer pg.Close()
-	var cvs []any
-	baseString := "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)"
+	var cvs []string
+	baseString := "(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\")"
 	var placeholders []string
-	for i, object := range objects {
-		var ctr int64
-		if i == 0 {
-			ctr = 0
-		} else {
-			ctr = int64(i)*int64(10)
-		}
-		var vals []int64
-		for i := 1; i < 11; i++ {
-			vals = append(vals, int64(ctr)+int64(i))
-		}
-		placeholders = append(placeholders, fmt.Sprintf(baseString, vals))
-		objectValues := object.Values(ctx)
+	for _, object := range objects {
+		objectValues := object.StringValues(ctx)
+		placeholders = append(placeholders, fmt.Sprintf(baseString, objectValues))
 		cvs = append(cvs, objectValues...)
 	}
 	q := fmt.Sprintf("INSERT INTO content (%s) VALUES %s", Content{}.Columns(ctx), strings.Join(placeholders, ", "))
@@ -156,11 +165,7 @@ func (c Content) CreateMany(ctx context.Context, objects []Content) error {
 		return err
 	}
 	defer pg.Tx.Commit(pg.Ctx)
-	_, err = pg.Tx.Conn().Exec(
-		pg.Ctx,
-		q,
-		cvs...
-	)
+	_, err = pg.Tx.Conn().Exec(pg.Ctx, q)
 	if err != nil {
         e.Err(ctx, err)
 		rollbackErr := pg.Tx.Rollback(pg.Ctx)

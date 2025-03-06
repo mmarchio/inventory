@@ -13,11 +13,15 @@ import (
 	"inventory/src/controller"
 	"inventory/src/errors"
 	system_init "inventory/src/init"
+	"inventory/src/util"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 )
+
+var ckey util.CtxKey = "stack"
+var ukey util.CtxKey = "updateCtx"
 
 type IDocument interface {
 	IsDocument() bool
@@ -59,7 +63,7 @@ func UpdateCtx(ctx context.Context, key, value string) context.Context {
 func main() {
 	ctx := context.Background()
 
-	updateCtx := func(ctx context.Context, key, value string) context.Context {
+	updateCtx := func(ctx context.Context, key util.CtxKey, value string) context.Context {
 		var stack []any
 		if v, ok := ctx.Value(key).([]any); ok {
 			stack = v
@@ -67,7 +71,7 @@ func main() {
 		stack = append(stack, value)
 		return context.WithValue(ctx, key, stack)
 	}
-	ctx = context.WithValue(ctx, "UpdateCtx", updateCtx)
+	ctx = context.WithValue(ctx, ukey, updateCtx)
 
 	ierr := errors.Error{
 		Package: "main",
@@ -126,6 +130,7 @@ func main() {
 			Package: "controller",
 			Struct: "IndexController",
 		},
+		Ctx: ctx,
 	}
 	err = indexController.RegisterResources(e)
 	if err != nil {
@@ -140,6 +145,7 @@ func main() {
 			Package: "controller",
 			Struct: "DashboardController",
 		},
+		Ctx: ctx,
 	}
 	err = dashboardController.RegisterResources(e)
 	if err != nil {
@@ -154,6 +160,7 @@ func main() {
 			Package: "controller",
 			Struct: "SettingsController",
 		},
+		Ctx: ctx,
 	}
 	err = settingsController.RegisterResources(e)
 	if err != nil {
@@ -167,6 +174,7 @@ func main() {
 			Package: "controller",
 			Struct: "LocationController",
 		},
+		Ctx: ctx,
 	}
 	err = locationController.RegisterResources(e)
 	if err != nil {
@@ -180,6 +188,7 @@ func main() {
 			Package: "controller",
 			Struct: "RoomController",
 		},
+		Ctx: ctx,
 	}
 	err = roomController.RegisterResources(e)
 	if err != nil {
@@ -193,6 +202,7 @@ func main() {
 			Package: "controller",
 			Struct: "ZoneController",
 		},
+		Ctx: ctx,
 	}
 	err = zoneController.RegisterResources(e)
 	if err != nil {
@@ -206,6 +216,7 @@ func main() {
 			Package: "controller",
 			Struct: "ContainerController",
 		},
+		Ctx: ctx,
 	}
 	err = containerController.RegisterResources(e)
 	if err != nil {
@@ -219,6 +230,7 @@ func main() {
 			Package: "controller",
 			Struct: "ItemController",
 		},
+		Ctx: ctx,
 	}
 	err = itemController.RegisterResources(e)
 	if err != nil {
@@ -232,6 +244,7 @@ func main() {
 			Package: "controller",
 			Struct: "LoginController",
 		},
+		Ctx: ctx,
 	}
 	err = loginController.RegisterResources(e)
 	if err != nil {
