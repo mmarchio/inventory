@@ -7,6 +7,7 @@ import (
 	"inventory/src/errors"
 	"inventory/src/login"
 	"inventory/src/types"
+	"inventory/src/util"
 	"net/http"
 	"os"
 	"time"
@@ -21,8 +22,8 @@ type LoginController struct{
 }
 
 func (s LoginController) RegisterResources(e *echo.Echo) error {
-	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		s.Ctx = v(s.Ctx, "stack", "controllers:login.go:LoginController:RegisterResources")
+	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, ckey, "controllers:login.go:LoginController:RegisterResources")
 	}
 	s.Error.Function = "RegisterResources"
 
@@ -61,8 +62,8 @@ func (s LoginController) RegisterResources(e *echo.Echo) error {
 
 func (s LoginController) LogoutHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:login.go:LoginController:LogoutHandler")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:login.go:LoginController:LogoutHandler")
 		}
 		s.Error.Function = "LogoutHandler"
 
@@ -92,8 +93,8 @@ func (s LoginController) LogoutHandler() echo.HandlerFunc {
 
 func (s LoginController) ApiLoginHandler() echo.HandlerFunc{
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:login.go:LoginController:ApiLoginHandler")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:login.go:LoginController:ApiLoginHandler")
 		}
 		fmt.Println("loginController:ApiLoginHandler")
 		s.Error.Function = "ApiLoginHandler"

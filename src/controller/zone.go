@@ -4,6 +4,7 @@ import (
 	"context"
 	"inventory/src/acl"
 	"inventory/src/errors"
+	"inventory/src/util"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -17,8 +18,8 @@ type ZoneController struct{
 
 func (s ZoneController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:zone.go:ZoneController:GetCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:zone.go:ZoneController:GetCreate")
 		}
 		s.Error.Function = "GetCreate"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -50,8 +51,8 @@ func (s ZoneController) GetCreate() echo.HandlerFunc {
 
 func (s ZoneController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:zone.go:ZoneController:GetEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:zone.go:ZoneController:GetEdit")
 		}
 		s.Error.Function = "GetEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -83,8 +84,8 @@ func (s ZoneController) GetEdit() echo.HandlerFunc {
 
 func (s ZoneController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:zone.go:ZoneController:GetDelete")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:zone.go:ZoneController:GetDelete")
 		}
 		s.Error.Function = "GetDelete"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -116,8 +117,8 @@ func (s ZoneController) GetDelete() echo.HandlerFunc {
 
 func (s ZoneController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:zone.go:ZoneController:PostApiCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:zone.go:ZoneController:PostApiCreate")
 		}
 		s.Error.Function = "PostApiCreate"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -146,8 +147,8 @@ func (s ZoneController) PostApiCreate() echo.HandlerFunc {
 
 func (s ZoneController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:zone.go:ZoneController:PostApiEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:zone.go:ZoneController:PostApiEdit")
 		}
 		s.Error.Function = "PostApiEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -175,8 +176,8 @@ func (s ZoneController) PostApiEdit() echo.HandlerFunc {
 }
 
 func (s ZoneController) RegisterResources(e *echo.Echo) error {
-	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		s.Ctx = v(s.Ctx, "stack", "controllers:zone.go:ZoneController:RegisterResources")
+	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, ckey, "controllers:zone.go:ZoneController:RegisterResources")
 	}
 	s.Error.Function = "RegisterResources"
 

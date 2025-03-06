@@ -7,6 +7,7 @@ import (
 	"inventory/src/acl"
 	"inventory/src/errors"
 	"inventory/src/types"
+	"inventory/src/util"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -20,8 +21,8 @@ type LocationController struct{
 
 func (s LocationController) Get() echo.HandlerFunc {
 	return func (c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:Get")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:location.go:LocationController:Get")
 		}
 		s.Error.Function = "Get"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -65,8 +66,8 @@ func (s LocationController) Get() echo.HandlerFunc {
 
 func (s LocationController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:GetCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:location.go:LocationController:GetCreate")
 		}
 		s.Error.Function = "GetCreate"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -97,8 +98,8 @@ func (s LocationController) GetCreate() echo.HandlerFunc {
 
 func (s LocationController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:GetEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:location.go:LocationController:GetEdit")
 		}
 		s.Error.Function = "GetEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -163,8 +164,8 @@ func (s LocationController) GetEdit() echo.HandlerFunc {
 
 func (s LocationController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:GetDelete")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:location.go:LocationController:GetDelete")
 		}
 		s.Error.Function = "GetDelete"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -194,8 +195,8 @@ func (s LocationController) GetDelete() echo.HandlerFunc {
 
 func (s LocationController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:PostApiCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:location.go:LocationController:PostApiCreate")
 		}
 		s.Error.Function = "PostApiCreate"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -229,8 +230,8 @@ func (s LocationController) PostApiCreate() echo.HandlerFunc {
 
 func (s LocationController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:PostApiEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:location.go:LocationController:PostApiEdit")
 		}
 		s.Error.Function = "PostApiEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -276,8 +277,8 @@ func (s LocationController) PostApiEdit() echo.HandlerFunc {
 }
 
 func (s LocationController) RegisterResources(e *echo.Echo) error {
-	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		s.Ctx = v(s.Ctx, "stack", "controllers:location.go:LocationController:RegisterResources")
+	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, ckey, "controllers:location.go:LocationController:RegisterResources")
 	}
 	s.Error.Function = "GetCreate"
 

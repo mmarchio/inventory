@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"inventory/src/acl"
 	"inventory/src/errors"
+	"inventory/src/util"
 	"log"
 	"net/http"
 
@@ -20,8 +21,8 @@ type DashboardController struct {
 
 func (s DashboardController) Get() echo.HandlerFunc {
 	return func (c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:dashboard.go:DashboardController:Get")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:dashboard.go:DashboardController:Get")
 		}
 		s.Error.Function = "Get"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -62,8 +63,8 @@ func (s DashboardController) Get() echo.HandlerFunc {
 }
 
 func (s DashboardController) RegisterResources(e *echo.Echo) error {
-	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		s.Ctx = v(s.Ctx, "stack", "controllers:dashboard.go:DashboardController:RegisterResources")
+	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, ckey, "controllers:dashboard.go:DashboardController:RegisterResources")
 	}
 	s.Error.Function = "GetCreate"
 	

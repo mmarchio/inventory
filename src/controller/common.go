@@ -7,6 +7,7 @@ import (
 	"inventory/src/acl"
 	"inventory/src/errors"
 	"inventory/src/login"
+	"inventory/src/util"
 	"regexp"
 	"strings"
 
@@ -14,6 +15,8 @@ import (
 )
 
 const ERRORTPL = "error.tpl.html"
+var ckey util.CtxKey = "stack"
+var ukey util.CtxKey = "updateCtx"
 
 type IDocument interface {
 	IsDocument() bool
@@ -22,8 +25,8 @@ type IDocument interface {
 }
 
 func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "controllers:common.go:GetRequestData")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "controllers:common.go:GetRequestData")
 	}
 	e := errors.Error{}
 	body := make(map[string]interface{})
@@ -36,8 +39,8 @@ func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{
 }
 
 func authenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error){
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "controllers:common.go:authenticateToken")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "controllers:common.go:authenticateToken")
 	}
 	e := errors.Error{}
 	data := make(map[string]interface{})
@@ -71,8 +74,8 @@ func authenticateToken(ctx context.Context, c echo.Context) (map[string]interfac
 }
 
 func CreatePolicy(ctx context.Context, resource, role, permission string) (*acl.Policy, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "controllers:common.go:CreatePolicy")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "controllers:common.go:CreatePolicy")
 	}
 	e := errors.Error{}
 	segments := strings.Split(resource, "/")
@@ -96,8 +99,8 @@ func CreatePolicy(ctx context.Context, resource, role, permission string) (*acl.
 }
 
 func UpdateRole(ctx context.Context, id string, resources acl.Resources) error {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "controllers:common.go:UpdateRole")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "controllers:common.go:UpdateRole")
 	}
 	e := errors.Error{}
 	rolePtr, err := acl.GetRole(ctx, id)
@@ -126,8 +129,8 @@ func UpdateRole(ctx context.Context, id string, resources acl.Resources) error {
 }
 
 func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) error {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "controllers:common.go:UpdatePolicy")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "controllers:common.go:UpdatePolicy")
 	}
 	e := errors.Error{}
 	dbPoliciesPtr, err := acl.GetPolicyByRole(ctx, role)
@@ -171,8 +174,8 @@ func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) err
 }
 
 func UpdateResources(ctx context.Context, resources acl.Resources) error {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "controllers:common.go:UpdateResource")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "controllers:common.go:UpdateResource")
 	}
 	e := errors.Error{}
 	dbResourcesPtr, err := acl.FindResources(ctx)
@@ -209,8 +212,8 @@ func UpdateResources(ctx context.Context, resources acl.Resources) error {
 }
 
 func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "controllers:common.go:GetContentIdFromUrl")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "controllers:common.go:GetContentIdFromUrl")
 	}
 	e := errors.Error{}
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
@@ -226,8 +229,8 @@ func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
 }
 
 func AuthenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "controllers:common.go:AuthenticateToken")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "controllers:common.go:AuthenticateToken")
 	}
 	e := errors.Error{}
 	data, err := authenticateToken(ctx, c)

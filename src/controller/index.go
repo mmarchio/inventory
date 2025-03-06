@@ -4,6 +4,7 @@ import (
 	"context"
 	"inventory/src/acl"
 	"inventory/src/errors"
+	"inventory/src/util"
 	"log"
 	"net/http"
 	"strings"
@@ -20,8 +21,8 @@ type IndexController struct {
 
 func (s IndexController) Get() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:index.go:IndexController:Get")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:index.go:IndexController:Get")
 		}
 		s.Error.Function = "Get"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -55,8 +56,8 @@ func (s IndexController) Get() echo.HandlerFunc {
 }
 
 func (s IndexController) RegisterResources(e *echo.Echo) error {
-	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		s.Ctx = v(s.Ctx, "stack", "controllers:index.go:IndexController:RegisterResources")
+	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, ckey, "controllers:index.go:IndexController:RegisterResources")
 	}
 s.Error.Function = "GetCreate"
 	g := e.Group("")

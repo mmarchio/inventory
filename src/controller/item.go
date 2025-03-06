@@ -4,6 +4,7 @@ import (
 	"context"
 	"inventory/src/acl"
 	"inventory/src/errors"
+	"inventory/src/util"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -17,8 +18,8 @@ type ItemController struct{
 
 func (s ItemController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:GetCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:item.go:ItemController:GetCreate")
 		}
 		s.Error.Function = "GetCreate"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -49,8 +50,8 @@ func (s ItemController) GetCreate() echo.HandlerFunc {
 
 func (s ItemController) GetEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:GetEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:item.go:ItemController:GetEdit")
 		}
 		s.Error.Function = "GetEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -81,8 +82,8 @@ func (s ItemController) GetEdit() echo.HandlerFunc {
 
 func (s ItemController) GetDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:GetDelete")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:item.go:ItemController:GetDelete")
 		}
 		s.Error.Function = "GetDelete"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -114,8 +115,8 @@ func (s ItemController) GetDelete() echo.HandlerFunc {
 
 func (s ItemController) PostApiCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:PostApiCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:item.go:ItemController:PostApiCreate")
 		}
 		s.Error.Function = "PostApiCreate"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -144,8 +145,8 @@ func (s ItemController) PostApiCreate() echo.HandlerFunc {
 
 func (s ItemController) PostApiEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:PostApiEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:item.go:ItemController:PostApiEdit")
 		}
 		s.Error.Function = "PostApiEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -173,8 +174,8 @@ func (s ItemController) PostApiEdit() echo.HandlerFunc {
 }
 
 func (s ItemController) RegisterResources(e *echo.Echo) error {
-	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		s.Ctx = v(s.Ctx, "stack", "controllers:item.go:ItemController:RegisterResources")
+	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, ckey, "controllers:item.go:ItemController:RegisterResources")
 	}
 s.Error.Function = "GetCreate"
 

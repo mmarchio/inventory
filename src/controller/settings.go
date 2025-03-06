@@ -7,6 +7,7 @@ import (
 	"inventory/src/errors"
 	"inventory/src/login"
 	"inventory/src/types"
+	"inventory/src/util"
 	"log"
 	"net/http"
 	"strings"
@@ -23,8 +24,8 @@ type SettingsController struct {
 
 func (s SettingsController) Get() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:Get")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:Get")
 		}
 		s.Error.RequestUri = c.Request().RequestURI
 		s.Error.Function = "Get"
@@ -93,8 +94,8 @@ func (s SettingsController) Get() echo.HandlerFunc {
 
 func (s SettingsController) GetUserCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:GetUserCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetUserCreate")
 		}
 		s.Error.RequestUri = c.Request().RequestURI
 		s.Error.Function = "GetUserCreate"
@@ -128,8 +129,8 @@ func (s SettingsController) GetUserCreate() echo.HandlerFunc {
 
 func (s SettingsController) GetUserEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:GetUserEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetUserEdit")
 		}
 		s.Error.Function = "GetUserEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -207,8 +208,8 @@ func (s SettingsController) GetUserEdit() echo.HandlerFunc {
  
 func (s SettingsController) GetUserDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:GetUserDelete")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetUserDelete")
 		}
 		s.Error.Function = "GetUserDelete"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -238,8 +239,8 @@ func (s SettingsController) GetUserDelete() echo.HandlerFunc {
 
 func (s SettingsController) GetRoleCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:GetRoleCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetRoleCreate")
 		}
 		s.Error.Function = "GetRoleCreate"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -273,8 +274,8 @@ func (s SettingsController) GetRoleCreate() echo.HandlerFunc {
 
 func (s SettingsController) GetRoleEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:GetRoleEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetRoleEdit")
 		}
 		s.Error.Function = "GetRoleEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -340,8 +341,8 @@ func (s SettingsController) GetRoleEdit() echo.HandlerFunc {
  
 func (s SettingsController) GetRoleDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:GetRoleDelete")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetRoleDelete")
 		}
 		s.Error.Function = "GetRoleDelete"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -384,8 +385,8 @@ func (s SettingsController) GetRoleDelete() echo.HandlerFunc {
 
 func (s SettingsController) GetPolicyCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:GetPolicyCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetPolicyCreate")
 		}
 		s.Error.Function = "GetPolicyCreate"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -419,8 +420,8 @@ func (s SettingsController) GetPolicyCreate() echo.HandlerFunc {
 
 func (s SettingsController) GetPolicyEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:GetPolicyEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetPolicyEdit")
 		}
 		s.Error.Function = "GetPolicyEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -454,8 +455,8 @@ func (s SettingsController) GetPolicyEdit() echo.HandlerFunc {
 
 func (s SettingsController) GetPolicyDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:GetPolicyDelete")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetPolicyDelete")
 		}
 		s.Error.Function = "GetPolicyDelete"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -489,8 +490,8 @@ func (s SettingsController) GetPolicyDelete() echo.HandlerFunc {
 
 func (s SettingsController) PostApiUserCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:PostApiUserCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiUserCreate")
 		}
 		s.Error.Function = "PostApiUserCreate"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -566,8 +567,8 @@ func (s SettingsController) PostApiUserCreate() echo.HandlerFunc {
 
 func (s SettingsController) PostApiRoleCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:PostApiRoleCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiRoleCreate")
 		}
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
@@ -583,8 +584,8 @@ func (s SettingsController) PostApiRoleCreate() echo.HandlerFunc {
 
 func (s SettingsController) PostApiRoleEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:PostApiRoleEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiRoleEdit")
 		}
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
@@ -600,8 +601,8 @@ func (s SettingsController) PostApiRoleEdit() echo.HandlerFunc {
 
 func (s SettingsController) PostApiRoleDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:PostApiRoleDelete")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiRoleDelete")
 		}
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
@@ -617,8 +618,8 @@ func (s SettingsController) PostApiRoleDelete() echo.HandlerFunc {
 
 func (s SettingsController) PostApiUserEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:PostApiUserEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiUserEdit")
 		}
 		s.Error.Function = "PostApiUserEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -695,8 +696,8 @@ func (s SettingsController) PostApiUserEdit() echo.HandlerFunc {
 
 func (s SettingsController) PostApiUserDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:PostApiUserDelete")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiUserDelete")
 		}
 		s.Error.Function = "PostApiUserDelete"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -714,8 +715,8 @@ func (s SettingsController) PostApiUserDelete() echo.HandlerFunc {
 
 func (s SettingsController) PostApiPolicyCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:PostApiPolicyCreate")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiPolicyCreate")
 		}
 		s.Error.Function = "PostApiPolicyCreate"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -771,8 +772,8 @@ func (s SettingsController) PostApiPolicyCreate() echo.HandlerFunc {
 
 func (s SettingsController) PostApiPolicyEdit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:PostApiPolicyEdit")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiPolicyEdit")
 		}
 		s.Error.Function = "PostApiPolicyEdit"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -790,8 +791,8 @@ func (s SettingsController) PostApiPolicyEdit() echo.HandlerFunc {
 
 func (s SettingsController) PostApiPolicyDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:PostApiPolicyDelete")
+		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiPolicyDelete")
 		}
 		s.Error.Function = "PostApiPolicyDelete"
 		s.Error.RequestUri = c.Request().RequestURI
@@ -809,8 +810,8 @@ func (s SettingsController) PostApiPolicyDelete() echo.HandlerFunc {
 
 
 func (s SettingsController) RegisterResources(e *echo.Echo) error {
-	if v, ok := s.Ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		s.Ctx = v(s.Ctx, "stack", "controllers:settings.go:SettingsController:RegisterResources")
+	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:RegisterResources")
 	}
 	s.Error.Function = "GetUserDelete"
 	
