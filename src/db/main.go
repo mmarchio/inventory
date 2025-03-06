@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"inventory/src/errors"
+	"inventory/src/util"
 	"os"
 	"strconv"
 
@@ -17,6 +18,8 @@ import (
 )
 
 var ctx = context.Background()
+var ckey util.CtxKey = "stack"
+var ukey util.CtxKey = "updateCtx"
 
 type IDocument interface {
     IsDocument() bool
@@ -180,8 +183,8 @@ type PostgresClient struct {
 }
 
 func NewPostgresClient(ctx context.Context) (*PostgresClient, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "db:main.go:NewPostgresClient")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "db:main.go:NewPostgresClient")
     }
     pg := PostgresClient{
         Ctx: ctx,
@@ -190,8 +193,8 @@ func NewPostgresClient(ctx context.Context) (*PostgresClient, error) {
 }
 
 func (c *PostgresClient) Open() error {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "db:main.go:PostgresClient:Open")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "db:main.go:PostgresClient:Open")
     }
 	conn, err := pgx.Connect(c.Ctx, os.Getenv("POSTGRES_URL"))
 	if err != nil {
@@ -219,8 +222,8 @@ func (c *PostgresClient) Open() error {
 }
 
 func (c PostgresClient) Close() error {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "db:main.go:PostgresClient:Close")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "db:main.go:PostgresClient:Close")
     }
     err := c.Pgx.Close(c.Ctx)
     if err != nil {
@@ -231,8 +234,8 @@ func (c PostgresClient) Close() error {
 }
 
 func (c PostgresClient) Commit(tx pgx.Tx) error {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "db:main.go:PostgresClient:Commit")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "db:main.go:PostgresClient:Commit")
     }
     err := tx.Conn().Close(c.Ctx)
     if err != nil {
@@ -243,8 +246,8 @@ func (c PostgresClient) Commit(tx pgx.Tx) error {
 }
 
 func (c PostgresClient) Query(ctx context.Context, q string, rs pgx.RowScanner) error {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "db:main.go:PostgresClient:Open")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "db:main.go:PostgresClient:Open")
     }
     err := c.Open()
     if err != nil {
