@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"inventory/src/errors"
+	"inventory/src/util"
 )
 
 type Item struct {
@@ -12,8 +13,8 @@ type Item struct {
 }
 
 func NewItem(ctx context.Context, createdBy *User) (*Item, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:item.go:NewItem")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:item.go:NewItem")
     }
 	item := Item{}
 	attributesPtr := NewAttributes(ctx, createdBy)
@@ -24,15 +25,15 @@ func NewItem(ctx context.Context, createdBy *User) (*Item, error) {
 }
 
 func (c Item) IsDocument(ctx context.Context) bool {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:item.go:Item:IsDocument")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:item.go:Item:IsDocument")
     }
 	return true
 }
 
 func (c Item) ToMSI(ctx context.Context) (map[string]interface{}, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:item.go:Item:ToMSI")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:item.go:Item:ToMSI")
     }
 	data, err := toMSI(ctx, c)
 	if err != nil {
@@ -43,8 +44,8 @@ func (c Item) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 }
 
 func (c Item) Hydrate(ctx context.Context, msi map[string]interface{}) (*Item, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:item.go:Item:Hydrate")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:item.go:Item:Hydrate")
     }
 	e := errors.Error{}
 	r := c
@@ -69,8 +70,8 @@ func (c Item) Hydrate(ctx context.Context, msi map[string]interface{}) (*Item, e
 type Items []Item
 
 func (c Items) In(ctx context.Context, id string) bool {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:item.go:Items:In")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:item.go:Items:In")
     }
 	for _, o := range c {
 		if o.Attributes.Id == id {
@@ -81,8 +82,8 @@ func (c Items) In(ctx context.Context, id string) bool {
 }
 
 func (c Items) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Items, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:item.go:Items:Hydrate")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:item.go:Items:Hydrate")
     }
 	e := errors.Error{}
 	items := c

@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"inventory/src/errors"
+	"inventory/src/util"
 )
 
 type Container struct {
@@ -11,7 +12,7 @@ type Container struct {
 }
 
 func NewContainer(ctx context.Context, createdBy *User) (*Container, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:NewContainer")
     }
 	container := Container{}
@@ -23,14 +24,14 @@ func NewContainer(ctx context.Context, createdBy *User) (*Container, error) {
 }
 
 func (c Container) IsDocument(ctx context.Context) bool {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Container:IsDocument")
     }
 	return true
 }
 
 func (c Container) ToMSI(ctx context.Context) (map[string]interface{}, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Container:ToMSI")
     }
 	data, err := toMSI(ctx, c)
@@ -43,7 +44,7 @@ func (c Container) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 }
 
 func (c Container) Hydrate(ctx context.Context, msi map[string]interface{}) (*Container, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Container:Hydrate")
     }
 	e := errors.Error{}
@@ -72,7 +73,7 @@ func (c Container) Hydrate(ctx context.Context, msi map[string]interface{}) (*Co
 type Containers []Container
 
 func (c Containers) In(ctx context.Context, id string) bool {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Containers:In")
     }
 	for _, o := range c {
@@ -84,7 +85,7 @@ func (c Containers) In(ctx context.Context, id string) bool {
 }
 
 func (c Containers) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Containers, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
+    if v, ok := ctx.Value("updateCtx").(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Container:Hydrate")
     }
 	e := errors.Error{}

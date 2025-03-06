@@ -387,7 +387,7 @@ func GetPolicyById(ctx context.Context, id string) (*Policy, error) {
 	if dbPoliciesPtr != nil {
 		dbPolicies := *dbPoliciesPtr
 		for _, p := range dbPolicies {
-			if p.Id == id {
+			if p.Attributes.Id == id {
 				return &p, nil
 			}
 		}

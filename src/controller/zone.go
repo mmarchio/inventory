@@ -221,7 +221,7 @@ func (s ZoneController) RegisterResources(e *echo.Echo) error {
 	var adminRole acl.Role
 	if adminRolePtr != nil {
 		adminRole = *adminRolePtr
-		err = UpdateRole(s.Ctx, adminRole.Id, resources)
+		err = UpdateRole(s.Ctx, adminRole.Attributes.Id, resources)
 		if err != nil {
 			return s.Error.Err(s.Ctx, err)
 		}

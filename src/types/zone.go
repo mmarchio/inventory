@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"inventory/src/errors"
+	"inventory/src/util"
 )
 
 type Zone struct {
@@ -11,8 +12,8 @@ type Zone struct {
 }
 
 func NewZone(ctx context.Context, createdBy *User) (*Zone, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:zone.go:NewZone")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:zone.go:NewZone")
     }
 	zone := Zone{}
 	attributesPtr := NewAttributes(ctx, createdBy)
@@ -23,15 +24,15 @@ func NewZone(ctx context.Context, createdBy *User) (*Zone, error) {
 }
 
 func (c Zone) IsDocument(ctx context.Context) bool {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:zone.go:Zone:IsDocument")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:zone.go:Zone:IsDocument")
     }
 	return true
 }
 
 func (c Zone) ToMSI(ctx context.Context) (map[string]interface{}, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:zone.go:Zone:ToMSI")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:zone.go:Zone:ToMSI")
     }
 	data, err := toMSI(ctx, c)
 	if err != nil {
@@ -43,8 +44,8 @@ func (c Zone) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 }
 
 func (c Zone) Hydrate(ctx context.Context, msi map[string]interface{}) (*Zone, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:zone.go:Zone:Hydrate")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:zone.go:Zone:Hydrate")
     }
 	e := errors.Error{}
 	zone := c
@@ -71,8 +72,8 @@ func (c Zone) Hydrate(ctx context.Context, msi map[string]interface{}) (*Zone, e
 type Zones []Zone
 
 func (c Zones) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Zones, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:zone.go:Zones:Hydrate")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:zone.go:Zones:Hydrate")
     }
 	zones := Zones{}
 	for _, r := range msi {
@@ -92,8 +93,8 @@ func (c Zones) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Zone
 }
 
 func (c Zones) In(ctx context.Context, id string) bool {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:zone.go:Zones:In")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:zone.go:Zones:In")
     }
 	for _, o := range c {
 		if o.Attributes.Id == id {

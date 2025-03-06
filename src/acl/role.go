@@ -166,7 +166,7 @@ func GetRole(ctx context.Context, id string) (*Role, error) {
 	if rolesPtr != nil {
 		roles := *rolesPtr
 		for _, role := range roles {
-			if role.Id == id || role.Name == id {
+			if role.Attributes.Id == id || role.Attributes.Name == id {
 				return &role, nil
 			}
 		}

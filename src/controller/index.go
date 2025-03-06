@@ -76,7 +76,7 @@ s.Error.Function = "GetCreate"
 	var adminRole acl.Role
 	if adminRolePtr != nil {
 		adminRole = *adminRolePtr
-		err = UpdateRole(s.Ctx, adminRole.Id, resources)
+		err = UpdateRole(s.Ctx, adminRole.Attributes.Id, resources)
 		if err != nil {
 			if err.Error() != "roles not found" {
 				s.Error.Err(s.Ctx, err)

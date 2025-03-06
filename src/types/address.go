@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"inventory/src/errors"
+	"inventory/src/util"
 )
 
 type Address struct {
@@ -17,8 +18,8 @@ type Address struct {
 }
 
 func NewAddress(ctx context.Context, createdBy *User) (*Address, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:address.go:NewAddress")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:address.go:NewAddress")
     }
 	address := Address{}
 	attributesPtr := NewAttributes(ctx, createdBy)
@@ -29,8 +30,8 @@ func NewAddress(ctx context.Context, createdBy *User) (*Address, error) {
 }
 
 func (c Address) Merge(ctx context.Context, oldInput, newInput interface{}) (*Address, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:address.go:Address:Merge")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:address.go:Address:Merge")
     }
 	e := errors.Error{}
 	var old, new Address
@@ -94,15 +95,15 @@ func (c Address) Merge(ctx context.Context, oldInput, newInput interface{}) (*Ad
 }
 
 func (c Address) IsDocument(ctx context.Context) bool {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:address.go:Address:IsDocument")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:address.go:Address:IsDocument")
     }
 	return true
 }
 
 func (c Address) ToMSI(ctx context.Context) (map[string]interface{}, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:address.go:Address:ToMSI")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:address.go:Address:ToMSI")
     }
 	data, err := toMSI(ctx, c)
 	if err != nil {
@@ -114,8 +115,8 @@ func (c Address) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 }
 
 func (c Address) Hydrate(ctx context.Context, msi map[string]interface{}) (*Address, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:address.go:Address:Hydrate")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:address.go:Address:Hydrate")
     }
 	e := errors.Error{}
 	address := c

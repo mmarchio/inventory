@@ -66,7 +66,7 @@ func (c Credentials) ToContent(ctx context.Context) (*types.Content, error) {
     }
     e := errors.Error{}
     content := types.Content{}
-    content.Id = c.Id
+    content.Id = c.Attributes.Id
     jbytes, err := json.Marshal(c)
     if err != nil {
         e.Err(ctx, err)
@@ -81,7 +81,7 @@ func (c Credentials) PGRead(ctx context.Context) (*Credentials, error) {
         ctx = v(ctx, ckey, "login:login.go:Credentials:PGRead")
     }
     e := errors.Error{}
-    contentPtr, err := types.Content{}.Read(ctx, c.Id)
+    contentPtr, err := types.Content{}.Read(ctx, c.Attributes.Id)
     if err != nil {
         e.Err(ctx, err)
         return nil, err
@@ -143,7 +143,7 @@ func (c Credentials) PGDelete(ctx context.Context) error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "login:login.go:Credentials:PGDelete")
     }
-    err := types.Content{}.Delete(ctx, c.Id)
+    err := types.Content{}.Delete(ctx, c.Attributes.Id)
     if err != nil {
         e := errors.Error{}
         e.Err(ctx, err)

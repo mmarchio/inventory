@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"inventory/src/errors"
+	"inventory/src/util"
 	"log"
 	"os"
 	"regexp"
@@ -14,6 +15,8 @@ import (
 )
 
 var logger = log.New(os.Stdout, "\n\n", log.LstdFlags | log.Lshortfile)
+var ckey util.CtxKey = "stack"
+var ukey util.CtxKey = "updateCtx"
 
 type IDocument interface {
 	IsDocument() bool
@@ -21,8 +24,8 @@ type IDocument interface {
 }
 
 func toMSI(ctx context.Context, c interface{}) (map[string]interface{}, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:common.go:toMSI")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:common.go:toMSI")
     }
 	e := errors.Error{}
 	r := make(map[string]interface{})
@@ -40,8 +43,8 @@ func toMSI(ctx context.Context, c interface{}) (map[string]interface{}, error) {
 }
 
 func JSONValidate(ctx context.Context, data []byte, dest interface{}) bool {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:common.go:JSONValidate")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:common.go:JSONValidate")
     }
 	err := json.Unmarshal(data, &dest)
 	if err != nil {
@@ -52,8 +55,8 @@ func JSONValidate(ctx context.Context, data []byte, dest interface{}) bool {
 }
 
 func GetContent(ctx context.Context, id string) (*Content, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:common.go:GetContent")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:common.go:GetContent")
     }
 	content, err := Content{}.Read(ctx, id)
 	if err != nil {
@@ -64,8 +67,8 @@ func GetContent(ctx context.Context, id string) (*Content, error) {
 }
 
 func GetMSIAttribute(ctx context.Context, name string, msi map[string]interface{}) (string, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:common.go:GetMSIAttribute")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:common.go:GetMSIAttribute")
     }
 	if a, ok := msi["attributes"].(map[string]interface{}); ok {
 		if v, ok := a[name].(string); ok {
@@ -79,8 +82,8 @@ func GetMSIAttribute(ctx context.Context, name string, msi map[string]interface{
 }
 
 func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
-    if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-        ctx = v(ctx, "stack", "types:common.go:GetContentFromURL")
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "types:common.go:GetContentFromURL")
     }
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
