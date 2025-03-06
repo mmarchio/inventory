@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"inventory/src/errors"
 	"inventory/src/types"
+	"inventory/src/util"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 )
+
+var ckey util.CtxKey = "stack"
+var ukey util.CtxKey = "updateCtx"
 
 type Permission struct {
 	Name string `json:"name"`
@@ -19,8 +23,8 @@ type Permission struct {
 type Permissions []Permission
 
 func FindPermissions(ctx context.Context) (*Permissions, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl.go:FindPermissions")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl.go:FindPermissions")
 	}
 	e := errors.Error{
 		Package: "acl",
@@ -45,8 +49,8 @@ func FindPermissions(ctx context.Context) (*Permissions, error) {
 }
 
 func GetBearerToken(ctx context.Context, c echo.Context) (string, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl.go:FindPermissions")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl.go:FindPermissions")
 	}
 	e := errors.Error{
 		Package: "acl",
@@ -68,8 +72,8 @@ func GetBearerToken(ctx context.Context, c echo.Context) (string, error) {
 }
 
 func GetUserFromContext(ctx context.Context, c echo.Context) (*types.User, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:acl.go:GetUserFromContext")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:acl.go:GetUserFromContext")
 	}
 	e := errors.Error{
 		Package: "acl",

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"inventory/src/errors"
 	"inventory/src/types"
+	"inventory/src/util"
 	"os"
 	"regexp"
 	"strings"
@@ -23,8 +24,8 @@ type IDocument interface{
 func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := context.Background()
-		if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-			ctx = v(ctx, "stack", "acl:middleware.go:ACL")
+		if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+			ctx = v(ctx, ckey, "acl:middleware.go:ACL")
 		}
 		e := errors.Error{
 			RequestUri: c.Request().RequestURI,
@@ -89,8 +90,8 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:middleware.go:DecodeJWT")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:middleware.go:DecodeJWT")
 	}
 	e := errors.Error{
 		Package: "acl",
@@ -122,8 +123,8 @@ func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.M
 }
 
 func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:middleware.go:GetUser")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:middleware.go:GetUser")
 	}
 	e := errors.Error{
 		Package: "acl",
@@ -157,8 +158,8 @@ func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User, error) {
 }
 
 func getResourcePolicy(ctx context.Context, u types.User, resource string) (*Policy, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:middleware.go:getResourcePolicy")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:middleware.go:getResourcePolicy")
 	}
 	e := errors.Error{
 		Package: "acl",
@@ -195,8 +196,8 @@ func skipper(c echo.Context) bool {
 }
 
 func GetUsableClaims(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:middleware.go:GetUsableClaims")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:middleware.go:GetUsableClaims")
 	}
 	e := errors.Error{
 		Package: "acl",
@@ -227,8 +228,8 @@ func GetUsableClaims(ctx context.Context, c echo.Context) (*map[string]interface
 }
 
 func pathToResource(ctx context.Context, url string) string {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:middleware.go:pathToResource")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:middleware.go:pathToResource")
 	}
 	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 	r := regexp.MustCompile(pattern)
@@ -241,8 +242,8 @@ func pathToResource(ctx context.Context, url string) string {
 }
 
 func PermissionsHandler(ctx context.Context, c echo.Context, p Policy) (bool, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:middleware.go:PermissionsHandler")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:middleware.go:PermissionsHandler")
 	}
 	e := errors.Error{
 		Package: "acl",

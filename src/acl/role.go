@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"inventory/src/errors"
 	"inventory/src/types"
+	"inventory/src/util"
 )
 
 type Role struct {
@@ -16,8 +17,8 @@ type Role struct {
 }
 
 func (c Role) New(ctx context.Context) (*Role, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:role:new")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:role:new")
 	}
 	e := errors.Error{}
 	role := c
@@ -36,8 +37,8 @@ func (c Role) New(ctx context.Context) (*Role, error) {
 }
 
 func (c Role) ToContent(ctx context.Context) (*types.Content, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:role:ToContent")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:role:ToContent")
 	}
 	e := errors.Error{}
 	content := types.Content{}
@@ -52,8 +53,8 @@ func (c Role) ToContent(ctx context.Context) (*types.Content, error) {
 }
 
 func (c Role) PGRead(ctx context.Context) (*Role, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:role:PGRead")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:role:PGRead")
 	}
 	e := errors.Error{}
 	contentPtr, err := c.ToContent(ctx)
@@ -77,8 +78,8 @@ func (c Role) PGRead(ctx context.Context) (*Role, error) {
 }
 
 func (c Role) PGCreate(ctx context.Context) error {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:role:PGCreate")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:role:PGCreate")
 	}
 	err := types.Content{}.Create(ctx, c)
 	if err != nil {
@@ -90,8 +91,8 @@ func (c Role) PGCreate(ctx context.Context) error {
 }
 
 func (c Role) PGUpdate(ctx context.Context) error {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:role:PGUpdate")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:role:PGUpdate")
 	}
 	e := errors.Error{}
 	contentPtr, err := c.ToContent(ctx)
@@ -114,8 +115,8 @@ func (c Role) PGUpdate(ctx context.Context) error {
 }
 
 func (c Role) PGDelete(ctx context.Context) error {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:role:PGDelete")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:role:PGDelete")
 	}
 	err := types.Content{}.Delete(ctx, c.Attributes.Id)
 	if err != nil {
@@ -127,15 +128,15 @@ func (c Role) PGDelete(ctx context.Context) error {
 }
 
 func (c Role) IsDocument(ctx context.Context) bool {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:role:IsDocument")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:role:IsDocument")
 	}
 	return true
 }
 
 func (c Role) ToMSI(ctx context.Context) (map[string]interface{}, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:role:ToMSI")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:role:ToMSI")
 	}
 	e := errors.Error{}
 	r := make(map[string]interface{})
@@ -153,8 +154,8 @@ func (c Role) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 }
 
 func GetRole(ctx context.Context, id string) (*Role, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:GetRole")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:GetRole")
 	}
 	e := errors.Error{}
 	rolesPtr, err := FindRoles(ctx)
@@ -176,8 +177,8 @@ func GetRole(ctx context.Context, id string) (*Role, error) {
 }
 
 func GetRoles(ctx context.Context) (*Roles, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:GetRoles")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:GetRoles")
 	}
 	e := errors.Error{}
 	contents, err := types.Content{}.FindAll(ctx, "role")
@@ -200,8 +201,8 @@ func GetRoles(ctx context.Context) (*Roles, error) {
 type Roles []Role
 
 func (c Roles) In(ctx context.Context, id string) bool {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:Roles:GetRole")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:Roles:GetRole")
 	}
 	for _, o := range c {
 		if o.Attributes.Id == id {
@@ -212,8 +213,8 @@ func (c Roles) In(ctx context.Context, id string) bool {
 }
 
 func FindRoles(ctx context.Context) (*Roles, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:Roles:FindRoles")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:Roles:FindRoles")
 	}
 	e := errors.Error{}
 	content, err := types.Content{}.FindAll(ctx, "role")
@@ -234,15 +235,15 @@ func FindRoles(ctx context.Context) (*Roles, error) {
 }
 
 func (c Roles) IsDocument(ctx context.Context) bool {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:Roles:IsDocument")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:Roles:IsDocument")
 	}
 	return true
 }
 
 func (c Roles) ToMSI(ctx context.Context) (map[string]interface{}, error) {
-	if v, ok := ctx.Value("updateCtx").(func(context.Context, string, string) context.Context); ok {
-		ctx = v(ctx, "stack", "acl:role.go:Roles:ToMSI")
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:role.go:Roles:ToMSI")
 	}
 	e := errors.Error{}
 	r := make(map[string]interface{})
