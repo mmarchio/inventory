@@ -148,11 +148,15 @@ func (c Content) CreateMany(ctx context.Context, objects []Content) error {
 	var placeholders []string
 	for _, object := range objects {
 		objectValues := object.StringValues(ctx)
-		placeholders = append(placeholders, fmt.Sprintf(baseString, objectValues))
+		ovcopy := []any{}
+		for _, ov := range objectValues {
+			ovcopy = append(ovcopy, ov)
+		}
+		placeholders = append(placeholders, fmt.Sprintf(baseString, ovcopy...))
+		ovcopy = []any{}
 		cvs = append(cvs, objectValues...)
 	}
 	q := fmt.Sprintf("INSERT INTO content (%s) VALUES %s", Content{}.Columns(ctx), strings.Join(placeholders, ", "))
-	fmt.Printf("\n%s\n", q)
 
 	if pg.Pgx == nil {
 		err = fmt.Errorf("pgx is nil")
