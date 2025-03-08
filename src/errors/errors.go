@@ -20,21 +20,41 @@ type Error struct {
 	Package string `json:"package"`
 	Function string `json:"function"`
 	Struct string `json:"struct"`
-	Error error
+	File string `json:"file"`
+	Recoverable bool `json:"recoverable"`
+	Wrapper error
+}
+
+func (c Error) Error() string {
+	return c.Wrapper.Error()
+}
+
+func (c *Error) IsRecoverable() {
+	c.Recoverable = true
+}
+
+func (c *Error) GetCtxTrace(ctx context.Context) {
+    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+        ctx = v(ctx, ckey, "errors:errors.go:GetCtxTrace")
+    }
+	if v, ok := ctx.Value(ckey).([]string); ok {
+		c.Trace = v
+	}
 }
 
 func (c Error) Err(ctx context.Context, e error) error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "errors:errors.go:Err")
+		c.GetCtxTrace(ctx)
     }
 	if c.Error != nil {
-		c.Error = e
-		c.Message = c.Error.Error()
+		c.Wrapper = e
+		c.Message = c.Wrapper.Error()
 		if v, ok := ctx.Value(ckey).([]string); ok {
 			c.Trace = v
 		}
 		logger.Printf("\n%#v\n", c)
-		return c.Error
+		return c.Wrapper
 	}
 	return nil
 }
@@ -42,15 +62,16 @@ func (c Error) Err(ctx context.Context, e error) error {
 func (c Error) ErrOrNil(ctx context.Context, ptr interface{}, e error) error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "errors:error.go:Error:ErrOrNil")
+		c.GetCtxTrace(ctx)
     }
 	if ptr == nil {
-		c.Error = fmt.Errorf("pointer is nil")
-		c.Message = c.Error.Error()
+		c.Wrapper = fmt.Errorf("pointer is nil")
+		c.Message = c.Wrapper.Error()
 		if v, ok := ctx.Value(ckey).([]string); ok {
 			c.Trace = v
 		}
 		logger.Printf("\n%#v\n", c)
-		return c.Error
+		return c.Wrapper
 	}
 	if e != nil {
 		return c.Err(ctx, e)

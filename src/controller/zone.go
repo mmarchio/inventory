@@ -11,9 +11,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type ZoneController struct{
-	Error errors.Error
-	Ctx context.Context
+type ZoneController struct {
+	Errors map[string]errors.Error
+	Ctx   context.Context
 }
 
 func (s ZoneController) GetCreate() echo.HandlerFunc {
@@ -175,7 +175,8 @@ func (s ZoneController) PostApiEdit() echo.HandlerFunc {
 	}
 }
 
-func (s ZoneController) RegisterResources(e *echo.Echo) error {
+func (s ZoneController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
+
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:zone.go:ZoneController:RegisterResources")
 	}
@@ -190,31 +191,33 @@ func (s ZoneController) RegisterResources(e *echo.Echo) error {
 	api.POST("/edit/:id", s.PostApiEdit())
 	resources := acl.Resources{}
 	res := acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/zone/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/zone/edit",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/zone/delete",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/api/zone/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/api/zone/edit",
 	}
 	resources = append(resources, res)
-	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
+	params := acl.Role{}
+	params.Attributes.Name = "admin"
+	adminRolePtr, err := acl.GetRole(s.Ctx, params)
 	if err != nil {
 		return s.Error.Err(s.Ctx, err)
 	}

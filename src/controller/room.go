@@ -13,8 +13,8 @@ import (
 )
 
 type RoomController struct {
-	Error errors.Error
-	Ctx context.Context
+	Errors map[string]errors.Error
+	Ctx   context.Context
 }
 
 func (s RoomController) GetCreate() echo.HandlerFunc {
@@ -177,7 +177,8 @@ func (s RoomController) PostApiEdit() echo.HandlerFunc {
 	}
 }
 
-func (s RoomController) RegisterResources(e *echo.Echo) error {
+func (s RoomController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
+
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:room.go:RoomController:RegisterResources")
 	}
@@ -193,32 +194,33 @@ func (s RoomController) RegisterResources(e *echo.Echo) error {
 
 	resources := acl.Resources{}
 	res := acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/room/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/room/edit",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/room/delete",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/api/room/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/api/room/edit",
 	}
 	resources = append(resources, res)
-	
-	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
+	params := acl.Role{}
+	params.Attributes.Name = "admin"
+	adminRolePtr, err := acl.GetRole(s.Ctx, params)
 	if err != nil {
 		return s.Error.Err(s.Ctx, err)
 	}

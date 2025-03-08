@@ -13,7 +13,7 @@ import (
 
 type Resource struct {
 	types.Attributes
-	Id string `json:"id"`
+	Id  string `json:"id"`
 	URL string `json:"url"`
 }
 
@@ -68,14 +68,16 @@ func (c Resource) PGRead(ctx context.Context) (*Resource, error) {
 	return &resource, nil
 }
 
-func (c Resource) PGCreate(ctx context.Context) error {
+func (c Resource) PGCreate(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:resource.go:Resource:PGCreate")
 	}
 	return types.Content{}.Create(ctx, c)
 }
 
-func (c Resource) PGUpdate(ctx context.Context) error {
+func (c Resource) PGUpdate(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:resource.go:Resource:PGUpdate")
 	}
@@ -94,7 +96,8 @@ func (c Resource) PGUpdate(ctx context.Context) error {
 	return content.Update(ctx, c)
 }
 
-func (c Resource) PGDelete(ctx context.Context) error {
+func (c Resource) PGDelete(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:resource.go:Resource:PGDelete")
 	}

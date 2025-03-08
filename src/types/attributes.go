@@ -8,24 +8,25 @@ import (
 
 	"github.com/google/uuid"
 )
+
 const FORMAT = "2006-01-02T15:04:05.000000000Z"
 
 type Attributes struct {
-	Id        string    `json:"id" db:"id"`
-	ParentId  string `json:"parentId" db:"parent_id"`
-	RootId string `json:"rootId" db:"root_id"`
-	CreatedAt time.Time `json:"createdAt" db:"created_at"`
-	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
-	CreatedBy string    `json:"createdBy" db:"created_by"`
-	Owner     string    `json:"owner" db:"owner"`
-	Name      string    `json:"name" db:"name"`
-	ContentType string `json:"contentType" db:"content_type"`
+	Id          string    `json:"id" db:"id"`
+	ParentId    string    `json:"parentId" db:"parent_id"`
+	RootId      string    `json:"rootId" db:"root_id"`
+	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt   time.Time `json:"updatedAt" db:"updated_at"`
+	CreatedBy   string    `json:"createdBy" db:"created_by"`
+	Owner       string    `json:"owner" db:"owner"`
+	Name        string    `json:"name" db:"name"`
+	ContentType string    `json:"contentType" db:"content_type"`
 }
 
 func (c Attributes) New(ctx context.Context) (*Attributes, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:attributes.go:Attributes:New")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:attributes.go:Attributes:New")
+	}
 	a := c
 	a.Id = uuid.NewString()
 	a.CreatedAt = time.Now()
@@ -34,9 +35,9 @@ func (c Attributes) New(ctx context.Context) (*Attributes, error) {
 }
 
 func (c Attributes) Columns(ctx context.Context) []string {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:attributes.go:Attributes:Columns")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:attributes.go:Attributes:Columns")
+	}
 	cols := []string{
 		"id",
 		"parent_id",
@@ -52,9 +53,9 @@ func (c Attributes) Columns(ctx context.Context) []string {
 }
 
 func (c Attributes) Values(ctx context.Context) []interface{} {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:attributes.go:Attributes:Values")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:attributes.go:Attributes:Values")
+	}
 	cols := make([]interface{}, 0)
 	cols = append(cols, c.Id)
 	cols = append(cols, c.ParentId)
@@ -68,9 +69,9 @@ func (c Attributes) Values(ctx context.Context) []interface{} {
 }
 
 func (c Attributes) PGHydrate(ctx context.Context, content Content) *Attributes {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:attributes.go:Attributes:PGHydrate")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:attributes.go:Attributes:PGHydrate")
+	}
 	c.Id = content.Id
 	c.ParentId = content.ParentId
 	c.RootId = content.RootId
@@ -82,10 +83,11 @@ func (c Attributes) PGHydrate(ctx context.Context, content Content) *Attributes 
 	return &c
 }
 
-func (c *Attributes) MSIHydrate(ctx context.Context, msi map[string]interface{}) error {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:attributes.go:Attributes:MSIHydrate")
-    }
+func (c *Attributes) MSIHydrate(ctx context.Context, msi map[string]interface{}) *map[string]errors.Error {
+
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:attributes.go:Attributes:MSIHydrate")
+	}
 	e := errors.Error{}
 	if v, ok := msi["id"].(string); ok {
 		c.Id = v
@@ -122,9 +124,9 @@ func (c *Attributes) MSIHydrate(ctx context.Context, msi map[string]interface{})
 }
 
 func (c Attributes) Merge(ctx context.Context, oldInput, newInput interface{}) (*Attributes, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:attributes.go:Attributes:Merge")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:attributes.go:Attributes:Merge")
+	}
 	e := errors.Error{}
 	var old, new Attributes
 	if o, ok := oldInput.(map[string]interface{}); ok {
@@ -163,12 +165,12 @@ func (c Attributes) Merge(ctx context.Context, oldInput, newInput interface{}) (
 		new.ContentType = old.ContentType
 	}
 	return &new, nil
-} 
+}
 
 func NewAttributes(ctx context.Context, createdBy *User) *Attributes {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:attributes.go:NewAttributes")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:attributes.go:NewAttributes")
+	}
 	stack := []any{}
 	if v, ok := ctx.Value("stack").([]any); ok {
 		stack = append(stack, v...)
@@ -188,5 +190,3 @@ func NewAttributes(ctx context.Context, createdBy *User) *Attributes {
 	}
 	return &r
 }
-
-

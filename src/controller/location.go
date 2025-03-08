@@ -14,13 +14,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type LocationController struct{
-	Error errors.Error
-	Ctx context.Context
+type LocationController struct {
+	Errors map[string]errors.Error
+	Ctx   context.Context
 }
 
 func (s LocationController) Get() echo.HandlerFunc {
-	return func (c echo.Context) error {
+	return func(c echo.Context) error {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:location.go:LocationController:Get")
 		}
@@ -103,7 +103,7 @@ func (s LocationController) GetEdit() echo.HandlerFunc {
 		}
 		s.Error.Function = "GetEdit"
 		s.Error.RequestUri = c.Request().RequestURI
-	
+
 		data, err := AuthenticateToken(s.Ctx, c)
 		if err != nil {
 			s.Error.Err(s.Ctx, err)
@@ -253,7 +253,7 @@ func (s LocationController) PostApiEdit() echo.HandlerFunc {
 				return c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			oldLocation := *oldLocationPtr
-	
+
 			updatedLocationPtr, err := newLocation.Merge(s.Ctx, oldLocation, newLocation, user)
 			if s.Error.ErrOrNil(s.Ctx, updatedLocationPtr, err) != nil {
 				return c.JSON(http.StatusInternalServerError, err.Error())
@@ -276,7 +276,8 @@ func (s LocationController) PostApiEdit() echo.HandlerFunc {
 	}
 }
 
-func (s LocationController) RegisterResources(e *echo.Echo) error {
+func (s LocationController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
+
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:location.go:LocationController:RegisterResources")
 	}
@@ -286,7 +287,7 @@ func (s LocationController) RegisterResources(e *echo.Echo) error {
 	api := e.Group("/api/content/location")
 
 	e.GET("/content/locations", s.Get())
-	
+
 	view.GET("/create", s.GetCreate())
 	view.GET("/edit/:id", s.GetEdit())
 	view.GET("/delete/:id", s.GetDelete())
@@ -297,36 +298,38 @@ func (s LocationController) RegisterResources(e *echo.Echo) error {
 	resources := acl.Resources{}
 
 	res := acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/locations",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/location/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/location/edit",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/location/delete",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/content/location/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/content/location/edit",
 	}
 	resources = append(resources, res)
-	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
+	params := acl.Role{}
+	params.Attributes.Name = "admin"
+	adminRolePtr, err := acl.GetRole(s.Ctx, params)
 	if err != nil {
 		return s.Error.Err(s.Ctx, err)
 	}

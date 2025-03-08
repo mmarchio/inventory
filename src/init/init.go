@@ -16,19 +16,20 @@ import (
 var ckey util.CtxKey = "stack"
 var ukey util.CtxKey = "updateCtx"
 
-func CreateSystemUser(ctx context.Context) error {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "init:init.go:CreateSystemUser")
-    }
+func CreateSystemUser(ctx context.Context) *map[string]errors.Error {
+
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "init:init.go:CreateSystemUser")
+	}
 	e := errors.Error{}
 	now := time.Now()
 	u := types.User{
-		Roles: []string{"system"},
-		Firstname: "system",
+		Roles:       []string{"system"},
+		Firstname:   "system",
 		Middlenames: []string{"system"},
-		Lastname: "system",
-		DOB: &now,
-		Username: "system",
+		Lastname:    "system",
+		DOB:         &now,
+		Username:    "system",
 	}
 	a := types.NewAttributes(ctx, nil)
 	if a == nil {
@@ -79,11 +80,20 @@ func CreateSystemUser(ctx context.Context) error {
 	return nil
 }
 
-func CreateAdminRole(ctx context.Context) error {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "init:init.go:CreateAdminRole")
-    }
+func CreateAdminRole(ctx context.Context) *map[string]errors.Error {
+
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "init:init.go:CreateAdminRole")
+	}
 	e := errors.Error{}
+	jstring := "{'contentType': 'role', 'name': 'admin'}"
+	content := types.Content{}
+	adminPtr, err := content.FindBy(ctx, jstring)
+	if err != nil {
+		e.Err(ctx, err)
+		return err
+	}
+
 	role := acl.Role{}
 	attributesPtr, err := role.Attributes.New(ctx)
 	if err != nil {
@@ -96,15 +106,19 @@ func CreateAdminRole(ctx context.Context) error {
 		return err
 	}
 	role = acl.Role{
-		Attributes: *attributesPtr,
-		Name: "admin",
-		Policies: acl.Policies{},
+		Attributes:        *attributesPtr,
+		Policies:          acl.Policies{},
 		DefaultPermisison: "all",
 	}
-	err = role.PGCreate(ctx)
-	if err != nil {
-		e.Err(ctx, err)
-		return err
+	role.Attributes.ContentType = "role"
+	role.Attributes.Name = "admin"
+
+	if adminPtr == nil {
+		err = role.PGCreate(ctx)
+		if err != nil {
+			e.Err(ctx, err)
+			return err
+		}
 	}
 	logoutPolicy := acl.NewPolicy(ctx, "admin-logout", "admin", "/logout", "all")
 	createPolicyPolicy := acl.NewPolicy(ctx, "admin-policy-create", "admin", "/settings/policy/create", "all")

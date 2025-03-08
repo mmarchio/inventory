@@ -11,9 +11,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type ContainerController struct{
-	Error errors.Error
-	Ctx context.Context
+type ContainerController struct {
+	Errors map[string]errors.Error
+	Ctx   context.Context
 }
 
 func (s ContainerController) GetCreate() echo.HandlerFunc {
@@ -176,7 +176,8 @@ func (s ContainerController) PostApiEdit() echo.HandlerFunc {
 	}
 }
 
-func (s ContainerController) RegisterResources(e *echo.Echo) error {
+func (s ContainerController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
+
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:container.go:ContainerController:RegisterResources")
 	}
@@ -192,32 +193,33 @@ func (s ContainerController) RegisterResources(e *echo.Echo) error {
 
 	resources := acl.Resources{}
 	res := acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/container/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/container/edit",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/container/delete",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/api/container/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/api/container/edit",
 	}
 	resources = append(resources, res)
-
-	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
+	params := acl.Role{}
+	params.Attributes.Name = "admin"
+	adminRolePtr, err := acl.GetRole(s.Ctx, params)
 	if err != nil {
 		return s.Error.Err(s.Ctx, err)
 	}

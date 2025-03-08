@@ -15,6 +15,7 @@ import (
 )
 
 const ERRORTPL = "error.tpl.html"
+
 var ckey util.CtxKey = "stack"
 var ukey util.CtxKey = "updateCtx"
 
@@ -38,7 +39,7 @@ func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{
 	return &body, nil
 }
 
-func authenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error){
+func authenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "controllers:common.go:authenticateToken")
 	}
@@ -98,12 +99,15 @@ func CreatePolicy(ctx context.Context, resource, role, permission string) (*acl.
 	return nil, err
 }
 
-func UpdateRole(ctx context.Context, id string, resources acl.Resources) error {
+func UpdateRole(ctx context.Context, id string, resources acl.Resources) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "controllers:common.go:UpdateRole")
 	}
 	e := errors.Error{}
-	rolePtr, err := acl.GetRole(ctx, id)
+	params := acl.Role{}
+	params.Attributes.Id = id
+	rolePtr, err := acl.GetRole(ctx, params)
 	if err != nil {
 		e.Err(ctx, err)
 		return err
@@ -113,7 +117,7 @@ func UpdateRole(ctx context.Context, id string, resources acl.Resources) error {
 		role = *rolePtr
 	}
 	for _, resource := range resources {
-		polPtr, err := CreatePolicy(ctx, resource.URL, role.Name, role.DefaultPermisison)
+		polPtr, err := CreatePolicy(ctx, resource.URL, role.Attributes.Name, role.DefaultPermisison)
 		if err != nil || polPtr == nil {
 			e.Err(ctx, err)
 			return err
@@ -128,7 +132,8 @@ func UpdateRole(ctx context.Context, id string, resources acl.Resources) error {
 	return nil
 }
 
-func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) error {
+func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "controllers:common.go:UpdatePolicy")
 	}
@@ -140,7 +145,7 @@ func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) err
 	}
 	if dbPoliciesPtr != nil {
 		dbPolicies := *dbPoliciesPtr
-		OUTER:
+	OUTER:
 		for _, outer := range resources {
 			for _, inner := range dbPolicies {
 				if outer.URL == inner.Resource {
@@ -149,7 +154,9 @@ func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) err
 			}
 			segments := strings.Split(outer.URL, "/")
 			segments = append([]string{role}, segments...)
-			rolePtr, err := acl.GetRole(ctx, role)
+			params := acl.Role{}
+			params.Attributes.Name = role
+			rolePtr, err := acl.GetRole(ctx, params)
 			if err != nil {
 				e.Err(ctx, err)
 				return err
@@ -170,10 +177,11 @@ func UpdatePolicy(ctx context.Context, role string, resources acl.Resources) err
 			}
 		}
 	}
-	return nil	
+	return nil
 }
 
-func UpdateResources(ctx context.Context, resources acl.Resources) error {
+func UpdateResources(ctx context.Context, resources acl.Resources) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "controllers:common.go:UpdateResource")
 	}
@@ -196,7 +204,7 @@ func UpdateResources(ctx context.Context, resources acl.Resources) error {
 				continue
 			}
 		}
-		dbResources = append(dbResources, outer)				
+		dbResources = append(dbResources, outer)
 	}
 	newLen := len(dbResources)
 	if oldLen != newLen {

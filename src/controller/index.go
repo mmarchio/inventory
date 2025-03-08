@@ -15,8 +15,8 @@ import (
 
 type IndexController struct {
 	Logger *log.Logger
-	Error errors.Error
-	Ctx context.Context
+	Errors map[string]errors.Error
+	Ctx    context.Context
 }
 
 func (s IndexController) Get() echo.HandlerFunc {
@@ -55,20 +55,23 @@ func (s IndexController) Get() echo.HandlerFunc {
 	}
 }
 
-func (s IndexController) RegisterResources(e *echo.Echo) error {
+func (s IndexController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
+
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:index.go:IndexController:RegisterResources")
 	}
-s.Error.Function = "GetCreate"
+	s.Error.Function = "GetCreate"
 	g := e.Group("")
 	g.GET("/", s.Get())
 
 	resources := acl.Resources{}
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/",
 	})
-	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
+	params := acl.Role{}
+	params.Attributes.Name = "admin"
+	adminRolePtr, err := acl.GetRole(s.Ctx, params)
 	if err != nil {
 		s.Error.Err(s.Ctx, err)
 		return err

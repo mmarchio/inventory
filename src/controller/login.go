@@ -16,12 +16,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type LoginController struct{
-	Error errors.Error
-	Ctx context.Context
+type LoginController struct {
+	Errors map[string]errors.Error
+	Ctx   context.Context
 }
 
-func (s LoginController) RegisterResources(e *echo.Echo) error {
+func (s LoginController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
+
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:login.go:LoginController:RegisterResources")
 	}
@@ -32,12 +33,14 @@ func (s LoginController) RegisterResources(e *echo.Echo) error {
 
 	resources := acl.Resources{}
 	res := acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/login",
 	}
 	resources = append(resources, res)
 
-	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
+	params := acl.Role{}
+	params.Attributes.Name = "admin"
+	adminRolePtr, err := acl.GetRole(s.Ctx, params)
 	if err != nil {
 		return s.Error.Err(s.Ctx, err)
 	}
@@ -82,7 +85,7 @@ func (s LoginController) LogoutHandler() echo.HandlerFunc {
 		}
 
 		cookie := &http.Cookie{
-			Domain: domain,
+			Domain:  domain,
 			Expires: time.Now(),
 		}
 		c.SetCookie(cookie)
@@ -91,7 +94,7 @@ func (s LoginController) LogoutHandler() echo.HandlerFunc {
 	}
 }
 
-func (s LoginController) ApiLoginHandler() echo.HandlerFunc{
+func (s LoginController) ApiLoginHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:login.go:LoginController:ApiLoginHandler")
@@ -100,7 +103,7 @@ func (s LoginController) ApiLoginHandler() echo.HandlerFunc{
 		s.Error.Function = "ApiLoginHandler"
 		s.Error.RequestUri = c.Request().RequestURI
 		msg := make(map[string]interface{})
-		requestBody, err := GetRequestData(s.Ctx, c) 
+		requestBody, err := GetRequestData(s.Ctx, c)
 		if err != nil {
 			s.Error.Err(s.Ctx, err)
 			msg["error"] = fmt.Sprintf("json: %s", err.Error())
@@ -155,11 +158,10 @@ func (s LoginController) ApiLoginHandler() echo.HandlerFunc{
 			c.Set("user", *userPtr)
 			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", auth.Value))
 			msg["authenticated"] = true
-			msg["token"] = auth.Value;
+			msg["token"] = auth.Value
 			return c.JSON(http.StatusOK, msg)
 		}
 		msg["error"] = "user not found"
 		return c.JSON(http.StatusNotFound, msg)
 	}
 }
-

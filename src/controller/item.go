@@ -11,13 +11,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type ItemController struct{
-	Error errors.Error
-	Ctx context.Context
+type ItemController struct {
+	Errors map[string]errors.Error
+	Ctx   context.Context
 }
 
 func (s ItemController) GetCreate() echo.HandlerFunc {
 	return func(c echo.Context) error {
+
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:item.go:ItemController:GetCreate")
 		}
@@ -173,11 +174,12 @@ func (s ItemController) PostApiEdit() echo.HandlerFunc {
 	}
 }
 
-func (s ItemController) RegisterResources(e *echo.Echo) error {
+func (s ItemController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
+
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:item.go:ItemController:RegisterResources")
 	}
-s.Error.Function = "GetCreate"
+	s.Error.Function = "GetCreate"
 
 	view := e.Group("/content/item")
 	api := e.Group("/api/content/item")
@@ -192,32 +194,34 @@ s.Error.Function = "GetCreate"
 	res := acl.Resource{}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/item/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/item/edit",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/item/delete",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/api/item/create",
 	}
 	resources = append(resources, res)
 	res = acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/content/api/item/edit",
 	}
 	resources = append(resources, res)
-	
-	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
+
+	params := acl.Role{}
+	params.Attributes.Name = "admin"
+	adminRolePtr, err := acl.GetRole(s.Ctx, params)
 	if err != nil {
 		return s.Error.Err(s.Ctx, err)
 	}

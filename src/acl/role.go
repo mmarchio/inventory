@@ -11,9 +11,8 @@ import (
 
 type Role struct {
 	types.Attributes
-	Name string `json:"name"`
-	Policies Policies `json:"policies"`
-	DefaultPermisison string `json:"defaultPermission"`
+	Policies          Policies `json:"policies"`
+	DefaultPermisison string   `json:"defaultPermission"`
 }
 
 func (c Role) New(ctx context.Context) (*Role, error) {
@@ -77,7 +76,8 @@ func (c Role) PGRead(ctx context.Context) (*Role, error) {
 	return &role, nil
 }
 
-func (c Role) PGCreate(ctx context.Context) error {
+func (c Role) PGCreate(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:role:PGCreate")
 	}
@@ -90,7 +90,8 @@ func (c Role) PGCreate(ctx context.Context) error {
 	return nil
 }
 
-func (c Role) PGUpdate(ctx context.Context) error {
+func (c Role) PGUpdate(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:role:PGUpdate")
 	}
@@ -114,7 +115,8 @@ func (c Role) PGUpdate(ctx context.Context) error {
 	return nil
 }
 
-func (c Role) PGDelete(ctx context.Context) error {
+func (c Role) PGDelete(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:role:PGDelete")
 	}
@@ -153,7 +155,7 @@ func (c Role) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return r, nil
 }
 
-func GetRole(ctx context.Context, id string) (*Role, error) {
+func GetRole(ctx context.Context, params Role) (*Role, error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:GetRole")
 	}
@@ -163,15 +165,17 @@ func GetRole(ctx context.Context, id string) (*Role, error) {
 		e.Err(ctx, err)
 		return nil, err
 	}
+
 	if rolesPtr != nil {
 		roles := *rolesPtr
+		fmt.Printf("\nroles length: %d\n", len(roles))
 		for _, role := range roles {
-			if role.Attributes.Id == id || role.Attributes.Name == id {
+			if role.Attributes.Id == params.Attributes.Id || role.Attributes.Name == params.Attributes.Name {
 				return &role, nil
 			}
 		}
 	}
-	err = fmt.Errorf("role id: %s not found", id)
+	err = fmt.Errorf("role params: %#v not found", params)
 	e.Err(ctx, err)
 	return nil, err
 }
@@ -180,18 +184,25 @@ func GetRoles(ctx context.Context) (*Roles, error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:GetRoles")
 	}
-	e := errors.Error{}
+	e := errors.Error{
+		Package:  "acl",
+		Function: "GetRoles",
+	}
+	if t, ok := ctx.Value(ukey).([]string); ok {
+		e.Trace = t
+	}
+
 	contents, err := types.Content{}.FindAll(ctx, "role")
 	if err != nil {
 		e.Err(ctx, err)
-		return nil, err
+		return nil, e
 	}
 	roles := Roles{}
 	for _, content := range contents {
 		role := Role{}
 		err = json.Unmarshal(content.Content, &role)
 		if err != nil {
-			return nil, err
+			return nil, e
 		}
 		roles = append(roles, role)
 	}

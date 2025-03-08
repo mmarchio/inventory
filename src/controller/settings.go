@@ -18,8 +18,8 @@ import (
 
 type SettingsController struct {
 	Logger *log.Logger
-	Error errors.Error
-	Ctx context.Context
+	Errors map[string]errors.Error
+	Ctx    context.Context
 }
 
 func (s SettingsController) Get() echo.HandlerFunc {
@@ -178,10 +178,10 @@ func (s SettingsController) GetUserEdit() echo.HandlerFunc {
 				roleMSI := make(map[string]interface{})
 				if u, ok := data["Entity"].(types.User); ok {
 					for _, ur := range u.Roles {
-						if r.Name == ur {
+						if r.Attributes.Name == ur {
 							roleMSI["Selected"] = 1
 						}
-						roleMSI["Name"] = r.Name
+						roleMSI["Name"] = r.Attributes.Name
 						rolesMSI = append(rolesMSI, roleMSI)
 					}
 					data["Roles"] = rolesMSI
@@ -205,7 +205,7 @@ func (s SettingsController) GetUserEdit() echo.HandlerFunc {
 		return c.Render(http.StatusOK, "settings.user.edit.tpl.html", data)
 	}
 }
- 
+
 func (s SettingsController) GetUserDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
@@ -288,8 +288,9 @@ func (s SettingsController) GetRoleEdit() echo.HandlerFunc {
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
-
-		rolePtr, err := acl.GetRole(s.Ctx, c.Param("id"))
+		params := acl.Role{}
+		params.Attributes.Id = c.Param("id")
+		rolePtr, err := acl.GetRole(s.Ctx, params)
 		if err != nil {
 			s.Error.Err(s.Ctx, err)
 			data["error"] = err.Error()
@@ -298,7 +299,7 @@ func (s SettingsController) GetRoleEdit() echo.HandlerFunc {
 
 		if rolePtr != nil {
 			role := *rolePtr
-			policiesPtr, err := acl.GetPolicyByRole(s.Ctx, role.Name)
+			policiesPtr, err := acl.GetPolicyByRole(s.Ctx, role.Attributes.Name)
 			if err != nil {
 				s.Error.Err(s.Ctx, err)
 				data["error"] = err.Error()
@@ -338,7 +339,7 @@ func (s SettingsController) GetRoleEdit() echo.HandlerFunc {
 		return c.Render(http.StatusOK, "settings.role.edit.tpl.html", data)
 	}
 }
- 
+
 func (s SettingsController) GetRoleDelete() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
@@ -518,14 +519,14 @@ func (s SettingsController) PostApiUserCreate() echo.HandlerFunc {
 			data["error"] = err.Error()
 			return c.JSON(http.StatusBadRequest, data)
 		}
-	
+
 		if p, ok := body["password"].(string); ok {
 			if cp, ok := body["confirm_password"].(string); ok {
 				if p != cp {
 					data["error"] = "passwords do not match"
 					return c.JSON(http.StatusBadRequest, data)
 				}
-			} 
+			}
 		}
 		user := &types.User{}
 		user, err = user.Hydrate(s.Ctx, body)
@@ -555,7 +556,7 @@ func (s SettingsController) PostApiUserCreate() echo.HandlerFunc {
 		attributes := types.NewAttributes(s.Ctx, nil)
 		user.Attributes = *attributes
 		user.Password = ""
-		err = creds.PGCreate(s.Ctx, )
+		err = creds.PGCreate(s.Ctx)
 		if err != nil {
 			s.Error.Err(s.Ctx, err)
 			data["error"] = err.Error()
@@ -808,13 +809,13 @@ func (s SettingsController) PostApiPolicyDelete() echo.HandlerFunc {
 	}
 }
 
+func (s SettingsController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
 
-func (s SettingsController) RegisterResources(e *echo.Echo) error {
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:RegisterResources")
 	}
 	s.Error.Function = "GetUserDelete"
-	
+
 	view := e.Group("/settings")
 	api := e.Group("/api")
 	view.GET("", s.Get())
@@ -840,107 +841,108 @@ func (s SettingsController) RegisterResources(e *echo.Echo) error {
 
 	resources := acl.Resources{}
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/user/create",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/user/edit",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/user/delete",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/location/create",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/location/edit",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/location/delete",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/role/create",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/role/edit",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/role/delete",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/policy/create",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/policy/edit",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/settings/policy/delete",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/user/create",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/user/edit",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/user/delete",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/location/create",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/location/edit",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/location/delete",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/role/create",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/role/edit",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/role/delete",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/policy/create",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/policy/edit",
 	})
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/api/policy/delete",
 	})
-
-	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
+	params := acl.Role{}
+	params.Attributes.Name = "admin"
+	adminRolePtr, err := acl.GetRole(s.Ctx, params)
 	if err != nil {
 		s.Error.Err(s.Ctx, err)
 		return err

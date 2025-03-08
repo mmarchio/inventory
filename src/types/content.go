@@ -18,47 +18,65 @@ type IContent interface {
 type Content struct {
 	Attributes
 	Content []byte `json:"content"`
+	Errors map[string]errors.Error
 }
 
-func (c Content) Create(ctx context.Context, object IContent) error {
+func (c Content) Create(ctx context.Context, object IContent) *map[string]errors.Error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:content.go:Content:Create")
     }
-	e := errors.Error{}
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		c.Errors = ce
+	}
+	e := errors.Error{
+		File: "content.go",
+		Package: "types",
+		Function: "Create",
+		Struct: "Content",
+	}
+	c.Errors["content:Create"] = e
+
 	pg := db.PostgresClient{
 		Ctx: ctx,
 	}
 
-	err := pg.Open()
-	if err != nil {
-        e.Err(ctx, err)
-		return err
+	erp := pg.Open()
+	if erp != nil {
+		c.Errors["pg:Open"] = c.Errors["content:Create"]
+		if erp != nil {
+			ers := *erp
+			c.Errors["pg:Open"].Err(ctx, ers["PostgresClient:Open"].Wrapper)
+		}
+		return &c.Errors
 	}
 
 	defer pg.Close()
 
 	contentPtr, err := object.ToContent(ctx)
-	if err != nil {
-        e.Err(ctx, err)
-		return err
+	if erp != nil {
+		c.Errors["object:ToContent"] = c.Errors["content:Create"]
+		if erp != nil {
+			c.Errors["object:ToContent"].Err(ctx, fmt.Errorf("object interface error"))
+		}
+		return &c.Errors
 	}
 
 	if contentPtr == nil {
-		err = fmt.Errorf("content pointer is nil")
-        e.Err(ctx, err)
-		return err
+		c.Errors["content:Create"].Err(ctx, fmt.Errorf("content is nil"))
+		return &c.Errors
 	}
 
 	content := *contentPtr
 	if pg.Pgx == nil {
-		err = fmt.Errorf("pgx is nil")
-        e.Err(ctx, err)
-		panic(err.Error())
+		c.Errors["content:Create"].Err(ctx, fmt.Errorf("pgx is nil"))
+		return &c.Errors
 	}
 	pg.Tx, err = pg.Pgx.Begin(pg.Ctx)
 	if err != nil {
-        e.Err(ctx, err)
-		return err
+		c.Errors["pg:begin"] = c.Errors["content:Create"]
+		c.Errors["pg:begin"].Err(ctx, err)
+		return &c.Errors
 	}
 	defer pg.Tx.Commit(pg.Ctx)
 	columns := content.Columns(ctx)
@@ -70,11 +88,12 @@ func (c Content) Create(ctx context.Context, object IContent) error {
 		values...
 	)
 	if err != nil {
-        e.Err(ctx, err)
+		c.Errors["content:Create"].Err(ctx, err)
 		rollbackErr := pg.Tx.Rollback(pg.Ctx)
 		if rollbackErr != nil {
-			e.Err(ctx, rollbackErr)
-			return rollbackErr
+			c.Errors["content:create:rollback"] = e
+			c.Errors["content:create:rollback"].Err(ctx, rollbackErr)
+			return &c.Errors
 		}
 	}
 
@@ -127,24 +146,38 @@ func (c Content) StringValues(ctx context.Context) []string {
 	return vals
 }
 
-func (c Content) CreateMany(ctx context.Context, objects []Content) error {
+func (c Content) CreateMany(ctx context.Context, objects []Content) *map[string]errors.Error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:content.go:Content:CreateMany")
     }
-	e := errors.Error{}
 	pg := db.PostgresClient{
 		Ctx: ctx,
 	}
 
-	err := pg.Open()
-	if err != nil {
-        e.Err(ctx, err)
-		return err
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "content.go",
+			Package: "types",
+			Function: "CreateMany",
+			Struct: "Content",
+		}
+		e.GetCtxTrace(ctx)
+		ce["content:CreateMany"] = e			
+		c.Errors = ce
+
+	}
+
+	erp := pg.Open()
+	if erp != nil {
+		ers := *erp
+		c.Errors["content:CreateMany"].Err(ctx, ers["PostgresClient:Open"].Wrapper)
+		return &c.Errors
 	}
 
 	defer pg.Close()
 	var cvs []string
-	baseString := "(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\")"
+	baseString := "('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"
 	var placeholders []string
 	for _, object := range objects {
 		objectValues := object.StringValues(ctx)
@@ -159,23 +192,26 @@ func (c Content) CreateMany(ctx context.Context, objects []Content) error {
 	q := fmt.Sprintf("INSERT INTO content (%s) VALUES %s", Content{}.Columns(ctx), strings.Join(placeholders, ", "))
 
 	if pg.Pgx == nil {
-		err = fmt.Errorf("pgx is nil")
-        e.Err(ctx, err)
-		panic(err.Error())
+		c.Errors["content:CreateMany"].Err(ctx, fmt.Errorf("pgx is nil"))
+		return &c.Errors
 	}
+	var err error
 	pg.Tx, err = pg.Pgx.Begin(pg.Ctx)
 	if err != nil {
-        e.Err(ctx, err)
-		return err
+		c.Errors["pg:begin"] = c.Errors["content:CreateMany"]
+		c.Errors["pg:begin"].Err(ctx, err)
+		return &c.Errors
 	}
 	defer pg.Tx.Commit(pg.Ctx)
 	_, err = pg.Tx.Conn().Exec(pg.Ctx, q)
 	if err != nil {
-        e.Err(ctx, err)
+		c.Errors["pg:tx:conn"] = c.Errors["content:CreateMany"]
+		c.Errors["pg:tx:conn"].Err(ctx, err)
 		rollbackErr := pg.Tx.Rollback(pg.Ctx)
 		if rollbackErr != nil {
-			e.Err(ctx, rollbackErr)
-			return rollbackErr
+			c.Errors["pg:tx:rollback"] = c.Errors["content:CreateMany"]
+			c.Errors["pg:tx:rollback"].Err(ctx, err)
+			return &c.Errors
 		}
 	}
 
@@ -183,156 +219,257 @@ func (c Content) CreateMany(ctx context.Context, objects []Content) error {
 }
 
 func (c Content) ScanRow(rows pgx.Rows) error {
-	err := rows.Scan(&c)
-	if err != nil {
-		return err
-	}
+	debugBytes(rows.RawValues())
+	// err := rows.Scan(&c)
+	// if err != nil {
+	// 	return err
+	// }
 	return nil
 }
 
-func (c Content) Read(ctx context.Context, id string) (*Content, error) {
+func (c Content) Read(ctx context.Context, id string) (*Content, *map[string]errors.Error) {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:content.go:Content:Read")
     }
 	pg := db.PostgresClient{
 		Ctx: ctx,
 	}
-	err := pg.Open()
-	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "content.go",
+			Package: "types",
+			Function: "Read",
+			Struct: "Content",
+		}
+		e.GetCtxTrace(ctx)
+		ce["content:Read"] = e			
+		c.Errors = ce
+	}
+
+	erp := pg.Open()
+	if erp != nil {
+		ers := *erp
+		c.Errors["pg:Open"] = c.Errors["content:Read"]
+		c.Errors["pg:Open"].Err(ctx, ers["PostgresClient:Open"].Wrapper)
+		return nil, &c.Errors
 	}
 	defer pg.Close()
 
 	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE id = $1", id)
 	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+		c.Errors["pgx:query"] = c.Errors["content:Read"]
+		c.Errors["pgx:query"].Err(ctx, err)
+		return nil, &c.Errors
 	}
 	if rows.Next() {
 		err = rows.Scan(&c)
 		if err != nil {
-			pg.Error.Err(ctx, err)
-			return nil, err
+			c.Errors["rows:scan"] = c.Errors["content:Read"]
+			c.Errors["rows:scan"].Err(ctx, err)
+			return nil, &c.Errors
 		}
 	}
 
 	return &c, nil
 }
 
-func (c Content) FindAll(ctx context.Context, t string) ([]Content, error) {
+func (c Content) FindAll(ctx context.Context, t string) ([]Content, *map[string]errors.Error) {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:content.go:Content:FindAll")
     }
-	pg, err := db.NewPostgresClient(ctx)
-	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "content.go",
+			Package: "types",
+			Function: "FindAll",
+			Struct: "Content",
+		}
+		e.GetCtxTrace(ctx)
+		ce["content:FindAll"] = e			
+		c.Errors = ce
+
 	}
-	err = pg.Open()
-	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+
+	pg := db.NewPostgresClient(ctx)
+
+	erp := pg.Open()
+	if erp != nil {
+		ers := *erp
+		c.Errors["pg:Open"] = c.Errors["content:FindAll"]
+		c.Errors["pg:Open"].Err(ctx, ers["PostgresClient:Open"].Wrapper)
+		return nil, &c.Errors
 	}
 	defer pg.Close()
 	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE content_type = $1", t)
 	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+		c.Errors["pgx:query"] = c.Errors["content:FindAll"]
+		pq := c.Errors["pgx:query"]
+		pq.Recoverable = true
+		c.Errors["pgx:query"] = pq
+		c.Errors["pgx:query"].Err(ctx, err)
+		return nil, &c.Errors
 	}
-	r := make([]Content, 0)
+	//r := make([]Content, 0)
+	// contents := make([]Content, 0)
+	defer rows.Close()
 	for rows.Next() {
-		content := Content{}
-		err = rows.Scan(&content)
-		if err != nil {
-			pg.Error.Err(ctx, err)
-			return nil, err
-		}
-		r = append(r, content)
+		// content := Content{}
+		debugBytes(rows.RawValues())
+		// err = rows.Scan(&content)
+		// if err != nil {
+		// 	pg.Error.Err(ctx, err)
+		// 	return nil, err
+		// }
+		// contents = append(contents, content)
 	}
-	return r, nil
+	// fmt.Printf("\nmsis: %#v\n", contents)
+	return nil, nil
 }
 
-func (c Content) FindBy(ctx context.Context, jstring string) (*Content, error) {
+func debugBytes(b [][]byte) {
+	for i, v := range b {
+		fmt.Printf("\nrow %d: %s\n", i, string(v))
+	} 
+}
+
+func (c Content) FindBy(ctx context.Context, jstring string) (*Content, *map[string]errors.Error) {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:content.go:Content:FindBy")
     }
-	pg, err := db.NewPostgresClient(ctx)
-	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "content.go",
+			Package: "types",
+			Function: "SelectIn",
+			Struct: "Content",
+		}
+		e.GetCtxTrace(ctx)
+		ce["content:SelectIn"] = e			
+		c.Errors = ce
 	}
+
+	pg := db.NewPostgresClient(ctx)
+
+	erp := pg.Open()
+	if erp != nil {
+		ers := *erp
+		c.Errors["pg:open"] = c.Errors["content:FindBy"]
+		c.Errors["pg:open"].Err(ctx, ers["pg:Open"].Wrapper)
+		return nil, &c.Errors
+	}
+	defer pg.Close()
 	r := c
 	rows, err := pg.Pgx.Query(pg.Ctx, "SELECT * FROM content WHERE content @> $1", jstring)
 	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+		c.Errors["pgx:query"] = c.Errors["content:FindBy"]
+		c.Errors["pgx:query"].Err(ctx, err)
+		return nil, &c.Errors
 	}
 	err = rows.Scan(&r)
 	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+		c.Errors["rows:scan"] = c.Errors["content:FindBy"]
+		c.Errors["rows:scan"].Err(ctx, err)
+		return nil, &c.Errors
 	}
 	return &r, nil
 }
 
-func (c Content) SelectIn(ctx context.Context, ids []string) ([]*Content, error) {
+func (c Content) SelectIn(ctx context.Context, ids []string) ([]*Content, *map[string]errors.Error) {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:content.go:Content:SelectIn")
     }
-	pg, err := db.NewPostgresClient(ctx)
-	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "content.go",
+			Package: "types",
+			Function: "SelectIn",
+			Struct: "Content",
+		}
+		e.GetCtxTrace(ctx)
+		ce["content:SelectIn"] = e			
+		c.Errors = ce
 	}
-	err = pg.Open()
-	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+
+	pg := db.NewPostgresClient(ctx)
+
+	erp := pg.Open()
+	if erp != nil {
+		ers := *erp
+		c.Errors["pg:open"] = c.Errors["content:SelectIn"]
+		c.Errors["pg:open"].Err(ctx, ers["PostgresClient:Open"].Wrapper)
+		return nil, &c.Errors
 	}
 	defer pg.Close()
 
 	q := fmt.Sprintf("SELECT * FROM content WHERE id IN ('%s')", strings.Join(ids, "', '"))
 	rows, err := pg.Pgx.Query(pg.Ctx, q)
 	if err != nil {
-		pg.Error.Err(ctx, err)
-		return nil, err
+		c.Errors["pgx:query"] = c.Errors["content:SelectIn"]
+		c.Errors["pgx:query"].Err(ctx, err)
+		return nil, &c.Errors
 	}
 	contents := make([]*Content, 0)
 	if rows.Next() {
 		content := Content{}
 		err = rows.Scan(&content)
 		if err != nil {
-			pg.Error.Err(ctx, err)
-			return nil, err
+			c.Errors["rows:scan"] = c.Errors["content:SelectIn"]
+			c.Errors["rows:scan"].Err(ctx, err)
+			return nil, &c.Errors
 		}
 		contents = append(contents, &content)
 	}
 	return contents, nil
 }
 
-func (c Content) Update(ctx context.Context, object IContent) error {
+func (c Content) Update(ctx context.Context, object IContent) *map[string]errors.Error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:content.go:Content:Update")
     }
-	pg := db.PostgresClient{
-		Ctx: context.Background(),
+
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "content.go",
+			Package: "types",
+			Function: "Update",
+			Struct: "Content",
+		}
+		e.GetCtxTrace(ctx)
+		ce["content:Update"] = e			
+		c.Errors = ce
 	}
-	err := pg.Open()
-	if err != nil {
-		pg.Error.Err(ctx, err)
-		return err
+
+	pg := db.NewPostgresClient(ctx)
+
+	erp := pg.Open()
+	if erp != nil {
+		ers := *erp
+		c.Errors["pg:open"] = c.Errors["content:Update"]
+		c.Errors["pg:open"].Err(ctx, ers["PostgresClient:Open"].Wrapper)
+		return &c.Errors
 	}
 	defer pg.Close()
-	err = c.Delete(ctx, c.Attributes.Id)
-	if err != nil {
-		pg.Error.Err(ctx, err)
-		return err
+	erp = c.Delete(ctx, c.Attributes.Id)
+	if erp != nil {
+		ers := *erp
+		c.Errors["delete"] = c.Errors["content:Update"]
+		c.Errors["delete"].Err(ctx, ers["content:Delete"].Wrapper)
+		return &c.Errors
 	}
-	err = c.Create(ctx, object)
-	if err != nil {
-		pg.Error.Err(ctx, err)
-		return err
+	erp = c.Create(ctx, object)
+	if erp != nil {
+		ers := *erp
+		c.Errors["create"] = c.Errors["content:Update"]
+		c.Errors["create"].Err(ctx, ers["content:Create"].Wrapper)
+		return &c.Errors
 	}
 	// q := fmt.Sprintf("UPDATE content SET %s WHERE id = ?", c.UpdateString())
 	// _, values := c.Values()
@@ -343,23 +480,39 @@ func (c Content) Update(ctx context.Context, object IContent) error {
 	return nil
 }
 
-func (c Content) Delete(ctx context.Context, id string) error {
+func (c Content) Delete(ctx context.Context, id string) *map[string]errors.Error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:content.go:Content:Delete")
     }
-	pg := db.PostgresClient{
-		Ctx: context.Background(),
+
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "content.go",
+			Package: "types",
+			Function: "Delete",
+			Struct: "Content",
+		}
+		e.GetCtxTrace(ctx)
+		ce["content:Delete"] = e			
+		c.Errors = ce
 	}
-	err := pg.Open()
-	if err != nil {
-		pg.Error.Err(ctx, err)
+
+	pg := db.NewPostgresClient(ctx)
+
+	erp := pg.Open()
+	if erp != nil {
+		ers := *erp
+		c.Errors["pg:open"] = c.Errors["content:delete"]
+		c.Errors["pg:open"].Err(ctx, ers["PostgresClient:Open"].Wrapper)
 		return err
 	}
 	defer pg.Close()
-	_, err = pg.Sqlx.Query("DELETE FROM content WHERE id = $1", id)
+	_, err := pg.Pgx.Query(ctx, "DELETE FROM content WHERE id = $1", id)
 	if err != nil {
-		pg.Error.Err(ctx, err)
-		return err
+		c.Errors["pgx:query"] = c.Errors["content:Delete"]
+		c.Errors["pgx:query"].Err(ctx, err)
+		return &c.Errors
 	}
-	return err
+	return nil
 }

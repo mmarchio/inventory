@@ -179,28 +179,40 @@ type PostgresClient struct {
     Sqlx *sql.DB
     Ctx context.Context
     Tx pgx.Tx
-    Error errors.Error
+    Errors map[string]errors.Error
 }
 
-func NewPostgresClient(ctx context.Context) (*PostgresClient, error) {
+func NewPostgresClient(ctx context.Context) *PostgresClient {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "db:main.go:NewPostgresClient")
     }
     pg := PostgresClient{
         Ctx: ctx,
     }
-    return &pg, nil
+    return &pg
 }
 
-func (c *PostgresClient) Open() error {
+func (c *PostgresClient) Open() *map[string]errors.Error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "db:main.go:PostgresClient:Open")
     }
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "main.go",
+			Package: "db",
+			Function: "Open",
+			Struct: "PostgresClient",
+		}
+		e.GetCtxTrace(ctx)
+		ce["PostgresClient:Open"] = e			
+		c.Errors = ce
+	}
 	conn, err := pgx.Connect(c.Ctx, os.Getenv("POSTGRES_URL"))
 	if err != nil {
-        c.Error.Err(c.Ctx, err)
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
+        c.Errors["pgx:Connect"] = c.Errors["PostgresClient:Open"]
+        c.Errors["PostgresClient:Open"].Err(ctx, err)
+        return &c.Errors
 	}
     c.Pgx = conn
     // host := "localhost"
@@ -218,41 +230,82 @@ func (c *PostgresClient) Open() error {
     //     os.Exit(1)
     // }
     // c.Sqlx = conn
-    return err
+    return &c.Errors
 }
 
-func (c PostgresClient) Close() error {
+func (c PostgresClient) Close() *map[string]errors.Error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "db:main.go:PostgresClient:Close")
     }
+
+    if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "main.go",
+			Package: "db",
+			Function: "Close",
+			Struct: "PostgresClient",
+		}
+		e.GetCtxTrace(ctx)
+		ce["PostgresClient:Close"] = e			
+		c.Errors = ce
+	}
+
     err := c.Pgx.Close(c.Ctx)
     if err != nil {
-        c.Error.Err(ctx, err)
-        return err
+        c.Errors["pgx:Close"] = c.Errors["PostgresClient:Close"]
+        c.Errors["pgx:Close"].Err(ctx, err)
+        return &c.Errors
     }
     return nil
 }
 
-func (c PostgresClient) Commit(tx pgx.Tx) error {
+func (c PostgresClient) Commit(tx pgx.Tx) *map[string]errors.Error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "db:main.go:PostgresClient:Commit")
     }
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "main.go",
+			Package: "db",
+			Function: "Commit",
+			Struct: "PostgresClient",
+		}
+		e.GetCtxTrace(ctx)
+		ce["PostgresClient:Commit"] = e			
+		c.Errors = ce
+	}
     err := tx.Conn().Close(c.Ctx)
     if err != nil {
-        c.Error.Err(ctx, err)
-        return err
+        c.Errors["PostgresClient:Commit"].Err(ctx, err)
+        return &c.Errors
     }
     return nil
 }
 
-func (c PostgresClient) Query(ctx context.Context, q string, rs pgx.RowScanner) error {
+func (c PostgresClient) Query(ctx context.Context, q string, rs pgx.RowScanner) *map[string]errors.Error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "db:main.go:PostgresClient:Open")
     }
-    err := c.Open()
-    if err != nil {
-        c.Error.Err(ctx, err)
-        return err
+	if c.Errors == nil {
+		ce := make(map[string]errors.Error)
+		e := errors.Error{
+			File: "main.go",
+			Package: "db",
+			Function: "Query",
+			Struct: "PostgresClient",
+		}
+		e.GetCtxTrace(ctx)
+		ce["PostgresClient:Query"] = e			
+		c.Errors = ce
+	}
+    erp := c.Open()
+    if erp != nil {
+        ers := *erp
+        c.Errors["PostgresClient:Open"] = c.Errors["PostgresClient:Query"]
+        c.Errors["PostgresClient:Open"].Err(ctx, ers["PostgresClient:Open"].Wrapper)
+        return &c.Errors
     }
     // txo := pgx.TxOptions{}
     // tx, err := c.Sqlx.BeginTx(c.Ctx, txo)

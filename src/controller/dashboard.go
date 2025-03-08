@@ -15,12 +15,12 @@ import (
 
 type DashboardController struct {
 	Logger *log.Logger
-	Error errors.Error
-	Ctx context.Context
+	Errors map[string]errors.Error
+	Ctx    context.Context
 }
 
 func (s DashboardController) Get() echo.HandlerFunc {
-	return func (c echo.Context) error {
+	return func(c echo.Context) error {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:dashboard.go:DashboardController:Get")
 		}
@@ -62,21 +62,24 @@ func (s DashboardController) Get() echo.HandlerFunc {
 	}
 }
 
-func (s DashboardController) RegisterResources(e *echo.Echo) error {
+func (s DashboardController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
+
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:dashboard.go:DashboardController:RegisterResources")
 	}
 	s.Error.Function = "GetCreate"
-	
+
 	g := e.Group("")
 	g.GET("/dashboard", s.Get())
 
 	resources := acl.Resources{}
 	resources = append(resources, acl.Resource{
-		Id: uuid.NewString(),
+		Id:  uuid.NewString(),
 		URL: "/dashboard",
 	})
-	adminRolePtr, err := acl.GetRole(s.Ctx, "admin")
+	params := acl.Role{}
+	params.Attributes.Name = "admin"
+	adminRolePtr, err := acl.GetRole(s.Ctx, params)
 	if err != nil {
 		s.Error.Err(s.Ctx, err)
 		return err

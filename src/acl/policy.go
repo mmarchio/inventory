@@ -10,7 +10,6 @@ import (
 )
 
 type Policy struct {
-	
 	types.Attributes
 	Role       string     `json:"role"`
 	Resource   string     `json:"resource"`
@@ -23,7 +22,7 @@ func (c Policy) New(ctx context.Context) (*Policy, error) {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:New")
 	}
 	e := errors.Error{
-		Package: "acl",
+		Package:  "acl",
 		Function: "GetBearerToken",
 	}
 	var err error
@@ -48,7 +47,7 @@ func (c Policy) ToContent(ctx context.Context) (*types.Content, error) {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:ToContent")
 	}
 	e := errors.Error{
-		Package: "acl",
+		Package:  "acl",
 		Function: "GetBearerToken",
 	}
 	content := types.Content{}
@@ -67,7 +66,7 @@ func (c Policy) PGRead(ctx context.Context) (*Policy, error) {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:PGRead")
 	}
 	e := errors.Error{
-		Package: "acl",
+		Package:  "acl",
 		Function: "GetBearerToken",
 	}
 	contentPtr, err := types.Content{}.Read(ctx, c.Attributes.Id)
@@ -95,7 +94,8 @@ func (c Policy) PGRead(ctx context.Context) (*Policy, error) {
 	return &policy, nil
 }
 
-func (c Policy) PGCreate(ctx context.Context) error {
+func (c Policy) PGCreate(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:PGCreate")
 	}
@@ -104,13 +104,14 @@ func (c Policy) PGCreate(ctx context.Context) error {
 	}
 	err := types.Content{}.Create(ctx, c)
 	if err != nil {
-		e.Err(ctx, err)	
+		e.Err(ctx, err)
 		return err
 	}
 	return nil
 }
 
-func (c Policy) PGUpdate(ctx context.Context) error {
+func (c Policy) PGUpdate(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:PGUpdate")
 	}
@@ -125,7 +126,8 @@ func (c Policy) PGUpdate(ctx context.Context) error {
 	return content.Update(ctx, c)
 }
 
-func (c Policy) PGDelete(ctx context.Context) error {
+func (c Policy) PGDelete(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:PGDelete")
 	}
@@ -257,7 +259,8 @@ func (c Policies) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return r, nil
 }
 
-func (c Policies) CreateMany(ctx context.Context) error {
+func (c Policies) CreateMany(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policies:CreateMany")
 	}
@@ -274,7 +277,7 @@ func (c Policies) CreateMany(ctx context.Context) error {
 			e.Err(ctx, err)
 			return err
 		}
-	
+
 		contents = append(contents, *contentPtr)
 	}
 	err := types.Content{}.CreateMany(ctx, contents)
@@ -285,12 +288,15 @@ func (c Policies) CreateMany(ctx context.Context) error {
 	return nil
 }
 
-func CreatePolicy(ctx context.Context, name, role, resource string) error {
+func CreatePolicy(ctx context.Context, name, role, resource string) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:CreatePolicy")
 	}
 	e := errors.Error{}
-	rolePtr, err := GetRole(ctx, role)
+	params := Role{}
+	params.Attributes.Name = role
+	rolePtr, err := GetRole(ctx, params)
 	if err != nil {
 		e.Err(ctx, err)
 		return err
@@ -397,7 +403,8 @@ func GetPolicyById(ctx context.Context, id string) (*Policy, error) {
 	return nil, err
 }
 
-func CreateSystemPolicies(ctx context.Context) error {
+func CreateSystemPolicies(ctx context.Context) *map[string]errors.Error {
+
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:CreateSystemPolicies")
 	}

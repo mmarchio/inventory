@@ -14,22 +14,27 @@ type Location struct {
 	Attributes Attributes `json:"attributes"`
 	Rooms      Rooms      `json:"rooms"`
 	Address    Address    `json:"address"`
+	Error      errors.Error
 }
 
-func (c Location) New(ctx context.Context) (*Location, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:New")
-    }
-	e := errors.Error{}
+func (c Location) New(ctx context.Context) (*Location, *errors.Error) {
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:New")
+	}
+	c.Error.File = "location.go"
+	c.Error.Package = "types"
+	c.Error.Function = "New"
+	c.Error.Struct = "Location"
+
 	attributesPtr, err := c.Attributes.New(ctx)
 	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+		c.Error.Err(ctx, err)
+		return nil, &c.Error
 	}
 	if attributesPtr == nil {
 		err = fmt.Errorf("attributes is nil")
-		e.Err(ctx, err)
-		return nil, err
+		c.Error.Err(ctx, err)
+		return nil, &c.Error
 	}
 	location := c
 	location.Attributes = *attributesPtr
@@ -37,27 +42,35 @@ func (c Location) New(ctx context.Context) (*Location, error) {
 	return &location, nil
 }
 
-func (c Location) ToContent(ctx context.Context) (*Content, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:ToContent")
-    }
-	e := errors.Error{}
+func (c Location) ToContent(ctx context.Context) (*Content, *errors.Error) {
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:ToContent")
+	}
+	c.Error.File = "location.go"
+	c.Error.Package = "types"
+	c.Error.Function = "ToContent"
+	c.Error.Struct = "Location"
+
 	content := Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
 	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+		c.Error.Err(ctx, err)
+		return nil, &c.Error
 	}
 	content.Content = jbytes
 	return &content, nil
 }
 
-func (c Location) PGRead(ctx context.Context) (*Location, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:PGRead")
-    }
-	e := errors.Error{}
+func (c Location) PGRead(ctx context.Context) (*Location, *errors.Error) {
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:PGRead")
+	}
+	c.Error.File = "location.go"
+	c.Error.Package = "types"
+	c.Error.Function = "PGRead"
+	c.Error.Struct = "Location"
+
 	content, err := Content{}.Read(ctx, c.Attributes.Id)
 	if err != nil {
 		e.Err(ctx, err)
@@ -72,10 +85,11 @@ func (c Location) PGRead(ctx context.Context) (*Location, error) {
 	return &location, nil
 }
 
-func (c Location) PGCreate(ctx context.Context) error {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:PGCreate")
-    }
+func (c Location) PGCreate(ctx context.Context) *map[string]errors.Error {
+
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:PGCreate")
+	}
 	e := errors.Error{}
 	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
@@ -97,10 +111,11 @@ func (c Location) PGCreate(ctx context.Context) error {
 	return nil
 }
 
-func (c Location) PGUpdate(ctx context.Context) error {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:PGUpdate")
-    }
+func (c Location) PGUpdate(ctx context.Context) *map[string]errors.Error {
+
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:PGUpdate")
+	}
 	e := errors.Error{}
 	contentPtr, err := c.ToContent(ctx)
 	if err != nil {
@@ -122,10 +137,11 @@ func (c Location) PGUpdate(ctx context.Context) error {
 	return nil
 }
 
-func (c Location) PGDelete(ctx context.Context) error {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:PGDelete")
-    }
+func (c Location) PGDelete(ctx context.Context) *map[string]errors.Error {
+
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:PGDelete")
+	}
 	err := Content{}.Delete(ctx, c.Attributes.Id)
 	if err != nil {
 		e := errors.Error{}
@@ -136,9 +152,9 @@ func (c Location) PGDelete(ctx context.Context) error {
 }
 
 func NewLocation(ctx context.Context, createdBy User) *Location {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:NewLocation")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:NewLocation")
+	}
 	r := Location{}
 	a := NewAttributes(ctx, &createdBy)
 	if a != nil {
@@ -148,16 +164,16 @@ func NewLocation(ctx context.Context, createdBy User) *Location {
 }
 
 func (c Location) IsDocument(ctx context.Context) bool {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:IsDocument")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:IsDocument")
+	}
 	return true
 }
 
 func (c Location) ToMSI(ctx context.Context) (map[string]interface{}, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:ToMSI")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:ToMSI")
+	}
 	data, err := toMSI(ctx, c)
 	if err != nil {
 		e := errors.Error{}
@@ -168,9 +184,9 @@ func (c Location) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 }
 
 func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user User) (*Location, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:Hydrate")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:Hydrate")
+	}
 	e := errors.Error{}
 	r := Location{}
 	if a, ok := msi["attributes"].(map[string]interface{}); ok {
@@ -205,7 +221,7 @@ func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user 
 		addressPtr := NewAttributes(ctx, &user)
 		if addressPtr != nil {
 			r.Attributes = *addressPtr
-		} 
+		}
 	}
 	if v, ok := msi["name"].(string); ok {
 		r.Attributes.Name = v
@@ -215,9 +231,9 @@ func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user 
 }
 
 func (c Location) HydrateFromRequest(ctx context.Context, e echo.Context, user User) (*Location, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:HydrateFromRequest")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:HydrateFromRequest")
+	}
 	er := errors.Error{}
 	bodyPtr, err := GetRequestData(ctx, e)
 	if err != nil {
@@ -244,9 +260,9 @@ func (c Location) HydrateFromRequest(ctx context.Context, e echo.Context, user U
 }
 
 func (c Location) Load(ctx context.Context, e echo.Context, user User) (*Location, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:Load")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:Load")
+	}
 	er := errors.Error{}
 	contentId, err := GetContentIdFromUrl(ctx, e)
 	if err != nil {
@@ -274,9 +290,9 @@ func (c Location) Load(ctx context.Context, e echo.Context, user User) (*Locatio
 }
 
 func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, user User) (*Location, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Location:Merge")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Location:Merge")
+	}
 	e := errors.Error{}
 	var old, new Location
 	if o, ok := oldInput.(map[string]interface{}); ok {
@@ -330,9 +346,9 @@ func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, use
 }
 
 func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:GetRequestData")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:GetRequestData")
+	}
 	body := make(map[string]interface{})
 	err := json.NewDecoder(c.Request().Body).Decode(&body)
 	if err != nil {
@@ -346,17 +362,23 @@ func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{
 type Locations []Location
 
 func (c Locations) IsDocument(ctx context.Context) bool {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Locations:IsDocument")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Locations:IsDocument")
+	}
 	return true
 }
 
-func (c Locations) FindAll(ctx context.Context) (*Locations, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Locations:FindAll")
-    }
-	e := errors.Error{}
+func (c Locations) FindAll(ctx context.Context) (*Locations, *errors.Error) {
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Locations:FindAll")
+	}
+	e := errors.Error{
+		Package:  "types",
+		File:     "location.go",
+		Struct:   "Locations",
+		Function: "FindAll",
+	}
+	e.GetCtxTrace(ctx)
 	content, err := Content{}.FindAll(ctx, "location")
 	if err != nil {
 		e.Err(ctx, err)
@@ -366,13 +388,13 @@ func (c Locations) FindAll(ctx context.Context) (*Locations, error) {
 		e.Err(ctx, err)
 		return nil, err
 	}
-	locations := c 
+	locations := c
 	for _, cont := range content {
 		location := Location{}
-		err = json.Unmarshal(cont.Content, &location)
-		if err != nil {
-			e.Err(ctx, err)
-			return nil, err
+		e.Wrapper = json.Unmarshal(cont.Content, &location)
+		if e.Wrapper != nil {
+			e.Err(ctx, e.Wrapper)
+			return nil, &e
 		}
 		locations = append(locations, location)
 	}
@@ -380,9 +402,9 @@ func (c Locations) FindAll(ctx context.Context) (*Locations, error) {
 }
 
 func (c Locations) ToMSI(ctx context.Context) (map[string]interface{}, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Locations:ToMSI")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Locations:ToMSI")
+	}
 	data, err := toMSI(ctx, c)
 	if err != nil {
 		e := errors.Error{}
@@ -393,9 +415,9 @@ func (c Locations) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 }
 
 func (c Locations) Hydrate(ctx context.Context, msi []map[string]interface{}, user User) (*Locations, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Locations:Hydrate")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Locations:Hydrate")
+	}
 	e := errors.Error{}
 	locations := Locations{}
 	for _, r := range msi {
@@ -413,9 +435,9 @@ func (c Locations) Hydrate(ctx context.Context, msi []map[string]interface{}, us
 }
 
 func (c Locations) In(ctx context.Context, id string) bool {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Locations:In")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Locations:In")
+	}
 	for _, l := range c {
 		if l.Attributes.Id == id {
 			return true
@@ -425,9 +447,9 @@ func (c Locations) In(ctx context.Context, id string) bool {
 }
 
 func GetLocations(ctx context.Context) (*Locations, error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:location.go:Locations:GetLocations")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:location.go:Locations:GetLocations")
+	}
 	locations, err := Locations{}.FindAll(ctx)
 	if err != nil {
 		e := errors.Error{}
