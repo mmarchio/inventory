@@ -374,7 +374,7 @@ func (c Locations) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Locations) FindAll(ctx context.Context) (*Locations, *errors.Error) {
+func (c Locations) FindAll(ctx context.Context) (*Locations, *map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:location.go:Locations:FindAll")
 	}

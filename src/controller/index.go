@@ -4,10 +4,10 @@ import (
 	"context"
 	"inventory/src/acl"
 	"inventory/src/errors"
+	"inventory/src/types"
 	"inventory/src/util"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -24,43 +24,44 @@ func (s IndexController) Get() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:index.go:IndexController:Get")
 		}
-		s.Error.Function = "Get"
-		s.Error.RequestUri = c.Request().RequestURI
 
-		data := make(map[string]interface{})
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "index.go", "controller", "Get", "IndexController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
+		data, erp := AuthenticateToken(s.Ctx, c)
+		if erp != nil {
+			fidx := "controller:AuthenticateToken"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
+			return c.Render(http.StatusOK, ERRORTPL, data)
+		}
 		data["PageTitle"] = "Inventory Management"
-		bearer := c.Request().Header.Get("AUTHORIZATION")
-		if bearer == "" {
-			data["Authenticated"] = false
-			return c.Render(http.StatusOK, "index.tpl.html", data)
+		if user, ok := data["User"].(types.User); ok {
+			c.Set("user", user.Attributes.Id)
 		}
-		token := strings.Split(bearer, " ")[1]
-		claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
-			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+		var bearer string
+		if v, ok := data["bearer"].(string); ok {
+			bearer = v
 		}
-		user, err := acl.GetUser(s.Ctx, claims)
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
-			data["error"] = err.Error()
-			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
-		}
-		c.Set("user", user.Id)
 		c.Response().Header().Set("AUTHORIZATION", bearer)
 		data["Authenticated"] = true
-		data["Token"] = token
 		return c.Render(http.StatusOK, "dashboard.tpl.html", data)
 	}
 }
 
 func (s IndexController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
-
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:index.go:IndexController:RegisterResources")
 	}
-	s.Error.Function = "GetCreate"
+	
+	var idx string
+	s.Errors, idx = errors.Error{}.New(s.Ctx, "index.go", "controller", "RegisterResources", "IndexController")
+	er := s.Errors[idx]
+	s.Errors[idx] = er
+	
 	g := e.Group("")
 	g.GET("/", s.Get())
 
@@ -71,31 +72,35 @@ func (s IndexController) RegisterResources(e *echo.Echo) *map[string]errors.Erro
 	})
 	params := acl.Role{}
 	params.Attributes.Name = "admin"
-	adminRolePtr, err := acl.GetRole(s.Ctx, params)
-	if err != nil {
-		s.Error.Err(s.Ctx, err)
-		return err
+	adminRolePtr, erp := acl.GetRole(s.Ctx, params)
+	if erp != nil {
+		fidx := "acl:GetRole"
+		errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+		return &s.Errors
 	}
 	var adminRole acl.Role
 	if adminRolePtr != nil {
 		adminRole = *adminRolePtr
-		err = UpdateRole(s.Ctx, adminRole.Attributes.Id, resources)
-		if err != nil {
-			if err.Error() != "roles not found" {
-				s.Error.Err(s.Ctx, err)
-				return err
+		erp = UpdateRole(s.Ctx, adminRole.Attributes.Id, resources)
+		if erp != nil {
+			fidx := "controller:UpdateRole"
+			if s.Errors[fidx].Error() != "roles not found" {
+				errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+				return &s.Errors
 			}
 		}
 	}
-	err = UpdateResources(s.Ctx, resources)
-	if err != nil {
-		s.Error.Err(s.Ctx, err)
-		return err
+	erp = UpdateResources(s.Ctx, resources)
+	if erp != nil {
+		fidx := "controller:UpdateResources"
+		errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+		return &s.Errors
 	}
-	err = UpdatePolicy(s.Ctx, "admin", resources)
-	if err != nil {
-		s.Error.Err(s.Ctx, err)
-		return err
+	erp = UpdatePolicy(s.Ctx, "admin", resources)
+	if erp != nil {
+		fidx := "controller:UpdatePolicy"
+		errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+		return &s.Errors
 	}
 	return nil
 }

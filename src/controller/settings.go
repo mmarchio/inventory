@@ -27,34 +27,50 @@ func (s SettingsController) Get() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:Get")
 		}
-		s.Error.RequestUri = c.Request().RequestURI
-		s.Error.Function = "Get"
-		data, err := authenticateToken(s.Ctx, c)
-		if err != nil {
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
+		data, erp := AuthenticateToken(s.Ctx, c)
+		if erp != nil {
+			fidx := "controller:AuthenticateToken"
+			ers := *erp
 			data["PageTitle"] = "Inventory Management"
-			if err.Error() == "bearer not found" {
-				s.Error.Err(s.Ctx, err)
+			if ers[fidx].Error() == "bearer not found" {
+				errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 
-		usersPtr, err := types.GetUsers(s.Ctx)
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
+		usersPtr, erp := types.GetUsers(s.Ctx)
+		if erp != nil {
+			fidx := "types:GetUsers"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+		}
+		if usersPtr == nil {
+			err := fmt.Errorf("user pointer is nil")
+			fidx := "types:GetUsers"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, nil, err, &s.Errors)
 			data["error"] = err.Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
-		if usersPtr != nil {
-			data["Users"] = *usersPtr
-		}
 
-		rolesPtr, err := acl.GetRoles(s.Ctx)
-		if err != nil {
-			if err.Error() != "roles not found" {
-				s.Error.Err(s.Ctx, err)
-				data["error"] = err.Error()
+		data["Users"] = *usersPtr
+
+		rolesPtr, erp := acl.GetRoles(s.Ctx)
+		if erp != nil {
+			fidx := "acl:GetRoles"
+			ers := *erp
+			if ers[fidx].Error() != "roles not found" {
+				errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+				data["error"] = s.Errors[fidx].Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
 		}
@@ -62,30 +78,29 @@ func (s SettingsController) Get() echo.HandlerFunc {
 			data["Roles"] = *rolesPtr
 		}
 
-		policiesPtr, err := acl.GetPolicies(s.Ctx)
-		if err != nil {
-			if err.Error() != "policies not found" {
-				s.Error.Err(s.Ctx, err)
-				data["error"] = err.Error()
+		policiesPtr, erp := acl.GetPolicies(s.Ctx)
+		if erp != nil {
+			fidx := "acl:GetPolicies"
+			ers := *erp
+			if ers[fidx].Error() != "policies not found" {
+				errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+				data["error"] = s.Errors[fidx].Error()
 				return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 			}
 		}
-		if policiesPtr != nil {
-			data["Policies"] = *policiesPtr
+		if policiesPtr == nil {
+			err := fmt.Errorf("policies pointer is nil")
+			fidx := "acl:GetPolicies"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, nil, err, &s.Errors)
+			data["error"] = err.Error()
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
+		data["Policies"] = *policiesPtr
 
 		if token, ok := data["Token"].(string); ok {
-			claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+			if token != "" {
+				//do something
 			}
-			user, err := acl.GetUser(s.Ctx, claims)
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
 		}
 
 		return c.Render(http.StatusOK, "settings.tpl.html", data)
@@ -97,13 +112,21 @@ func (s SettingsController) GetUserCreate() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetUserCreate")
 		}
-		s.Error.RequestUri = c.Request().RequestURI
-		s.Error.Function = "GetUserCreate"
-		data, err := authenticateToken(s.Ctx, c)
-		if err != nil {
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "GetUserCreate", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
+		data, erp := AuthenticateToken(s.Ctx, c)
+		if erp != nil {
+			fidx := "controller:AuthenticateToken"
+			ers := *erp
 			data["PageTitle"] = "Inventory Management"
-			if err.Error() == "bearer not found" {
-				s.Error.Err(s.Ctx, err)
+			if ers[fidx].Error() == "bearer not found" {
+				errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+				data["error"] = s.Errors[fidx].Error()
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
@@ -111,17 +134,9 @@ func (s SettingsController) GetUserCreate() echo.HandlerFunc {
 		data["PageTitle"] = "Inventory Management"
 
 		if token, ok := data["Token"].(string); ok {
-			claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+			if token != "" {
+				//do something
 			}
-			user, err := acl.GetUser(s.Ctx, claims)
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
 		}
 		return c.Render(http.StatusOK, "settings.user.create.tpl.html", data)
 	}
@@ -132,75 +147,85 @@ func (s SettingsController) GetUserEdit() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetUserEdit")
 		}
-		s.Error.Function = "GetUserEdit"
-		s.Error.RequestUri = c.Request().RequestURI
-		data, err := AuthenticateToken(s.Ctx, c)
-		if err != nil {
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "GetUserEdit", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
+		data, erp := AuthenticateToken(s.Ctx, c)
+		if erp != nil {
+			fidx := "controller:AuthenticateToken"
+			ers := *erp
 			data["PageTitle"] = "Inventory Management"
-			if err.Error() == "bearer not found" {
-				s.Error.Err(s.Ctx, err)
+			if ers[fidx].Error() == "bearer not found" {
+				errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+				data["error"] = s.Errors[fidx].Error()
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 
-		userPtr, err := types.GetUser(s.Ctx, c.Param("id"))
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
-			data["error"] = err.Error()
+		userPtr, erp := types.GetUser(s.Ctx, c.Param("id"))
+		if erp != nil {
+			fidx := "types:GetUser"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
-		if userPtr != nil {
-			user := *userPtr
-			data["Entity"] = user
-			if user.DOB != nil {
-				dob := *user.DOB
-				data["DOB"] = dob.Format("01/02/2006")
-			} else {
-				err = fmt.Errorf("entity dob nil")
-				s.Error.Err(s.Ctx, err)
-			}
+		if userPtr == nil {
+			err := fmt.Errorf("user pointer is nil")
+			fidx := "types:GetUser"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, nil, err, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+		}
+		user := *userPtr
+		data["Entity"] = user
+		if user.DOB != nil {
+			dob := *user.DOB
+			data["DOB"] = dob.Format("01/02/2006")
 		} else {
-			err = fmt.Errorf("entity pointer nil")
-			s.Error.Err(s.Ctx, err)
+			err := fmt.Errorf("entity dob nil")
+			s.Errors[idx].Err(s.Ctx, err)
 		}
-		rolesPtr, err := acl.GetRoles(s.Ctx)
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
-			data["error"] = err.Error()
+
+		rolesPtr, erp := acl.GetRoles(s.Ctx)
+		if erp != nil {
+			fidx := "acl:GetRoles"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
-		if rolesPtr != nil {
-			roles := *rolesPtr
-			rolesMSI := make([]map[string]interface{}, 0)
-			for _, r := range roles {
-				roleMSI := make(map[string]interface{})
-				if u, ok := data["Entity"].(types.User); ok {
-					for _, ur := range u.Roles {
-						if r.Attributes.Name == ur {
-							roleMSI["Selected"] = 1
-						}
-						roleMSI["Name"] = r.Attributes.Name
-						rolesMSI = append(rolesMSI, roleMSI)
+		if rolesPtr == nil {
+			err := fmt.Errorf("roles pointer is nil")
+			fidx := "acl:GetRoles"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, nil, err, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
+			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
+		}
+		roles := *rolesPtr
+		rolesMSI := make([]map[string]interface{}, 0)
+		for _, r := range roles {
+			roleMSI := make(map[string]interface{})
+			if u, ok := data["Entity"].(types.User); ok {
+				for _, ur := range u.Roles {
+					if r.Attributes.Name == ur {
+						roleMSI["Selected"] = 1
 					}
-					data["Roles"] = rolesMSI
+					roleMSI["Name"] = r.Attributes.Name
+					rolesMSI = append(rolesMSI, roleMSI)
 				}
+				data["Roles"] = rolesMSI
 			}
 		}
 
 		if token, ok := data["Token"].(string); ok {
-			claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+			if token != "" {
+				//do something
 			}
-			user, err := acl.GetUser(s.Ctx, claims)
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
 		}
 		return c.Render(http.StatusOK, "settings.user.edit.tpl.html", data)
 	}
@@ -211,13 +236,21 @@ func (s SettingsController) GetUserDelete() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetUserDelete")
 		}
-		s.Error.Function = "GetUserDelete"
-		s.Error.RequestUri = c.Request().RequestURI
-		data, err := AuthenticateToken(s.Ctx, c)
-		if err != nil {
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
+		data, erp := AuthenticateToken(s.Ctx, c)
+		if erp != nil {
+			fidx := "controller:AuthenticateToken"
+			ers := *erp
 			data["PageTitle"] = "Inventory Management"
-			if err.Error() == "bearer not found" {
-				s.Error.Err(s.Ctx, err)
+			if ers[fidx].Error() == "bearer not found" {
+				errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+				data["error"] = s.Errors[fidx].Error()
 				return c.Render(http.StatusOK, "index.tpl.html", data)
 			}
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
@@ -225,10 +258,11 @@ func (s SettingsController) GetUserDelete() echo.HandlerFunc {
 		data["PageTitle"] = "Inventory Management"
 		user := types.User{}
 		user.Attributes.Id = c.Param("id")
-		err = user.PGDelete(s.Ctx)
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
-			data["error"] = err.Error()
+		erp = user.PGDelete(s.Ctx)
+		if erp != nil {
+			fidx := "types:User:PGDelete"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 
@@ -242,8 +276,13 @@ func (s SettingsController) GetRoleCreate() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetRoleCreate")
 		}
-		s.Error.Function = "GetRoleCreate"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := AuthenticateToken(s.Ctx, c)
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
@@ -277,8 +316,13 @@ func (s SettingsController) GetRoleEdit() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetRoleEdit")
 		}
-		s.Error.Function = "GetRoleEdit"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
@@ -345,8 +389,13 @@ func (s SettingsController) GetRoleDelete() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetRoleDelete")
 		}
-		s.Error.Function = "GetRoleDelete"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
@@ -389,8 +438,13 @@ func (s SettingsController) GetPolicyCreate() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetPolicyCreate")
 		}
-		s.Error.Function = "GetPolicyCreate"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
@@ -424,8 +478,13 @@ func (s SettingsController) GetPolicyEdit() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetPolicyEdit")
 		}
-		s.Error.Function = "GetPolicyEdit"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := AuthenticateToken(s.Ctx, c)
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
@@ -459,8 +518,13 @@ func (s SettingsController) GetPolicyDelete() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:GetPolicyDelete")
 		}
-		s.Error.Function = "GetPolicyDelete"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			data["PageTitle"] = "Inventory Management"
@@ -494,8 +558,13 @@ func (s SettingsController) PostApiUserCreate() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiUserCreate")
 		}
-		s.Error.Function = "PostApiUserCreate"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
@@ -571,6 +640,13 @@ func (s SettingsController) PostApiRoleCreate() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiRoleCreate")
 		}
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
@@ -588,6 +664,13 @@ func (s SettingsController) PostApiRoleEdit() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiRoleEdit")
 		}
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
@@ -605,6 +688,13 @@ func (s SettingsController) PostApiRoleDelete() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiRoleDelete")
 		}
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
@@ -622,8 +712,13 @@ func (s SettingsController) PostApiUserEdit() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiUserEdit")
 		}
-		s.Error.Function = "PostApiUserEdit"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := AuthenticateToken(s.Ctx, c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
@@ -700,8 +795,13 @@ func (s SettingsController) PostApiUserDelete() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiUserDelete")
 		}
-		s.Error.Function = "PostApiUserDelete"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
@@ -719,8 +819,13 @@ func (s SettingsController) PostApiPolicyCreate() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiPolicyCreate")
 		}
-		s.Error.Function = "PostApiPolicyCreate"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
@@ -776,8 +881,13 @@ func (s SettingsController) PostApiPolicyEdit() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiPolicyEdit")
 		}
-		s.Error.Function = "PostApiPolicyEdit"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
@@ -795,8 +905,13 @@ func (s SettingsController) PostApiPolicyDelete() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:PostApiPolicyDelete")
 		}
-		s.Error.Function = "PostApiPolicyDelete"
-		s.Error.RequestUri = c.Request().RequestURI
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
 		data, err := authenticateToken(s.Ctx, c)
 		if err != nil {
 			if err.Error() == "bearer not found" {
@@ -814,7 +929,12 @@ func (s SettingsController) RegisterResources(e *echo.Echo) *map[string]errors.E
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:settings.go:SettingsController:RegisterResources")
 	}
-	s.Error.Function = "GetUserDelete"
+
+	var idx string
+	s.Errors, idx = errors.Error{}.New(s.Ctx, "settings.go", "controller", "Get", "SettingsController")
+	er := s.Errors[idx]
+	er.RequestUri = c.Request().RequestURI
+	s.Errors[idx] = er
 
 	view := e.Group("/settings")
 	api := e.Group("/api")

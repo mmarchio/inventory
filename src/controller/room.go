@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"inventory/src/acl"
 	"inventory/src/errors"
 	"inventory/src/util"
@@ -22,28 +21,26 @@ func (s RoomController) GetCreate() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:room.go:RoomController:GetCreate")
 		}
-		s.Error.Function = "GetCreate"
-		s.Error.RequestUri = c.Request().RequestURI
-		data, err := authenticateToken(s.Ctx, c)
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
-			data["error"] = err.Error()
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "room.go", "controller", "GetCreate", "RoomController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
+		data, erp := AuthenticateToken(s.Ctx, c)
+		if erp != nil {
+			fidx := "controller:AuthenticateToken"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
+			if token != "" {
+				//do something
 			}
-			user, err := acl.GetUser(s.Ctx, claims)
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
-			}
-			data["User"] = user
 		}
 		return c.Render(http.StatusOK, "content.room.create.tpl.html", data)
 	}
@@ -54,30 +51,26 @@ func (s RoomController) GetEdit() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:room.go:RoomController:GetEdit")
 		}
-		s.Error.Function = "GetEdit"
-		s.Error.RequestUri = c.Request().RequestURI
-		data, err := authenticateToken(s.Ctx, c)
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
-			data["error"] = err.Error()
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "room.go", "controller", "GetEdit", "RoomController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
+		data, erp := AuthenticateToken(s.Ctx, c)
+		if erp != nil {
+			fidx := "controller:AuthenticateToken"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
+			if token != "" {
+				//do something
 			}
-			user, err := acl.GetUser(s.Ctx, claims)
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, ERRORTPL, err.Error())
-			}
-			data["User"] = user
-			c.Response().Header().Set("AUTHORIZATION", fmt.Sprintf("Bearer %s", token))
-			return c.Render(http.StatusOK, "content.locations.tpl.html", data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
@@ -89,28 +82,26 @@ func (s RoomController) GetDelete() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:room.go:RoomController:GetDelete")
 		}
-		s.Error.Function = "GetDelete"
-		s.Error.RequestUri = c.Request().RequestURI
-		data, err := authenticateToken(s.Ctx, c)
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
-			data["error"] = err.Error()
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "room.go", "controller", "GetDelete", "RoomController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
+		data, erp := AuthenticateToken(s.Ctx, c)
+		if erp != nil {
+			fidx := "controller:AuthenticateToken"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
 			data["PageTitle"] = "Inventory Management"
 			return c.Render(http.StatusInternalServerError, ERRORTPL, data)
 		}
 		data["PageTitle"] = "Inventory Management"
 		if token, ok := data["Token"].(string); ok {
-			claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
+			if token != "" {
+				//do something
 			}
-			user, err := acl.GetUser(s.Ctx, claims)
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.Render(http.StatusInternalServerError, "error.tpl.html", err.Error())
-			}
-			data["User"] = user
 		}
 		data["PageTitle"] = "Inventory Management"
 		return c.Render(http.StatusOK, "content.location.edit.tpl.html", data)
@@ -122,26 +113,24 @@ func (s RoomController) PostApiCreate() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:room.go:RoomController:PostApiCreate")
 		}
-		s.Error.Function = "PostApiCreate"
-		s.Error.RequestUri = c.Request().RequestURI
-		data, err := authenticateToken(s.Ctx, c)
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
-			data["error"] = err.Error()
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "room.go", "controller", "PostApiCreate", "RoomController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
+		data, erp := AuthenticateToken(s.Ctx, c)
+		if erp != nil {
+			fidx := "controller:AuthenticateToken"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		if token, ok := data["Token"].(string); ok {
-			claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
+			if token != "" {
+				//do something
 			}
-			user, err := acl.GetUser(s.Ctx, claims)
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			data["User"] = user
 		}
 		return c.JSON(http.StatusOK, data)
 	}
@@ -152,37 +141,39 @@ func (s RoomController) PostApiEdit() echo.HandlerFunc {
 		if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			s.Ctx = v(s.Ctx, ckey, "controllers:room.go:RoomController:PostApiEdit")
 		}
-		s.Error.Function = "PostApiEdit"
-		s.Error.RequestUri = c.Request().RequestURI
-		data, err := authenticateToken(s.Ctx, c)
-		if err != nil {
-			s.Error.Err(s.Ctx, err)
-			data["error"] = err.Error()
+
+		var idx string
+		s.Errors, idx = errors.Error{}.New(s.Ctx, "room.go", "controller", "PostApiEdit", "RoomController")
+		er := s.Errors[idx]
+		er.RequestUri = c.Request().RequestURI
+		s.Errors[idx] = er
+
+		data, erp := authenticateToken(s.Ctx, c)
+		if erp != nil {
+			fidx := "controller:AuthenticateToken"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			data["error"] = s.Errors[fidx].Error()
 			return c.JSON(http.StatusInternalServerError, data)
 		}
 		if token, ok := data["Token"].(string); ok {
-			claims, err := acl.DecodeJWT(s.Ctx, token, []byte("secret"))
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
+			if token != "" {
+				//do something
 			}
-			user, err := acl.GetUser(s.Ctx, claims)
-			if err != nil {
-				s.Error.Err(s.Ctx, err)
-				return c.JSON(http.StatusInternalServerError, err.Error())
-			}
-			data["User"] = user
 		}
 		return c.JSON(http.StatusOK, data)
 	}
 }
 
 func (s RoomController) RegisterResources(e *echo.Echo) *map[string]errors.Error {
-
 	if v, ok := s.Ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		s.Ctx = v(s.Ctx, ckey, "controllers:room.go:RoomController:RegisterResources")
 	}
-	s.Error.Function = "GetCreate"
+
+	var idx string
+	s.Errors, idx = errors.Error{}.New(s.Ctx, "room.go", "controller", "Get", "RoomController")
+	er := s.Errors[idx]
+	s.Errors[idx] = er
+
 	view := e.Group("/content/room")
 	api := e.Group("/api/content/room")
 
@@ -220,25 +211,33 @@ func (s RoomController) RegisterResources(e *echo.Echo) *map[string]errors.Error
 	resources = append(resources, res)
 	params := acl.Role{}
 	params.Attributes.Name = "admin"
-	adminRolePtr, err := acl.GetRole(s.Ctx, params)
-	if err != nil {
-		return s.Error.Err(s.Ctx, err)
+	adminRolePtr, erp := acl.GetRole(s.Ctx, params)
+	if erp != nil {
+		fidx := "acl:GetRole"
+		errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+		return &s.Errors
 	}
 	var adminRole acl.Role
 	if adminRolePtr != nil {
 		adminRole = *adminRolePtr
-		err = UpdateRole(s.Ctx, adminRole.Attributes.Id, resources)
-		if err != nil {
-			return s.Error.Err(s.Ctx, err)
+		erp = UpdateRole(s.Ctx, adminRole.Attributes.Id, resources)
+		if erp != nil {
+			fidx := "controller:UpdateRole"
+			errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+			return &s.Errors
 		}
 	}
-	err = UpdateResources(s.Ctx, resources)
-	if err != nil {
-		return s.Error.Err(s.Ctx, err)
+	erp = UpdateResources(s.Ctx, resources)
+	if erp != nil {
+		fidx := "controller:UpdateResources"
+		errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+		return &s.Errors
 	}
-	err = UpdatePolicy(s.Ctx, "admin", resources)
-	if err != nil {
-		return s.Error.Err(s.Ctx, err)
+	erp = UpdatePolicy(s.Ctx, "admin", resources)
+	if erp != nil {
+		fidx := "controller:UpdatePolicy"
+		errors.CreateErrorEntry(s.Ctx, idx, fidx, erp, nil, &s.Errors)
+		return &s.Errors
 	}
 	return nil
 }
