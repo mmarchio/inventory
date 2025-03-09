@@ -47,7 +47,7 @@ func (c Error) Err(ctx context.Context, e error) error {
         ctx = v(ctx, ckey, "errors:errors.go:Err")
 		c.GetCtxTrace(ctx)
     }
-	if c.Wrapper != nil {
+	if e != nil {
 		c.Wrapper = e
 		c.Message = c.Wrapper.Error()
 		if v, ok := ctx.Value(ckey).([]string); ok {
