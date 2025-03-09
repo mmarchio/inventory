@@ -12,28 +12,28 @@ import (
 )
 
 type IContent interface {
-	ToContent(context.Context) (*Content, error)
+	ToContent(context.Context) (*Content, *map[string]errors.Error)
 }
 
 type Content struct {
 	Attributes
 	Content []byte `json:"content"`
-	Errors map[string]errors.Error
+	Errors  map[string]errors.Error
 }
 
 func (c Content) Create(ctx context.Context, object IContent) *map[string]errors.Error {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:Create")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:Create")
+	}
 	if c.Errors == nil {
 		ce := make(map[string]errors.Error)
 		c.Errors = ce
 	}
 	e := errors.Error{
-		File: "content.go",
-		Package: "types",
+		File:     "content.go",
+		Package:  "types",
 		Function: "Create",
-		Struct: "Content",
+		Struct:   "Content",
 	}
 	c.Errors["content:Create"] = e
 
@@ -85,7 +85,7 @@ func (c Content) Create(ctx context.Context, object IContent) *map[string]errors
 	_, err = pg.Tx.Conn().Exec(
 		pg.Ctx,
 		q,
-		values...
+		values...,
 	)
 	if err != nil {
 		c.Errors["content:Create"].Err(ctx, err)
@@ -101,20 +101,20 @@ func (c Content) Create(ctx context.Context, object IContent) *map[string]errors
 }
 
 func (c Content) Columns(ctx context.Context) string {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:Columns")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:Columns")
+	}
 	cols := []string{"id", "parent_id", "root_id", "created_at", "updated_at", "created_by", "owned", "name", "content_type", "content"}
 	return fmt.Sprintf("%s", strings.Join(cols, ", "))
 }
 
 func (c Content) Values(ctx context.Context) []interface{} {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:Values")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:Values")
+	}
 	vals := []interface{}{
-		c.Attributes.Id, 
-		c.Attributes.ParentId, 
+		c.Attributes.Id,
+		c.Attributes.ParentId,
 		c.Attributes.RootId,
 		c.Attributes.CreatedAt.Unix(),
 		c.Attributes.UpdatedAt.Unix(),
@@ -128,12 +128,12 @@ func (c Content) Values(ctx context.Context) []interface{} {
 }
 
 func (c Content) StringValues(ctx context.Context) []string {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:Values")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:Values")
+	}
 	vals := []string{
-		c.Attributes.Id, 
-		c.Attributes.ParentId, 
+		c.Attributes.Id,
+		c.Attributes.ParentId,
 		c.Attributes.RootId,
 		c.Attributes.CreatedAt.Format(FORMAT),
 		c.Attributes.UpdatedAt.Format(FORMAT),
@@ -147,9 +147,9 @@ func (c Content) StringValues(ctx context.Context) []string {
 }
 
 func (c Content) CreateMany(ctx context.Context, objects []Content) *map[string]errors.Error {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:CreateMany")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:CreateMany")
+	}
 	pg := db.PostgresClient{
 		Ctx: ctx,
 	}
@@ -157,13 +157,13 @@ func (c Content) CreateMany(ctx context.Context, objects []Content) *map[string]
 	if c.Errors == nil {
 		ce := make(map[string]errors.Error)
 		e := errors.Error{
-			File: "content.go",
-			Package: "types",
+			File:     "content.go",
+			Package:  "types",
 			Function: "CreateMany",
-			Struct: "Content",
+			Struct:   "Content",
 		}
 		e.GetCtxTrace(ctx)
-		ce["content:CreateMany"] = e			
+		ce["content:CreateMany"] = e
 		c.Errors = ce
 
 	}
@@ -228,9 +228,9 @@ func (c Content) ScanRow(rows pgx.Rows) error {
 }
 
 func (c Content) Read(ctx context.Context, id string) (*Content, *map[string]errors.Error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:Read")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:Read")
+	}
 	pg := db.PostgresClient{
 		Ctx: ctx,
 	}
@@ -238,13 +238,13 @@ func (c Content) Read(ctx context.Context, id string) (*Content, *map[string]err
 	if c.Errors == nil {
 		ce := make(map[string]errors.Error)
 		e := errors.Error{
-			File: "content.go",
-			Package: "types",
+			File:     "content.go",
+			Package:  "types",
 			Function: "Read",
-			Struct: "Content",
+			Struct:   "Content",
 		}
 		e.GetCtxTrace(ctx)
-		ce["content:Read"] = e			
+		ce["content:Read"] = e
 		c.Errors = ce
 	}
 
@@ -276,19 +276,19 @@ func (c Content) Read(ctx context.Context, id string) (*Content, *map[string]err
 }
 
 func (c Content) FindAll(ctx context.Context, t string) ([]Content, *map[string]errors.Error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:FindAll")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:FindAll")
+	}
 	if c.Errors == nil {
 		ce := make(map[string]errors.Error)
 		e := errors.Error{
-			File: "content.go",
-			Package: "types",
+			File:     "content.go",
+			Package:  "types",
 			Function: "FindAll",
-			Struct: "Content",
+			Struct:   "Content",
 		}
 		e.GetCtxTrace(ctx)
-		ce["content:FindAll"] = e			
+		ce["content:FindAll"] = e
 		c.Errors = ce
 
 	}
@@ -332,24 +332,24 @@ func (c Content) FindAll(ctx context.Context, t string) ([]Content, *map[string]
 func debugBytes(b [][]byte) {
 	for i, v := range b {
 		fmt.Printf("\nrow %d: %s\n", i, string(v))
-	} 
+	}
 }
 
 func (c Content) FindBy(ctx context.Context, jstring string) (*Content, *map[string]errors.Error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:FindBy")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:FindBy")
+	}
 
 	if c.Errors == nil {
 		ce := make(map[string]errors.Error)
 		e := errors.Error{
-			File: "content.go",
-			Package: "types",
+			File:     "content.go",
+			Package:  "types",
 			Function: "SelectIn",
-			Struct: "Content",
+			Struct:   "Content",
 		}
 		e.GetCtxTrace(ctx)
-		ce["content:SelectIn"] = e			
+		ce["content:SelectIn"] = e
 		c.Errors = ce
 	}
 
@@ -380,20 +380,20 @@ func (c Content) FindBy(ctx context.Context, jstring string) (*Content, *map[str
 }
 
 func (c Content) SelectIn(ctx context.Context, ids []string) ([]*Content, *map[string]errors.Error) {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:SelectIn")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:SelectIn")
+	}
 
 	if c.Errors == nil {
 		ce := make(map[string]errors.Error)
 		e := errors.Error{
-			File: "content.go",
-			Package: "types",
+			File:     "content.go",
+			Package:  "types",
 			Function: "SelectIn",
-			Struct: "Content",
+			Struct:   "Content",
 		}
 		e.GetCtxTrace(ctx)
-		ce["content:SelectIn"] = e			
+		ce["content:SelectIn"] = e
 		c.Errors = ce
 	}
 
@@ -430,20 +430,20 @@ func (c Content) SelectIn(ctx context.Context, ids []string) ([]*Content, *map[s
 }
 
 func (c Content) Update(ctx context.Context, object IContent) *map[string]errors.Error {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:Update")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:Update")
+	}
 
 	if c.Errors == nil {
 		ce := make(map[string]errors.Error)
 		e := errors.Error{
-			File: "content.go",
-			Package: "types",
+			File:     "content.go",
+			Package:  "types",
 			Function: "Update",
-			Struct: "Content",
+			Struct:   "Content",
 		}
 		e.GetCtxTrace(ctx)
-		ce["content:Update"] = e			
+		ce["content:Update"] = e
 		c.Errors = ce
 	}
 
@@ -481,20 +481,20 @@ func (c Content) Update(ctx context.Context, object IContent) *map[string]errors
 }
 
 func (c Content) Delete(ctx context.Context, id string) *map[string]errors.Error {
-    if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-        ctx = v(ctx, ckey, "types:content.go:Content:Delete")
-    }
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "types:content.go:Content:Delete")
+	}
 
 	if c.Errors == nil {
 		ce := make(map[string]errors.Error)
 		e := errors.Error{
-			File: "content.go",
-			Package: "types",
+			File:     "content.go",
+			Package:  "types",
 			Function: "Delete",
-			Struct: "Content",
+			Struct:   "Content",
 		}
 		e.GetCtxTrace(ctx)
-		ce["content:Delete"] = e			
+		ce["content:Delete"] = e
 		c.Errors = ce
 	}
 

@@ -23,7 +23,8 @@ type Attributes struct {
 	ContentType string    `json:"contentType" db:"content_type"`
 }
 
-func (c Attributes) New(ctx context.Context) (*Attributes, error) {
+func (c Attributes) New(ctx context.Context) (*Attributes, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:attributes.go:Attributes:New")
 	}
@@ -123,7 +124,8 @@ func (c *Attributes) MSIHydrate(ctx context.Context, msi map[string]interface{})
 	return nil
 }
 
-func (c Attributes) Merge(ctx context.Context, oldInput, newInput interface{}) (*Attributes, error) {
+func (c Attributes) Merge(ctx context.Context, oldInput, newInput interface{}) (*Attributes, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:attributes.go:Attributes:Merge")
 	}

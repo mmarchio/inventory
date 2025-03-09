@@ -12,7 +12,8 @@ type Item struct {
 	UOMS       string     `json:"oums"`
 }
 
-func NewItem(ctx context.Context, createdBy *User) (*Item, error) {
+func NewItem(ctx context.Context, createdBy *User) (*Item, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:item.go:NewItem")
     }
@@ -31,7 +32,8 @@ func (c Item) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Item) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Item) ToMSI(ctx context.Context) (map[string]interface{}, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:item.go:Item:ToMSI")
     }
@@ -43,7 +45,8 @@ func (c Item) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func (c Item) Hydrate(ctx context.Context, msi map[string]interface{}) (*Item, error) {
+func (c Item) Hydrate(ctx context.Context, msi map[string]interface{}) (*Item, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:item.go:Item:Hydrate")
     }
@@ -81,7 +84,8 @@ func (c Items) In(ctx context.Context, id string) bool {
 	return false
 }
 
-func (c Items) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Items, error) {
+func (c Items) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Items, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:item.go:Items:Hydrate")
     }

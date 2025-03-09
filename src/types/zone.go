@@ -11,7 +11,8 @@ type Zone struct {
 	Containers Containers `json:"containers"`
 }
 
-func NewZone(ctx context.Context, createdBy *User) (*Zone, error) {
+func NewZone(ctx context.Context, createdBy *User) (*Zone, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:zone.go:NewZone")
     }
@@ -30,7 +31,8 @@ func (c Zone) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Zone) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Zone) ToMSI(ctx context.Context) (map[string]interface{}, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:zone.go:Zone:ToMSI")
     }
@@ -43,7 +45,8 @@ func (c Zone) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func (c Zone) Hydrate(ctx context.Context, msi map[string]interface{}) (*Zone, error) {
+func (c Zone) Hydrate(ctx context.Context, msi map[string]interface{}) (*Zone, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:zone.go:Zone:Hydrate")
     }
@@ -71,7 +74,8 @@ func (c Zone) Hydrate(ctx context.Context, msi map[string]interface{}) (*Zone, e
 
 type Zones []Zone
 
-func (c Zones) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Zones, error) {
+func (c Zones) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Zones, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:zone.go:Zones:Hydrate")
     }

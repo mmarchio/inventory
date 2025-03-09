@@ -15,10 +15,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-
-type IDocument interface{
+type IDocument interface {
 	IsDocument() bool
-	ToMSI() (map[string]interface{}, error)
+	ToMSI() (map[string]interface{}, *map[string]errors.Error)
 }
 
 func ACL(next echo.HandlerFunc) echo.HandlerFunc {
@@ -29,8 +28,8 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		e := errors.Error{
 			RequestUri: c.Request().RequestURI,
-			Package: "acl",
-			Function: "ACL",
+			Package:    "acl",
+			Function:   "ACL",
 		}
 		if err := next(c); err != nil {
 			e.Err(ctx, err)
@@ -89,22 +88,24 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims, error) {
+func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:middleware.go:DecodeJWT")
 	}
 	e := errors.Error{
-		Package: "acl",
+		Package:  "acl",
 		Function: "DecodeJWT",
 	}
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-	// Verify the signing method
-	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-		err2 := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		e.Err(ctx, err2)
-		return nil, err2
-	}
-	return secretKey, nil
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{},*map[string]errors.Error)
+ {
+		// Verify the signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			err2 := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			e.Err(ctx, err2)
+			return nil, err2
+		}
+		return secretKey, nil
 	})
 
 	if err != nil {
@@ -122,12 +123,13 @@ func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.M
 	return nil, err
 }
 
-func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User, error) {
+func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:middleware.go:GetUser")
 	}
 	e := errors.Error{
-		Package: "acl",
+		Package:  "acl",
 		Function: "GetUser",
 	}
 	b, err := json.Marshal(claims)
@@ -157,12 +159,13 @@ func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User, error) {
 	return userPtr, nil
 }
 
-func getResourcePolicy(ctx context.Context, u types.User, resource string) (*Policy, error) {
+func getResourcePolicy(ctx context.Context, u types.User, resource string) (*Policy,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:middleware.go:getResourcePolicy")
 	}
 	e := errors.Error{
-		Package: "acl",
+		Package:  "acl",
 		Function: "GetBearerToken",
 	}
 	policiesPtr, err := Policies{}.FindPolicies(ctx)
@@ -187,7 +190,7 @@ func getResourcePolicy(ctx context.Context, u types.User, resource string) (*Pol
 }
 
 func skipper(c echo.Context) bool {
-	pattern := regexp.QuoteMeta(".js")+"|"+regexp.QuoteMeta(".css")+"|"+regexp.QuoteMeta("logout")+"|"+regexp.QuoteMeta("login")
+	pattern := regexp.QuoteMeta(".js") + "|" + regexp.QuoteMeta(".css") + "|" + regexp.QuoteMeta("logout") + "|" + regexp.QuoteMeta("login")
 	r := regexp.MustCompile(pattern)
 	if c.Request().URL.Path == "" || c.Request().URL.Path == "/" || r.Match([]byte(c.Request().URL.Path)) {
 		return true
@@ -195,12 +198,13 @@ func skipper(c echo.Context) bool {
 	return false
 }
 
-func GetUsableClaims(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
+func GetUsableClaims(ctx context.Context, c echo.Context) (*map[string]interface{},*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:middleware.go:GetUsableClaims")
 	}
 	e := errors.Error{
-		Package: "acl",
+		Package:  "acl",
 		Function: "GetUsableClaims",
 	}
 	token, err := GetBearerToken(ctx, c)
@@ -241,12 +245,13 @@ func pathToResource(ctx context.Context, url string) string {
 	return s
 }
 
-func PermissionsHandler(ctx context.Context, c echo.Context, p Policy) (bool, error) {
+func PermissionsHandler(ctx context.Context, c echo.Context, p Policy) (bool,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:middleware.go:PermissionsHandler")
 	}
 	e := errors.Error{
-		Package: "acl",
+		Package:  "acl",
 		Function: "GetBearerToken",
 	}
 	userPtr, err := GetUserFromContext(ctx, c)

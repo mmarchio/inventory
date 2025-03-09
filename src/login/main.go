@@ -39,7 +39,8 @@ type Credentials struct {
 	Password string `json:"password"`
 }
 
-func (c Credentials) New(ctx context.Context) (*Credentials, error) {
+func (c Credentials) New(ctx context.Context) (*Credentials,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "login:login.go:Credentials:New")
 	}
@@ -60,7 +61,8 @@ func (c Credentials) New(ctx context.Context) (*Credentials, error) {
 	return &credentials, nil
 }
 
-func (c Credentials) ToContent(ctx context.Context) (*types.Content, error) {
+func (c Credentials) ToContent(ctx context.Context) (*types.Content,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "login:login.go:Credentials:ToContent")
 	}
@@ -76,7 +78,8 @@ func (c Credentials) ToContent(ctx context.Context) (*types.Content, error) {
 	return &content, nil
 }
 
-func (c Credentials) PGRead(ctx context.Context) (*Credentials, error) {
+func (c Credentials) PGRead(ctx context.Context) (*Credentials,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "login:login.go:Credentials:PGRead")
 	}
@@ -155,7 +158,8 @@ func (c Credentials) PGDelete(ctx context.Context) *map[string]errors.Error {
 	return nil
 }
 
-func (c Credentials) FindBy(ctx context.Context, jstring string) (*Credentials, error) {
+func (c Credentials) FindBy(ctx context.Context, jstring string) (*Credentials,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "login:login.go:Credentials:FindBy")
 	}
@@ -180,7 +184,8 @@ func (c Credentials) FindBy(ctx context.Context, jstring string) (*Credentials, 
 	return &credentials, nil
 }
 
-func (c Credentials) MSIHydrate(ctx context.Context, msi map[string]interface{}) (Credentials, error) {
+func (c Credentials) MSIHydrate(ctx context.Context, msi map[string]interface{}) (Credentials,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "login:login.go:Credentials:MSIHydrate")
 	}
@@ -194,7 +199,8 @@ func (c Credentials) MSIHydrate(ctx context.Context, msi map[string]interface{})
 	return r, nil
 }
 
-func (c Credentials) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Credentials) ToMSI(ctx context.Context) (map[string]interface{},*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "login:login.go:Credentials:ToMSI")
 	}
@@ -225,7 +231,8 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-func Login(ctx context.Context, username, userValue, dbValue string) (*http.Cookie, error) {
+func Login(ctx context.Context, username, userValue, dbValue string) (*http.Cookie,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "login:login.go:Login")
 	}
@@ -279,7 +286,8 @@ func Login(ctx context.Context, username, userValue, dbValue string) (*http.Cook
 	return r, nil
 }
 
-func ExtendToken(ctx context.Context, tokenString string, secret []byte) (*string, error) {
+func ExtendToken(ctx context.Context, tokenString string, secret []byte) (*string,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "login:login.go:ExtendToken")
 	}
@@ -334,7 +342,8 @@ func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	tokenStr := cookie.Value
 	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{},*map[string]errors.Error)
+ {
 		return jwtKey, nil
 	})
 	if err != nil {
@@ -387,7 +396,8 @@ func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userInfo)
 }
 
-func HashPassword(password string) (string, error) {
+func HashPassword(password string) (string,*map[string]errors.Error)
+ {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
 }
@@ -401,8 +411,10 @@ func VerifyPassword(password, hash string) bool {
 	return err == nil
 }
 
-func decodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+func decodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims, *map[string]errors.Error)
+ {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, *map[string]errors.Error)
+ {
 		// Verify the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

@@ -21,11 +21,13 @@ var ukey util.CtxKey = "updateCtx"
 
 type IDocument interface {
 	IsDocument() bool
-	ToMSI() (map[string]interface{}, error)
+	ToMSI() (map[string]interface{}, *map[string]errors.Error)
+
 	Hydrate(map[string]interface{}) error
 }
 
-func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
+func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{},*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "controllers:common.go:GetRequestData")
 	}
@@ -39,7 +41,8 @@ func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{
 	return &body, nil
 }
 
-func authenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error) {
+func authenticateToken(ctx context.Context, c echo.Context) (map[string]interface{},*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "controllers:common.go:authenticateToken")
 	}
@@ -74,7 +77,8 @@ func authenticateToken(ctx context.Context, c echo.Context) (map[string]interfac
 	return data, nil
 }
 
-func CreatePolicy(ctx context.Context, resource, role, permission string) (*acl.Policy, error) {
+func CreatePolicy(ctx context.Context, resource, role, permission string) (*acl.Policy,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "controllers:common.go:CreatePolicy")
 	}
@@ -219,7 +223,8 @@ func UpdateResources(ctx context.Context, resources acl.Resources) *map[string]e
 	return nil
 }
 
-func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
+func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "controllers:common.go:GetContentIdFromUrl")
 	}
@@ -236,7 +241,8 @@ func GetContentIdFromUrl(ctx context.Context, c echo.Context) (string, error) {
 	return "", err
 }
 
-func AuthenticateToken(ctx context.Context, c echo.Context) (map[string]interface{}, error) {
+func AuthenticateToken(ctx context.Context, c echo.Context) (map[string]interface{},*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "controllers:common.go:AuthenticateToken")
 	}

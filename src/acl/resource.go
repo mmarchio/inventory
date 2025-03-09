@@ -17,7 +17,8 @@ type Resource struct {
 	URL string `json:"url"`
 }
 
-func (c Resource) New(ctx context.Context) (*Resource, error) {
+func (c Resource) New(ctx context.Context) (*Resource,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		_ = v(ctx, ckey, "acl:resource.go:Resource:New")
 	}
@@ -26,7 +27,8 @@ func (c Resource) New(ctx context.Context) (*Resource, error) {
 	return &resource, nil
 }
 
-func (c Resource) ToContent(ctx context.Context) (*types.Content, error) {
+func (c Resource) ToContent(ctx context.Context) (*types.Content,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:resource.go:Resource:ToContent")
 	}
@@ -43,7 +45,8 @@ func (c Resource) ToContent(ctx context.Context) (*types.Content, error) {
 	return &content, nil
 }
 
-func (c Resource) PGRead(ctx context.Context) (*Resource, error) {
+func (c Resource) PGRead(ctx context.Context) (*Resource,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:resource.go:Resource:PGRead")
 	}
@@ -117,7 +120,8 @@ func (c Resource) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Resource) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Resource) ToMSI(ctx context.Context) (map[string]interface{},*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:resource.go:Resource:ToMSI")
 	}
@@ -157,7 +161,8 @@ func (c Resources) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Resources) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Resources) ToMSI(ctx context.Context) (map[string]interface{},*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:resource.go:Resources:ToMSI")
 	}
@@ -176,7 +181,8 @@ func (c Resources) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return r, nil
 }
 
-func FindResources(ctx context.Context) (*Resources, error) {
+func FindResources(ctx context.Context) (*Resources,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:resource.go:FindResources")
 	}

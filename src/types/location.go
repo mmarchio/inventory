@@ -170,7 +170,8 @@ func (c Location) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Location) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Location) ToMSI(ctx context.Context) (map[string]interface{}, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:location.go:Location:ToMSI")
 	}
@@ -183,7 +184,8 @@ func (c Location) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user User) (*Location, error) {
+func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user User) (*Location, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:location.go:Location:Hydrate")
 	}
@@ -230,7 +232,8 @@ func (c Location) Hydrate(ctx context.Context, msi map[string]interface{}, user 
 	return &r, nil
 }
 
-func (c Location) HydrateFromRequest(ctx context.Context, e echo.Context, user User) (*Location, error) {
+func (c Location) HydrateFromRequest(ctx context.Context, e echo.Context, user User) (*Location, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:location.go:Location:HydrateFromRequest")
 	}
@@ -259,7 +262,8 @@ func (c Location) HydrateFromRequest(ctx context.Context, e echo.Context, user U
 	return locationPtr, nil
 }
 
-func (c Location) Load(ctx context.Context, e echo.Context, user User) (*Location, error) {
+func (c Location) Load(ctx context.Context, e echo.Context, user User) (*Location, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:location.go:Location:Load")
 	}
@@ -289,7 +293,8 @@ func (c Location) Load(ctx context.Context, e echo.Context, user User) (*Locatio
 	return &location, nil
 }
 
-func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, user User) (*Location, error) {
+func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, user User) (*Location, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:location.go:Location:Merge")
 	}
@@ -345,7 +350,8 @@ func (c Location) Merge(ctx context.Context, oldInput, newInput interface{}, use
 	return &c, nil
 }
 
-func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{}, error) {
+func GetRequestData(ctx context.Context, c echo.Context) (*map[string]interface{}, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:location.go:GetRequestData")
 	}
@@ -401,7 +407,8 @@ func (c Locations) FindAll(ctx context.Context) (*Locations, *errors.Error) {
 	return &locations, nil
 }
 
-func (c Locations) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Locations) ToMSI(ctx context.Context) (map[string]interface{}, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:location.go:Locations:ToMSI")
 	}
@@ -414,7 +421,8 @@ func (c Locations) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func (c Locations) Hydrate(ctx context.Context, msi []map[string]interface{}, user User) (*Locations, error) {
+func (c Locations) Hydrate(ctx context.Context, msi []map[string]interface{}, user User) (*Locations, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:location.go:Locations:Hydrate")
 	}
@@ -446,7 +454,8 @@ func (c Locations) In(ctx context.Context, id string) bool {
 	return false
 }
 
-func GetLocations(ctx context.Context) (*Locations, error) {
+func GetLocations(ctx context.Context) (*Locations, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:location.go:Locations:GetLocations")
 	}

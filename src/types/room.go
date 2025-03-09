@@ -30,7 +30,8 @@ func (c Room) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Room) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Room) ToMSI(ctx context.Context) (map[string]interface{}, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:room.go:room:ToMSI")
     }
@@ -43,7 +44,8 @@ func (c Room) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func (c Room) Hydrate(ctx context.Context, msi map[string]interface{}) (*Room, error) {
+func (c Room) Hydrate(ctx context.Context, msi map[string]interface{}) (*Room, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:room.go:room:Hydrate")
     }
@@ -85,7 +87,8 @@ func (c Rooms) In(ctx context.Context, id string) bool {
 	return false
 }
 
-func (c Rooms) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Rooms, error) {
+func (c Rooms) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Rooms, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:room.go:room:Hydrate")
     }

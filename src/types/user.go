@@ -26,7 +26,8 @@ type User struct {
 	Token       string
 }
 
-func (c User) New(ctx context.Context) (*User, error) {
+func (c User) New(ctx context.Context) (*User, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:user:New")
 	}
@@ -47,7 +48,8 @@ func (c User) New(ctx context.Context) (*User, error) {
 	return &user, nil
 }
 
-func (c User) ToContent(ctx context.Context) (*Content, error) {
+func (c User) ToContent(ctx context.Context) (*Content, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:user:ToContent")
 	}
@@ -63,7 +65,8 @@ func (c User) ToContent(ctx context.Context) (*Content, error) {
 	return &content, nil
 }
 
-func (c User) Merge(ctx context.Context, old, new User) (*User, error) {
+func (c User) Merge(ctx context.Context, old, new User) (*User, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:user:Merge")
 	}
@@ -103,7 +106,8 @@ func (c User) Merge(ctx context.Context, old, new User) (*User, error) {
 	return &new, nil
 }
 
-func (c User) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c User) ToMSI(ctx context.Context) (map[string]interface{}, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:user:ToMSI")
 	}
@@ -125,7 +129,8 @@ func (c Users) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Users) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Users) ToMSI(ctx context.Context) (map[string]interface{}, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:users:ToMSI")
 	}
@@ -147,7 +152,8 @@ func NewUser(ctx context.Context) *User {
 	return &u
 }
 
-func (c User) Hydrate(ctx context.Context, msi map[string]interface{}) (*User, error) {
+func (c User) Hydrate(ctx context.Context, msi map[string]interface{}) (*User, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:user:Hydrate")
 	}
@@ -197,7 +203,8 @@ func (c User) Hydrate(ctx context.Context, msi map[string]interface{}) (*User, e
 	return &u, nil
 }
 
-func GetUser(ctx context.Context, id string) (*User, error) {
+func GetUser(ctx context.Context, id string) (*User, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:GetUser")
 	}
@@ -220,7 +227,8 @@ func GetUser(ctx context.Context, id string) (*User, error) {
 	return nil, err
 }
 
-func (c User) FindBy(ctx context.Context, jstring string) (*User, error) {
+func (c User) FindBy(ctx context.Context, jstring string) (*User, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:user:FindBy")
 	}
@@ -257,7 +265,8 @@ func (c Users) In(ctx context.Context, id string) bool {
 	return false
 }
 
-func (c Users) FindAll(ctx context.Context) (*Users, error) {
+func (c Users) FindAll(ctx context.Context) (*Users, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:users:FindAll")
 	}
@@ -281,7 +290,8 @@ func (c Users) FindAll(ctx context.Context) (*Users, error) {
 	return &users, nil
 }
 
-func GetUsers(ctx context.Context) (*Users, error) {
+func GetUsers(ctx context.Context) (*Users, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:GetUsers")
 	}
@@ -294,7 +304,8 @@ func GetUsers(ctx context.Context) (*Users, error) {
 	return u, nil
 }
 
-func (i User) MarshalBinary(ctx context.Context) ([]byte, error) {
+func (i User) MarshalBinary(ctx context.Context) ([]byte, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:user:MarshalBinary")
 	}
@@ -326,7 +337,8 @@ func (c User) HasRole(ctx context.Context, role string) bool {
 	return false
 }
 
-func (c User) PGHydrate(ctx context.Context, content Content) (*User, error) {
+func (c User) PGHydrate(ctx context.Context, content Content) (*User, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:user:PGHydrate")
 	}
@@ -348,7 +360,8 @@ func (c User) PGHydrate(ctx context.Context, content Content) (*User, error) {
 	return &user, nil
 }
 
-func (c User) PGRead(ctx context.Context, id string) (*User, error) {
+func (c User) PGRead(ctx context.Context, id string) (*User, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:user:PGRead")
 	}
@@ -481,7 +494,8 @@ func (c User) Values(ctx context.Context) []interface{} {
 	return values
 }
 
-func UserPGRead(ctx context.Context, id string) (*User, error) {
+func UserPGRead(ctx context.Context, id string) (*User, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "types:user.go:user:UserPGRead")
 	}

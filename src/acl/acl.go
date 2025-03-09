@@ -22,7 +22,9 @@ type Permission struct {
 
 type Permissions []Permission
 
-func FindPermissions(ctx context.Context) (*Permissions, error) {
+func FindPermissions(ctx context.Context) (*Permissions, *map[string]errors.Error)
+
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl.go:FindPermissions")
 	}
@@ -48,7 +50,8 @@ func FindPermissions(ctx context.Context) (*Permissions, error) {
 	return &r, nil
 }
 
-func GetBearerToken(ctx context.Context, c echo.Context) (string, error) {
+func GetBearerToken(ctx context.Context, c echo.Context) (string, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl.go:FindPermissions")
 	}
@@ -71,7 +74,8 @@ func GetBearerToken(ctx context.Context, c echo.Context) (string, error) {
 	return parts[1], nil
 }
 
-func GetUserFromContext(ctx context.Context, c echo.Context) (*types.User, error) {
+func GetUserFromContext(ctx context.Context, c echo.Context) (*types.User, *map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:acl.go:GetUserFromContext")
 	}

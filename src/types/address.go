@@ -17,7 +17,8 @@ type Address struct {
 	Country  string `json:"country"`
 }
 
-func NewAddress(ctx context.Context, createdBy *User) (*Address, error) {
+func NewAddress(ctx context.Context, createdBy *User) (*Address, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:address.go:NewAddress")
     }
@@ -29,7 +30,8 @@ func NewAddress(ctx context.Context, createdBy *User) (*Address, error) {
 	return &address, nil
 }
 
-func (c Address) Merge(ctx context.Context, oldInput, newInput interface{}) (*Address, error) {
+func (c Address) Merge(ctx context.Context, oldInput, newInput interface{}) (*Address, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:address.go:Address:Merge")
     }
@@ -101,7 +103,8 @@ func (c Address) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Address) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Address) ToMSI(ctx context.Context) (map[string]interface{}, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:address.go:Address:ToMSI")
     }
@@ -114,7 +117,8 @@ func (c Address) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func (c Address) Hydrate(ctx context.Context, msi map[string]interface{}) (*Address, error) {
+func (c Address) Hydrate(ctx context.Context, msi map[string]interface{}) (*Address, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "types:address.go:Address:Hydrate")
     }

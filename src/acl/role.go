@@ -15,7 +15,8 @@ type Role struct {
 	DefaultPermisison string   `json:"defaultPermission"`
 }
 
-func (c Role) New(ctx context.Context) (*Role, error) {
+func (c Role) New(ctx context.Context) (*Role,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:role:new")
 	}
@@ -35,7 +36,8 @@ func (c Role) New(ctx context.Context) (*Role, error) {
 	return &role, nil
 }
 
-func (c Role) ToContent(ctx context.Context) (*types.Content, error) {
+func (c Role) ToContent(ctx context.Context) (*types.Content,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:role:ToContent")
 	}
@@ -51,7 +53,8 @@ func (c Role) ToContent(ctx context.Context) (*types.Content, error) {
 	return &content, nil
 }
 
-func (c Role) PGRead(ctx context.Context) (*Role, error) {
+func (c Role) PGRead(ctx context.Context) (*Role,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:role:PGRead")
 	}
@@ -136,7 +139,8 @@ func (c Role) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Role) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Role) ToMSI(ctx context.Context) (map[string]interface{},*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:role:ToMSI")
 	}
@@ -155,7 +159,8 @@ func (c Role) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return r, nil
 }
 
-func GetRole(ctx context.Context, params Role) (*Role, error) {
+func GetRole(ctx context.Context, params Role) (*Role,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:GetRole")
 	}
@@ -180,7 +185,8 @@ func GetRole(ctx context.Context, params Role) (*Role, error) {
 	return nil, err
 }
 
-func GetRoles(ctx context.Context) (*Roles, error) {
+func GetRoles(ctx context.Context) (*Roles,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:GetRoles")
 	}
@@ -223,7 +229,8 @@ func (c Roles) In(ctx context.Context, id string) bool {
 	return false
 }
 
-func FindRoles(ctx context.Context) (*Roles, error) {
+func FindRoles(ctx context.Context) (*Roles,*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:Roles:FindRoles")
 	}
@@ -252,7 +259,8 @@ func (c Roles) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Roles) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Roles) ToMSI(ctx context.Context) (map[string]interface{},*map[string]errors.Error)
+ {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:role.go:Roles:ToMSI")
 	}

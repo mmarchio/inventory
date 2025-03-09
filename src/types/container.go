@@ -11,7 +11,8 @@ type Container struct {
 	Items      Items      `json:"items"`
 }
 
-func NewContainer(ctx context.Context, createdBy *User) (*Container, error) {
+func NewContainer(ctx context.Context, createdBy *User) (*Container, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:NewContainer")
     }
@@ -30,7 +31,8 @@ func (c Container) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Container) ToMSI(ctx context.Context) (map[string]interface{}, error) {
+func (c Container) ToMSI(ctx context.Context) (map[string]interface{}, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Container:ToMSI")
     }
@@ -43,7 +45,8 @@ func (c Container) ToMSI(ctx context.Context) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func (c Container) Hydrate(ctx context.Context, msi map[string]interface{}) (*Container, error) {
+func (c Container) Hydrate(ctx context.Context, msi map[string]interface{}) (*Container, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Container:Hydrate")
     }
@@ -84,7 +87,8 @@ func (c Containers) In(ctx context.Context, id string) bool {
 	return false
 }
 
-func (c Containers) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Containers, error) {
+func (c Containers) Hydrate(ctx context.Context, msi []map[string]interface{}) (*Containers, *map[string]errors.Error)
+ {
     if v, ok := ctx.Value("updateCtx").(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, "stack", "types:container.go:Container:Hydrate")
     }
