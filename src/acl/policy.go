@@ -17,8 +17,7 @@ type Policy struct {
 	IsContent  bool       `json:"isContent"`
 }
 
-func (c Policy) New(ctx context.Context) (*Policy,*map[string]errors.Error)
- {
+func (c Policy) New(ctx context.Context) (*Policy,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:New")
 	}
@@ -43,8 +42,7 @@ func (c Policy) New(ctx context.Context) (*Policy,*map[string]errors.Error)
 	return &policy, nil
 }
 
-func (c Policy) ToContent(ctx context.Context) (*types.Content,*map[string]errors.Error)
- {
+func (c Policy) ToContent(ctx context.Context) (*types.Content,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:ToContent")
 	}
@@ -63,8 +61,7 @@ func (c Policy) ToContent(ctx context.Context) (*types.Content,*map[string]error
 	return &content, nil
 }
 
-func (c Policy) PGRead(ctx context.Context) (*Policy,*map[string]errors.Error)
- {
+func (c Policy) PGRead(ctx context.Context) (*Policy,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:PGRead")
 	}
@@ -150,8 +147,7 @@ func (c Policy) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Policy) ToMSI(ctx context.Context) (map[string]interface{},*map[string]errors.Error)
- {
+func (c Policy) ToMSI(ctx context.Context) (map[string]interface{},*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:ToMSI")
 	}
@@ -184,8 +180,7 @@ func (c Policies) In(ctx context.Context, id string) bool {
 	return false
 }
 
-func (c Policies) SelectIn(ctx context.Context) (*Policies,*map[string]errors.Error)
- {
+func (c Policies) SelectIn(ctx context.Context) (*Policies,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policies:SelectIn")
 	}
@@ -222,8 +217,7 @@ func (c Policies) IsDocument(ctx context.Context) bool {
 	return true
 }
 
-func (c Policies) FindPolicies(ctx context.Context) (*Policies,*map[string]errors.Error)
- {
+func (c Policies) FindPolicies(ctx context.Context) (*Policies,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policies:FindPolicies")
 	}
@@ -246,8 +240,7 @@ func (c Policies) FindPolicies(ctx context.Context) (*Policies,*map[string]error
 	return &r, nil
 }
 
-func (c Policies) ToMSI(ctx context.Context) (map[string]interface{},*map[string]errors.Error)
- {
+func (c Policies) ToMSI(ctx context.Context) (map[string]interface{},*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policies:ToMSI")
 	}
@@ -267,7 +260,6 @@ func (c Policies) ToMSI(ctx context.Context) (map[string]interface{},*map[string
 }
 
 func (c Policies) CreateMany(ctx context.Context) *map[string]errors.Error {
-
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policies:CreateMany")
 	}
@@ -296,7 +288,6 @@ func (c Policies) CreateMany(ctx context.Context) *map[string]errors.Error {
 }
 
 func CreatePolicy(ctx context.Context, name, role, resource string) *map[string]errors.Error {
-
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:CreatePolicy")
 	}
@@ -344,8 +335,7 @@ func NewPolicy(ctx context.Context, name, role, resource, permission string) *Po
 	return nil
 }
 
-func GetPolicies(ctx context.Context) (*Policies,*map[string]errors.Error)
- {
+func GetPolicies(ctx context.Context) (*Policies,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:GetPolicies")
 	}
@@ -363,8 +353,7 @@ func GetPolicies(ctx context.Context) (*Policies,*map[string]errors.Error)
 	return policiesPtr, nil
 }
 
-func GetPolicyByRole(ctx context.Context, role string) (*Policies,*map[string]errors.Error)
- {
+func GetPolicyByRole(ctx context.Context, role string) (*Policies,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:GetPolicyByRole")
 	}
@@ -389,8 +378,7 @@ func GetPolicyByRole(ctx context.Context, role string) (*Policies,*map[string]er
 	return nil, err
 }
 
-func GetPolicyById(ctx context.Context, id string) (*Policy,*map[string]errors.Error)
- {
+func GetPolicyById(ctx context.Context, id string) (*Policy,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:GetPolicyById")
 	}
@@ -414,7 +402,6 @@ func GetPolicyById(ctx context.Context, id string) (*Policy,*map[string]errors.E
 }
 
 func CreateSystemPolicies(ctx context.Context) *map[string]errors.Error {
-
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:CreateSystemPolicies")
 	}

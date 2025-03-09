@@ -2,16 +2,14 @@ package acl
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"inventory/src/errors"
-	"inventory/src/types"
+	// "inventory/src/types"
 	"inventory/src/util"
 	"os"
 	"regexp"
-	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
+	// "github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
@@ -26,131 +24,80 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 		if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			ctx = v(ctx, ckey, "acl:middleware.go:ACL")
 		}
-		e := errors.Error{
-			RequestUri: c.Request().RequestURI,
-			Package:    "acl",
-			Function:   "ACL",
-		}
+		e := errors.Error{}.New(ctx, "middleware.go", "acl", "ACL", "")
 		if err := next(c); err != nil {
-			e.Err(ctx, err)
+			e["acl:ACL"].Err(ctx, err)
 			c.Error(err)
 		}
 		if skipper(c) {
 			return nil
 		}
-		token, err := GetBearerToken(ctx, c)
-		if err != nil {
-			return e.Err(ctx, err)
+		token, erp := GetBearerToken(ctx, c)
+		if erp != nil {
+			ers := *erp
+			e["acl:GetBearerToken"] = e["acl:ACL"]
+			e["acl:GetBearerToken"].Err(ctx, ers["acl:GetBearerToken"].Wrapper)
+			return ers["acl:GetBearerToken"].Wrapper
 		}
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
 			err := fmt.Errorf("secret not found")
-			return e.Err(ctx, err)
+			e["acl:ACL"].Err(ctx, err)
 		}
 		// if authorization[len(authorization)-2:len(authorization)-1] != "==" {
 		// 	authorization = fmt.Sprintf("%s==", authorization)
 		// }
 
-		claims, err := DecodeJWT(ctx, token, []byte("secret"))
-		if err != nil {
-			return e.Err(ctx, err)
+		claims, erp := DecodeJWT(ctx, token, []byte("secret"))
+		if erp != nil {
+			ers := *erp
+			e["acl:DecodeJWT"] = e["acl:ACL"]
+			e["acl:DecodeJWT"].Err(ctx, ers["acl:DecodeJWT"])
+			return ers["acl:DecodeJWT"].Wrapper
 		}
-		user, err := GetUser(ctx, claims)
-		if err != nil {
-			return e.Err(ctx, err)
+		user, erp := GetUser(ctx, claims)
+		if erp != nil {
+			ers := *erp
+			e["acl:GetUser"] = e["acl:ACL"]
+			e["acl:GetUser"].Err(ctx, ers["acl:GetUser"].Wrapper)
+			return ers["acl:GetUser"].Wrapper
 		}
 		if user != nil {
 			us := *user
-			policyPtr, err := getResourcePolicy(ctx, us, c.Request().URL.Path)
-			if e.Err(ctx, err) != nil {
-				return err
+			policyPtr, erp := getResourcePolicy(ctx, us, c.Request().URL.Path)
+			if erp != nil {
+				ers := *erp
+				e["acl:getResourcePolicy"] = e["acl:ACL"]
+				e["acl:getResourcePolicy"].Err(ctx, ers["acl:getResourcePolicy"].Wrapper)
+				return ers["acl:getResourcePolicy"].Wrapper
 			}
 			if policyPtr == nil {
-				err = fmt.Errorf("policy is nil")
-				return e.Err(ctx, err)
+				err := fmt.Errorf("policy is nil")
+				e["acl:ACL"].Err(ctx, err)
+				return err
 			}
 			policy := *policyPtr
 			if policy.IsContent {
-				auth, err := PermissionsHandler(ctx, c, policy)
-				if err != nil {
-					return e.Err(ctx, err)
+				auth, erp := PermissionsHandler(ctx, c, policy)
+				if erp != nil {
+					ers := *erp
+					e["acl:PermissionsHandler"] = e["acl:ACL"]
+					e["acl:PermissionsHandler"].Err(ctx, ers["acl:PermissionsHandler"].Wrapper)
+					return ers["acl:PermissionsHandler"].Wrapper
 				}
 				if auth {
 					return nil
 				} else {
-					err = fmt.Errorf("access forbidden")
-					return e.Err(ctx, err)
+					err := fmt.Errorf("access forbidden")
+					e["acl:ACL"].Err(ctx, err)
+					return err
 				}
 			}
-			return nil
 		}
-		return e.Err(ctx, err)
+		return nil
 	}
 }
 
-func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims,*map[string]errors.Error) {
-	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:middleware.go:DecodeJWT")
-	}
-	e := errors.Error{
-		Package:  "acl",
-		Function: "DecodeJWT",
-	}
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{},*map[string]errors.Error)
- {
-		// Verify the signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			err2 := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			e.Err(ctx, err2)
-			return nil, err2
-		}
-		return secretKey, nil
-	})
-
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
-	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		e.Err(ctx, err)
-		return claims, nil
-	}
-
-	err = fmt.Errorf("invalid token")
-	e.Err(ctx, err)
-	return nil, err
-}
-
-func getResourcePolicy(ctx context.Context, u types.User, resource string) (*Policy,*map[string]errors.Error)
- {
-	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:middleware.go:getResourcePolicy")
-	}
-	e := errors.Error{
-		Package:  "acl",
-		Function: "GetBearerToken",
-	}
-	policiesPtr, err := Policies{}.FindPolicies(ctx)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
-	}
-	if policiesPtr == nil {
-		e.Err(ctx, err)
-		return nil, fmt.Errorf("policies is nil")
-	}
-	policies := *policiesPtr
-	for _, p := range policies {
-		resource = pathToResource(ctx, resource)
-		if resource == p.Resource && u.HasRole(ctx, p.Role) {
-			return &p, nil
-		}
-	}
-	err = fmt.Errorf(resource)
-	e.Err(ctx, err)
-	return nil, err
-}
 
 func skipper(c echo.Context) bool {
 	pattern := regexp.QuoteMeta(".js") + "|" + regexp.QuoteMeta(".css") + "|" + regexp.QuoteMeta("logout") + "|" + regexp.QuoteMeta("login")
@@ -161,101 +108,4 @@ func skipper(c echo.Context) bool {
 	return false
 }
 
-func GetUsableClaims(ctx context.Context, c echo.Context) (*map[string]interface{},*map[string]errors.Error)
- {
-	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:middleware.go:GetUsableClaims")
-	}
-	e := errors.Error{
-		Package:  "acl",
-		Function: "GetUsableClaims",
-	}
-	token, err := GetBearerToken(ctx, c)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
-	}
-	jwt, err := DecodeJWT(ctx, token, []byte("secret"))
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
-	}
-	msi := make(map[string]interface{})
-	b, err := json.Marshal(jwt)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
-	}
-	err = json.Unmarshal(b, &msi)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
-	}
-	return &msi, nil
-}
 
-func pathToResource(ctx context.Context, url string) string {
-	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		_ = v(ctx, ckey, "acl:middleware.go:pathToResource")
-	}
-	pattern := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-	r := regexp.MustCompile(pattern)
-	segments := strings.Split(url, "/")
-	s := url
-	if r.Match([]byte(segments[len(segments)-1])) {
-		s = strings.Join(segments[0:len(segments)-1], "/")
-	}
-	return s
-}
-
-func PermissionsHandler(ctx context.Context, c echo.Context, p Policy) (bool,*map[string]errors.Error)
- {
-	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:middleware.go:PermissionsHandler")
-	}
-	e := errors.Error{
-		Package:  "acl",
-		Function: "GetBearerToken",
-	}
-	userPtr, err := GetUserFromContext(ctx, c)
-	if err != nil {
-		e.Err(ctx, err)
-		return false, err
-	}
-	if userPtr == nil {
-		err := fmt.Errorf("user is nil")
-		e.Err(ctx, err)
-		return false, err
-	}
-	user := *userPtr
-	segments := strings.Split(c.Request().RequestURI, "/")
-	contentId := segments[len(segments)-1]
-	contentPtr, err := types.GetContent(ctx, contentId)
-	if err != nil {
-		e.Err(ctx, err)
-		return false, err
-	}
-	if contentPtr == nil {
-		err := fmt.Errorf("content pointer is nil")
-		e.Err(ctx, err)
-		return false, err
-	}
-	content := *contentPtr
-	if user.HasRole(ctx, p.Role) {
-		switch p.Permission.Name {
-		case "all":
-			return true, nil
-		case "created":
-			if user.Attributes.Id == content.Attributes.CreatedBy {
-				return true, nil
-			}
-		case "owned":
-			if user.Attributes.Id == content.Attributes.Owner {
-				return true, nil
-			}
-		default:
-			return false, nil
-		}
-	}
-	return false, err
-}
