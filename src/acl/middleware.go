@@ -24,9 +24,9 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 		if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 			ctx = v(ctx, ckey, "acl:middleware.go:ACL")
 		}
-		e := errors.Error{}.New(ctx, "middleware.go", "acl", "ACL", "")
+		e, idx := errors.Error{}.New(ctx, "middleware.go", "acl", "ACL", "")
 		if err := next(c); err != nil {
-			e["acl:ACL"].Err(ctx, err)
+			e[idx].Err(ctx, err)
 			c.Error(err)
 		}
 		if skipper(c) {
@@ -34,15 +34,16 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		token, erp := GetBearerToken(ctx, c)
 		if erp != nil {
+			fidx := "acl:GetBearerToken"
 			ers := *erp
-			e["acl:GetBearerToken"] = e["acl:ACL"]
-			e["acl:GetBearerToken"].Err(ctx, ers["acl:GetBearerToken"].Wrapper)
-			return ers["acl:GetBearerToken"].Wrapper
+			errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+			return ers[fidx].Wrapper
 		}
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
 			err := fmt.Errorf("secret not found")
-			e["acl:ACL"].Err(ctx, err)
+			e[idx].Err(ctx, err)
+			return err
 		}
 		// if authorization[len(authorization)-2:len(authorization)-1] != "==" {
 		// 	authorization = fmt.Sprintf("%s==", authorization)
@@ -51,29 +52,29 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 		claims, erp := DecodeJWT(ctx, token, []byte("secret"))
 		if erp != nil {
 			ers := *erp
-			e["acl:DecodeJWT"] = e["acl:ACL"]
-			e["acl:DecodeJWT"].Err(ctx, ers["acl:DecodeJWT"])
-			return ers["acl:DecodeJWT"].Wrapper
+			fidx := "acl:DecodeJWT"
+			errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+			return ers[fidx].Wrapper
 		}
 		user, erp := GetUser(ctx, claims)
 		if erp != nil {
 			ers := *erp
-			e["acl:GetUser"] = e["acl:ACL"]
-			e["acl:GetUser"].Err(ctx, ers["acl:GetUser"].Wrapper)
-			return ers["acl:GetUser"].Wrapper
+			fidx := "acl:GetUser"
+			errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+			return ers[fidx].Wrapper
 		}
 		if user != nil {
 			us := *user
 			policyPtr, erp := getResourcePolicy(ctx, us, c.Request().URL.Path)
 			if erp != nil {
 				ers := *erp
-				e["acl:getResourcePolicy"] = e["acl:ACL"]
-				e["acl:getResourcePolicy"].Err(ctx, ers["acl:getResourcePolicy"].Wrapper)
-				return ers["acl:getResourcePolicy"].Wrapper
+				fidx := "acl:getResourcePolicy"
+				errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+				return ers[fidx].Wrapper
 			}
 			if policyPtr == nil {
 				err := fmt.Errorf("policy is nil")
-				e["acl:ACL"].Err(ctx, err)
+				e[idx].Err(ctx, err)
 				return err
 			}
 			policy := *policyPtr
@@ -81,15 +82,15 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 				auth, erp := PermissionsHandler(ctx, c, policy)
 				if erp != nil {
 					ers := *erp
-					e["acl:PermissionsHandler"] = e["acl:ACL"]
-					e["acl:PermissionsHandler"].Err(ctx, ers["acl:PermissionsHandler"].Wrapper)
-					return ers["acl:PermissionsHandler"].Wrapper
+					fidx := "acl:PermissionsHandler"
+					errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+					return ers[fidx].Wrapper
 				}
 				if auth {
 					return nil
 				} else {
 					err := fmt.Errorf("access forbidden")
-					e["acl:ACL"].Err(ctx, err)
+					e[idx].Err(ctx, err)
 					return err
 				}
 			}

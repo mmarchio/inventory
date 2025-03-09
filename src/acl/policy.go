@@ -21,21 +21,20 @@ func (c Policy) New(ctx context.Context) (*Policy,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:New")
 	}
-	e := errors.Error{
-		Package:  "acl",
-		Function: "GetBearerToken",
-	}
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "New", "Policy")
 	var err error
 	policy := c
-	attributesPtr, err := c.Attributes.New(ctx)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+	attributesPtr, erp := c.Attributes.New(ctx)
+	if erp != nil {
+		fidx := "types:Attributes:New"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return nil, &e
 	}
 	if attributesPtr == nil {
 		err = fmt.Errorf("attributes is nil")
-		e.Err(ctx, err)
-		return nil, err
+		fidx := "types:Attributes:New"
+		errors.CreateErrorEntry(ctx, idx, fidx, nil, err, &e)
+		return nil, &e
 	}
 	policy.Attributes = *attributesPtr
 	policy.Attributes.ContentType = "policy"
@@ -46,16 +45,14 @@ func (c Policy) ToContent(ctx context.Context) (*types.Content,*map[string]error
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:ToContent")
 	}
-	e := errors.Error{
-		Package:  "acl",
-		Function: "GetBearerToken",
-	}
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "ToContent", "Policy")
 	content := types.Content{}
 	content.Attributes = c.Attributes
 	jbytes, err := json.Marshal(c)
 	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+		fidx := "json:Marshal"
+		errors.CreateErrorEntry(ctx, idx, fidx, nil, err, &e)
+		return nil, &e
 	}
 	content.Content = jbytes
 	return &content, nil
@@ -65,27 +62,27 @@ func (c Policy) PGRead(ctx context.Context) (*Policy,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:PGRead")
 	}
-	e := errors.Error{
-		Package:  "acl",
-		Function: "GetBearerToken",
-	}
-	contentPtr, err := types.Content{}.Read(ctx, c.Attributes.Id)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "PGRead", "Policy")
+	contentPtr, erp := types.Content{}.Read(ctx, c.Attributes.Id)
+	if erp != nil {
+		fidx := "types:Content:Read"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return nil, &e
 	}
 	if contentPtr == nil {
-		err = fmt.Errorf("content is nil")
-		e.Err(ctx, err)
-		return nil, fmt.Errorf("content is nil")
+		err := fmt.Errorf("content is nil")
+		fidx := "types:Content:Read"
+		errors.CreateErrorEntry(ctx, idx, fidx, nil, err, &e)
+		return nil, &e
 	}
 	content := *contentPtr
 	policy := Policy{}
 	if content.Content != nil {
-		err = json.Unmarshal(content.Content, &policy)
+		err := json.Unmarshal(content.Content, &policy)
 		if err != nil {
-			e.Err(ctx, err)
-			return nil, err
+			fidx := "json:Unmarshal"
+			errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+			return nil, &e
 		}
 	} else {
 		return nil, nil
@@ -95,47 +92,49 @@ func (c Policy) PGRead(ctx context.Context) (*Policy,*map[string]errors.Error) {
 }
 
 func (c Policy) PGCreate(ctx context.Context) *map[string]errors.Error {
-
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:PGCreate")
 	}
-	e := errors.Error{
-		Package: "acl",
-	}
-	err := types.Content{}.Create(ctx, c)
-	if err != nil {
-		e.Err(ctx, err)
-		return err
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "PGCreate", "Policy")
+	erp := types.Content{}.Create(ctx, c)
+	if erp != nil {
+		fidx := "types:Content:Create"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return &e
 	}
 	return nil
 }
 
 func (c Policy) PGUpdate(ctx context.Context) *map[string]errors.Error {
-
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:PGUpdate")
 	}
-	e := errors.Error{
-		Package: "acl",
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "PGUpdate", "Policy")
+	content, erp := c.ToContent(ctx)
+	if erp != nil {
+		fidx := "acl:Policy:ToContent"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return &e
 	}
-	content, err := c.ToContent(ctx)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil
+	erp = content.Update(ctx, c)
+	if erp != nil {
+		fidx := "types:Content:Update"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return &e
 	}
-	return content.Update(ctx, c)
+	return nil
 }
 
 func (c Policy) PGDelete(ctx context.Context) *map[string]errors.Error {
-
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:PGDelete")
 	}
-	err := types.Content{}.Delete(ctx, c.Attributes.Id)
-	if err != nil {
-		e := errors.Error{}
-		e.Err(ctx, err)
-		return err
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "PGDelete", "Policy")
+	erp := types.Content{}.Delete(ctx, c.Attributes.Id)
+	if erp != nil {
+		fidx := "types:Content:Delete"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return &e
 	}
 	return nil
 }
@@ -151,17 +150,19 @@ func (c Policy) ToMSI(ctx context.Context) (map[string]interface{},*map[string]e
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policy:ToMSI")
 	}
-	e := errors.Error{}
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "ToMSI", "Policy")
 	r := make(map[string]interface{})
 	m, err := json.Marshal(c)
 	if err != nil {
-		e.Err(ctx, err)
-		return r, err
+		fidx := "json:Marshal"
+		errors.CreateErrorEntry(ctx, idx, fidx, nil, err, &e)
+		return r, &e
 	}
 	err = json.Unmarshal(m, &r)
 	if err != nil {
-		e.Err(ctx, err)
-		return r, err
+		fidx := "json:Unmarshal"
+		errors.CreateErrorEntry(ctx, idx, fidx, nil, err, &e)
+		return r, &e
 	}
 	return r, nil
 }
@@ -184,25 +185,27 @@ func (c Policies) SelectIn(ctx context.Context) (*Policies,*map[string]errors.Er
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policies:SelectIn")
 	}
-	e := errors.Error{}
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "SelectIn", "Policies")
 	var ids []string
 	for _, policy := range c {
 		ids = append(ids, policy.Attributes.Id)
 	}
-	contentsPtr, err := types.Content{}.SelectIn(ctx, ids)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+	contentsPtr, erp := types.Content{}.SelectIn(ctx, ids)
+	if erp != nil {
+		fidx := "types:Content:SelectIn"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return nil, &e
 	}
 	policies := Policies{}
 	for _, contentPtr := range contentsPtr {
 		if contentPtr != nil {
 			content := *contentPtr
 			policy := Policy{}
-			err = json.Unmarshal(content.Content, &policy)
+			err := json.Unmarshal(content.Content, &policy)
 			if err != nil {
-				e.Err(ctx, err)
-				return nil, err
+				fidx := "json:Unmarshal"
+				errors.CreateErrorEntry(ctx, idx, fidx, nil, err, &e)
+				return nil, &e
 			}
 			policies = append(policies, policy)
 		}
@@ -221,19 +224,21 @@ func (c Policies) FindPolicies(ctx context.Context) (*Policies,*map[string]error
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:Policies:FindPolicies")
 	}
-	e := errors.Error{}
-	content, err := types.Content{}.FindAll(ctx, "policy")
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "SelectIn", "Policies")
+	content, erp := types.Content{}.FindAll(ctx, "policy")
+	if erp != nil {
+		fidx := "types:Content:FindAll"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return nil, &e
 	}
 	r := Policies{}
 	for _, c := range content {
 		policy := Policy{}
-		err = json.Unmarshal(c.Content, &policy)
+		err := json.Unmarshal(c.Content, &policy)
 		if err != nil {
-			e.Err(ctx, err)
-			return nil, err
+			fidx := "json:Unmarshal"
+			errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+			return nil, &e
 		}
 		r = append(r, policy)
 	}
@@ -245,16 +250,18 @@ func (c Policies) ToMSI(ctx context.Context) (map[string]interface{},*map[string
 		ctx = v(ctx, ckey, "acl:policy.go:Policies:ToMSI")
 	}
 	r := make(map[string]interface{})
-	e := errors.Error{}
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "ToMSI", "Policies")
 	m, err := json.Marshal(c)
 	if err != nil {
-		e.Err(ctx, err)
-		return r, err
+		fidx := "json:Marshal"
+		errors.CreateErrorEntry(ctx, idx, fidx, nil, err, &e)
+		return r, &e
 	}
 	err = json.Unmarshal(m, &r)
 	if err != nil {
-		e.Err(ctx, err)
-		return r, err
+		fidx := "json:Unmarshal"
+		errors.CreateErrorEntry(ctx, idx, fidx, nil, err, &e)
+		return r, &e
 	}
 	return r, nil
 }
@@ -264,25 +271,28 @@ func (c Policies) CreateMany(ctx context.Context) *map[string]errors.Error {
 		ctx = v(ctx, ckey, "acl:policy.go:Policies:CreateMany")
 	}
 	contents := make([]types.Content, 0)
-	e := errors.Error{}
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "CreateMany", "Policies")
 	for _, policy := range c {
-		contentPtr, err := policy.ToContent(ctx)
-		if err != nil {
-			e.Err(ctx, err)
-			return err
+		contentPtr, erp := policy.ToContent(ctx)
+		if erp != nil {
+			fidx := "acl:Policy:ToContent"
+			errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+			return &e
 		}
 		if contentPtr == nil {
-			err = fmt.Errorf("content pointer is nil")
-			e.Err(ctx, err)
-			return err
+			err := fmt.Errorf("content pointer is nil")
+			fidx := "acl:Policy:ToContent"
+			errors.CreateErrorEntry(ctx, idx, fidx, nil, err, &e)
+			return &e
 		}
 
 		contents = append(contents, *contentPtr)
 	}
-	err := types.Content{}.CreateMany(ctx, contents)
-	if err != nil {
-		e.Err(ctx, err)
-		return err
+	erp := types.Content{}.CreateMany(ctx, contents)
+	if erp != nil {
+		fidx := "types:Content:CreateMany"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return &e
 	}
 	return nil
 }
@@ -291,27 +301,31 @@ func CreatePolicy(ctx context.Context, name, role, resource string) *map[string]
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:CreatePolicy")
 	}
-	e := errors.Error{}
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "CreatePolicy", "")
 	params := Role{}
 	params.Attributes.Name = role
-	rolePtr, err := GetRole(ctx, params)
-	if err != nil {
-		e.Err(ctx, err)
-		return err
+	rolePtr, erp := GetRole(ctx, params)
+	if erp != nil {
+		fidx := "acl:GetRole"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return &e
 	}
 	if rolePtr != nil {
 		pol := NewPolicy(ctx, name, role, resource, rolePtr.DefaultPermisison)
 		if pol != nil {
 			p := *pol
-			err = p.PGCreate(ctx)
-			if err != nil {
-				e.Err(ctx, err)
-				return err
+			erp = p.PGCreate(ctx)
+			if erp != nil {
+				fidx := "acl:Policy:PGCreate"
+				errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+				return &e
 			}
 			return nil
 		}
 	}
-	return fmt.Errorf("unable to create policy")
+	err := fmt.Errorf("unable to create policy")
+	e[idx].Err(ctx, err)	
+	return &e
 }
 
 func NewPolicy(ctx context.Context, name, role, resource, permission string) *Policy {
@@ -339,16 +353,18 @@ func GetPolicies(ctx context.Context) (*Policies,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:GetPolicies")
 	}
-	e := errors.Error{}
-	policiesPtr, err := Policies{}.FindPolicies(ctx)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "GetPolicies", "")
+	policiesPtr, erp := Policies{}.FindPolicies(ctx)
+	if erp != nil {
+		fidx := "acl:Policies:FindPolicies"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return nil, &e
 	}
 	if policiesPtr == nil {
-		err = fmt.Errorf("policies is nil")
-		e.Err(ctx, err)
-		return nil, fmt.Errorf("policies is nil")
+		err := fmt.Errorf("policies is nil")
+		fidx := "acl:Policies:FindPolicies"
+		errors.CreateErrorEntry(ctx, idx, fidx, nil, err, &e)
+		return nil, &e
 	}
 	return policiesPtr, nil
 }
@@ -357,11 +373,12 @@ func GetPolicyByRole(ctx context.Context, role string) (*Policies,*map[string]er
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:GetPolicyByRole")
 	}
-	e := errors.Error{}
-	dbPoliciesPtr, err := GetPolicies(ctx)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "GetPolicyByRole", "")
+	dbPoliciesPtr, erp := GetPolicies(ctx)
+	if erp != nil {
+		fidx := "acl:GetPolicies"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return nil, &e
 	}
 	if dbPoliciesPtr != nil {
 		dbPolicies := *dbPoliciesPtr
@@ -373,20 +390,21 @@ func GetPolicyByRole(ctx context.Context, role string) (*Policies,*map[string]er
 		}
 		return &policies, nil
 	}
-	err = fmt.Errorf("no policies found for role %s", role)
-	e.Err(ctx, err)
-	return nil, err
+	err := fmt.Errorf("no policies found for role %s", role)
+	e[idx].Err(ctx, err)
+	return nil, &e
 }
 
 func GetPolicyById(ctx context.Context, id string) (*Policy,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:GetPolicyById")
 	}
-	e := errors.Error{}
-	dbPoliciesPtr, err := GetPolicies(ctx)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "CreatePolicy", "")
+	dbPoliciesPtr, erp := GetPolicies(ctx)
+	if erp != nil {
+		fidx := "acl:GetPolicies"
+		errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+		return nil, &e
 	}
 	if dbPoliciesPtr != nil {
 		dbPolicies := *dbPoliciesPtr
@@ -396,16 +414,16 @@ func GetPolicyById(ctx context.Context, id string) (*Policy,*map[string]errors.E
 			}
 		}
 	}
-	err = fmt.Errorf("no policy for role %s", id)
-	e.Err(ctx, err)
-	return nil, err
+	err := fmt.Errorf("no policy for role %s", id)
+	e[idx].Err(ctx, err)
+	return nil, &e
 }
 
 func CreateSystemPolicies(ctx context.Context) *map[string]errors.Error {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:policy.go:CreateSystemPolicies")
 	}
-	e := errors.Error{}
+	e, idx := errors.Error{}.New(ctx, "policy.go", "acl", "CreatePolicy", "")
 	policies := Policies{}
 	pol := NewPolicy(ctx, "system-create-user", "system", "/api/user/create", "all")
 	if pol != nil {
@@ -453,10 +471,11 @@ func CreateSystemPolicies(ctx context.Context) *map[string]errors.Error {
 	}
 
 	for _, p := range policies {
-		err := p.PGCreate(ctx)
-		if err != nil {
-			e.Err(ctx, err)
-			return err
+		erp := p.PGCreate(ctx)
+		if erp != nil {
+			fidx := "acl:Policy:Create"
+			errors.CreateErrorEntry(ctx, idx, fidx, erp, nil, &e)
+			return &e
 		}
 	}
 	return nil

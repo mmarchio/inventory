@@ -25,6 +25,20 @@ type Error struct {
 	Wrapper error
 }
 
+func CreateErrorEntry(ctx context.Context, idx, fidx string, erp *map[string]Error, e error, m *map[string]Error) {
+	if m != nil {
+		mp := *m
+		mp[fidx] = mp[idx]
+		if erp != nil {
+			ers := *erp
+			mp[fidx].Err(ctx, ers[fidx].Wrapper)
+		} else {
+			mp[fidx].Err(ctx, e)
+		}
+		m = &mp
+	}
+}
+
 func (c Error) Error() string {
 	return c.Wrapper.Error()
 }
@@ -79,7 +93,7 @@ func (c Error) ErrOrNil(ctx context.Context, ptr interface{}, e error) error {
 	return nil
 }
 
-func (c Error) New(ctx context.Context, f, p, fn, s string) map[string]Error {
+func (c Error) New(ctx context.Context, f, p, fn, s string) (map[string]Error, string) {
 	ce := make(map[string]Error)
 	e := Error{
 		File:     f,
@@ -88,12 +102,14 @@ func (c Error) New(ctx context.Context, f, p, fn, s string) map[string]Error {
 		Struct:   s,
 	}
 	e.GetCtxTrace(ctx)
+	var index string
 	if e.Struct != "" {
-		ce[fmt.Sprintf("%s:%s:%s", p, s, fn)] = e
+		index = fmt.Sprintf("%s:%s:%s", p, s, fn)
 	} else {
-		ce[fmt.Sprintf("%s:%s", p, fn)] = e
+		index = fmt.Sprintf("%s:%s", p, fn)
 	}
-	return ce
+	ce[index] = e
+	return ce, index
 }
 
 func ErrOrNil(ctx context.Context, ptr interface{}, e error) error {
