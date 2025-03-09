@@ -79,6 +79,23 @@ func (c Error) ErrOrNil(ctx context.Context, ptr interface{}, e error) error {
 	return nil
 }
 
+func (c Error) New(ctx context.Context, f, p, fn, s string) map[string]Error {
+	ce := make(map[string]Error)
+	e := Error{
+		File:     f,
+		Package:  p,
+		Function: fn,
+		Struct:   s,
+	}
+	e.GetCtxTrace(ctx)
+	if e.Struct != "" {
+		ce[fmt.Sprintf("%s:%s:%s", p, s, fn)] = e
+	} else {
+		ce[fmt.Sprintf("%s:%s", p, fn)] = e
+	}
+	return ce
+}
+
 func ErrOrNil(ctx context.Context, ptr interface{}, e error) error {
     if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
         ctx = v(ctx, ckey, "errors:error.go:ErrOrNil")

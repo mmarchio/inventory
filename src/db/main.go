@@ -49,8 +49,7 @@ type RedisConfig struct {
 }
 
 // NewRedisClient initializes a new Redis client
-func NewRedisClient() (*RedisClient,*map[string]errors.Error)
- {
+func NewRedisClient() (*RedisClient,*map[string]errors.Error) {
 	domain := os.Getenv("REDIS_DOMAIN")
 	port, err := strconv.Atoi(os.Getenv("REDIS_PORT"))
 	password := os.Getenv("REDIS_PASSWORD")
@@ -66,8 +65,7 @@ func NewRedisClient() (*RedisClient,*map[string]errors.Error)
 	return &RedisClient{client: rdb}, nil
 }
 
-func (i Document) MarshalBinary() ([]byte,*map[string]errors.Error)
- {
+func (i Document) MarshalBinary() ([]byte,*map[string]errors.Error) {
 	return json.Marshal(i)
 }
 
@@ -119,8 +117,7 @@ func (r *RedisClient) CreateDocument(doc *Document) error {
 }
 
 // ReadJSONDocument retrieves a JSON document from redis by key
-func (r *RedisClient) ReadJSONDocument(key, path string) (*string,*map[string]errors.Error)
- {
+func (r *RedisClient) ReadJSONDocument(key, path string) (*string,*map[string]errors.Error) {
 	ctx := context.Background()
 	val, err := r.client.JSONGet(ctx, key, path).Result()
 	if err != nil {
@@ -130,8 +127,7 @@ func (r *RedisClient) ReadJSONDocument(key, path string) (*string,*map[string]er
 }
 
 // ReadDocument retrieves a document from Redis by ID
-func (r *RedisClient) ReadDocument(id string) (*Document,*map[string]errors.Error)
- {
+func (r *RedisClient) ReadDocument(id string) (*Document,*map[string]errors.Error) {
 	val, err := r.client.Get(ctx, id).Result()
 	if err != nil {
 		return nil, err

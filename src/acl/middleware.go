@@ -88,8 +88,7 @@ func ACL(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims,*map[string]errors.Error)
- {
+func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.MapClaims,*map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:middleware.go:DecodeJWT")
 	}
@@ -121,42 +120,6 @@ func DecodeJWT(ctx context.Context, tokenString string, secretKey []byte) (jwt.M
 	err = fmt.Errorf("invalid token")
 	e.Err(ctx, err)
 	return nil, err
-}
-
-func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User,*map[string]errors.Error)
- {
-	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
-		ctx = v(ctx, ckey, "acl:middleware.go:GetUser")
-	}
-	e := errors.Error{
-		Package:  "acl",
-		Function: "GetUser",
-	}
-	b, err := json.Marshal(claims)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
-	}
-	msi := make(map[string]interface{})
-	err = json.Unmarshal(b, &msi)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
-	}
-	var jstring string
-	if v, ok := msi["username"].(string); ok {
-		jstring = fmt.Sprintf("{\"username\": \"%s\"}", v)
-	}
-	userPtr, err := types.User{}.FindBy(ctx, jstring)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
-	}
-	if userPtr == nil {
-		e.Err(ctx, err)
-		return nil, fmt.Errorf("user is nil")
-	}
-	return userPtr, nil
 }
 
 func getResourcePolicy(ctx context.Context, u types.User, resource string) (*Policy,*map[string]errors.Error)

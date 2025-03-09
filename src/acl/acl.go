@@ -9,6 +9,7 @@ import (
 	"inventory/src/util"
 	"strings"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
@@ -22,81 +23,114 @@ type Permission struct {
 
 type Permissions []Permission
 
-func FindPermissions(ctx context.Context) (*Permissions, *map[string]errors.Error)
-
- {
+func FindPermissions(ctx context.Context) (*Permissions, *map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl.go:FindPermissions")
 	}
-	e := errors.Error{
-		Package: "acl",
-		Function: "FindPermissions",
-	}
-	content, err := types.Content{}.FindAll(ctx, "permission")
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+	e := errors.Error{}.New(ctx, "acl.go", "acl", "FindPermissions", "")
+	content, erp := types.Content{}.FindAll(ctx, "permission")
+	if erp != nil {
+		ers := *erp
+		e["types:Content:FindAll"] = e["acl:FindPermissions"]
+		e["types:Content:FindAll"].Err(ctx, ers["types:Content:FindAll"].Wrapper)
+		return nil, &e
 	}
 	r := Permissions{}
 	for _, c := range content {
 		permission := Permission{}
-		err = json.Unmarshal(c.Content, &permission)
+		err := json.Unmarshal(c.Content, &permission)
 		if err != nil {
-			e.Err(ctx, err)
-			return nil, err
+			e["acl:FindPermissions"].Err(ctx, err)
+			return nil, &e
 		}
 		r = append(r, permission)
 	}
 	return &r, nil
 }
 
-func GetBearerToken(ctx context.Context, c echo.Context) (string, *map[string]errors.Error)
- {
+func GetBearerToken(ctx context.Context, c echo.Context) (string, *map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl.go:FindPermissions")
 	}
-	e := errors.Error{
-		Package: "acl",
-		Function: "GetBearerToken",
-	}
+	e := errors.Error{}.New(ctx, "acl.go", "acl", "GetBearerToken", "")
 	bearer := c.Request().Header.Get("AUTHORIZATION")
 	if bearer == "" {
 		err := fmt.Errorf("authorization header not found")
-		e.Err(ctx, err)
-		return "", err
+		e["acl:GetBearerToken"].Err(ctx, err)
+		return "", &e
 	}
 	parts := strings.Split(bearer, " ")
 	if len(parts) != 2 {
 		err := fmt.Errorf("unexpected authorization header segments")
-		e.Err(ctx, err)
-		return "", err
+		e["acl:GetBearerToken"].Err(ctx, err)
+		return "", &e
 	}
 	return parts[1], nil
 }
 
-func GetUserFromContext(ctx context.Context, c echo.Context) (*types.User, *map[string]errors.Error)
- {
+func GetUser(ctx context.Context, claims jwt.MapClaims) (*types.User,*map[string]errors.Error) {
+	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
+		ctx = v(ctx, ckey, "acl:middleware.go:GetUser")
+	}
+	e := errors.Error{}.New(ctx, "acl.go", "acl", "GetUserFromContext", "")
+	b, err := json.Marshal(claims)
+	if err != nil {
+		e["json:Marshal"] = e["acl:GetUser"]
+		e["json:Marshal"].Err(ctx, err)
+		return nil, &e
+	}
+	msi := make(map[string]interface{})
+	err = json.Unmarshal(b, &msi)
+	if err != nil {
+		e["json:Unmarshal"] = e["acl:GetUser"]
+		e["json:Unmarshal"].Err(ctx, err)
+		return nil, &e
+	}
+	var jstring string
+	if v, ok := msi["username"].(string); ok {
+		jstring = fmt.Sprintf("{\"username\": \"%s\"}", v)
+	}
+	userPtr, erp := types.User{}.FindBy(ctx, jstring)
+	if erp != nil {
+		ers := *erp
+		e["types:User:FindBy"] = e["acl:GetUser"]
+		e["types:User:FindBy"].Err(ctx, ers["types:User:FindBy"].Wrapper)
+		return nil, &e
+	}
+	if userPtr == nil {
+		err = fmt.Errorf("user is nil")
+		e["acl:GetUser"].Err(ctx, err)
+		return nil, &e
+	}
+	return userPtr, nil
+}
+
+
+func GetUserFromContext(ctx context.Context, c echo.Context) (*types.User, *map[string]errors.Error) {
 	if v, ok := ctx.Value(ukey).(func(context.Context, util.CtxKey, string) context.Context); ok {
 		ctx = v(ctx, ckey, "acl:acl.go:GetUserFromContext")
 	}
-	e := errors.Error{
-		Package: "acl",
-		Function: "GetBearerToken",
+	e := errors.Error{}.New(ctx, "acl.go", "acl", "GetUserFromContext", "")
+	token, erp := GetBearerToken(ctx, c)
+	if erp != nil {
+		ers := *erp
+		e["acl:GetBearerToken"] = e["acl:GetUserFromContext"]
+		e["acl:GetBearerToken"].Err(ctx, ers["acl:GetBearerToken"].Wrapper)
+		return nil, &e
 	}
-	token, err := GetBearerToken(ctx, c)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+	jwt, erp := DecodeJWT(ctx, token, []byte("secret"))
+	if erp != nil {
+		ers := *erp
+		e["acl:DecodeJWT"] = e["acl:GetUserFromContext"]
+		e["acl:DecodeJWT"].Err(ctx, ers["acl:DecodeJWT"].Wrapper)
+		return nil, &e
 	}
-	jwt, err := DecodeJWT(ctx, token, []byte("secret"))
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
-	}
-	userPtr, err := GetUser(ctx, jwt)
-	if err != nil {
-		e.Err(ctx, err)
-		return nil, err
+	userPtr, erp := GetUser(ctx, jwt)
+	if erp != nil {
+		ers := *erp
+		e["acl:GetUser"] = e["acl:GetUserFromContext"]
+		e["acl:GetUser"].Err(ctx, ers["acl:GetUser"].Wrapper)
+		return nil, &e
 	}
 	return userPtr, nil
 }
